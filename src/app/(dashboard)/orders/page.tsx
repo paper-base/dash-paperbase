@@ -7,6 +7,13 @@ import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import { useBranding } from "@/context/BrandingContext";
 import type { Order, PaginatedResponse } from "@/types";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
@@ -211,18 +218,29 @@ export default function OrdersPage() {
                       {order.phone || "—"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <select
+                      <Combobox
                         value={order.status}
-                        onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
+                        onValueChange={(_, value) =>
+                          handleStatusChange(order.id, value as OrderStatus)
+                        }
                         disabled={updatingStatusId === order.id}
-                        className="rounded-md border border-input bg-background px-2 py-1.5 text-sm font-medium capitalize focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60"
                       >
-                        {STATUS_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
+                        <ComboboxInput
+                          placeholder="Select status"
+                          showClear={false}
+                          className="w-[110px]"
+                          inputClassName="cursor-pointer caret-transparent text-xs font-medium capitalize"
+                        />
+                        <ComboboxContent>
+                          <ComboboxList>
+                            {STATUS_OPTIONS.map((opt) => (
+                              <ComboboxItem key={opt.value} value={opt.value}>
+                                <span className="capitalize">{opt.label}</span>
+                              </ComboboxItem>
+                            ))}
+                          </ComboboxList>
+                        </ComboboxContent>
+                      </Combobox>
                       {updatingStatusId === order.id && (
                         <span className="ml-1.5 inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
                       )}

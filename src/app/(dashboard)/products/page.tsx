@@ -7,6 +7,13 @@ import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import { useBranding } from "@/context/BrandingContext";
 import type { Product, PaginatedResponse } from "@/types";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -242,19 +249,38 @@ export default function ProductsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <select
+                      <Combobox
                         value={product.is_active ? "active" : "inactive"}
-                        onChange={(e) => handleStatusChange(product, e.target.value === "active")}
+                        onValueChange={(_, value) =>
+                          handleStatusChange(product, value === "active")
+                        }
                         disabled={updatingId === product.id}
-                        className={`rounded-full border-0 px-2.5 py-1 text-xs font-semibold focus:ring-2 focus:ring-ring focus:ring-offset-1 ${
-                          product.is_active
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : "bg-muted text-muted-foreground"
-                        } disabled:opacity-70`}
                       >
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                      </select>
+                        <ComboboxInput
+                          placeholder="Status"
+                          showClear={false}
+                          className="w-[110px]"
+                          inputClassName={`cursor-pointer caret-transparent text-xs font-semibold capitalize ${
+                            product.is_active
+                              ? "bg-emerald-500/10 text-emerald-400"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        />
+                        <ComboboxContent>
+                          <ComboboxList>
+                            <ComboboxItem value="active">
+                              <span className="text-xs font-medium capitalize">
+                                Active
+                              </span>
+                            </ComboboxItem>
+                            <ComboboxItem value="inactive">
+                              <span className="text-xs font-medium capitalize">
+                                Inactive
+                              </span>
+                            </ComboboxItem>
+                          </ComboboxList>
+                        </ComboboxContent>
+                      </Combobox>
                     </td>
                   </tr>
                 ))}
