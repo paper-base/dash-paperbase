@@ -151,23 +151,23 @@ export default function NewOrderPage() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => router.back()}
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+          className="rounded-lg border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted"
         >
           &larr; Back
         </button>
-        <h1 className="text-2xl font-semibold text-gray-900">New Order</h1>
+        <h1 className="text-2xl font-semibold text-foreground">New Order</h1>
       </div>
 
       {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Customer info */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <section className="rounded-xl border border-border bg-card p-6">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             Customer Information
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -245,8 +245,8 @@ export default function NewOrderPage() {
         </section>
 
         {/* Order items */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <section className="rounded-xl border border-border bg-card p-6">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             Order Items
           </h2>
 
@@ -262,18 +262,18 @@ export default function NewOrderPage() {
             />
             {searching && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               </div>
             )}
 
             {showResults && results.length > 0 && (
-              <div className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+              <div className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-border bg-card shadow-lg">
                 {results.map((product) => (
                   <button
                     key={product.id}
                     type="button"
                     onClick={() => addProduct(product)}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-gray-50"
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
                   >
                     {(product.image_url || product.image) && (
                       <img
@@ -283,10 +283,10 @@ export default function NewOrderPage() {
                       />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-gray-900">
+                      <p className="truncate font-medium text-foreground">
                         {product.name}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {currencySymbol}{Number(product.price).toLocaleString()} &middot;
                         Stock: {product.stock}
                       </p>
@@ -297,14 +297,14 @@ export default function NewOrderPage() {
             )}
 
             {showResults && query.trim().length >= 2 && results.length === 0 && !searching && (
-              <div className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500 shadow-lg">
+              <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-lg">
                 No products found
               </div>
             )}
           </div>
 
           {items.length === 0 ? (
-            <div className="rounded-lg border-2 border-dashed border-gray-200 py-8 text-center text-sm text-gray-400">
+            <div className="rounded-lg border-2 border-dashed border-border py-8 text-center text-sm text-muted-foreground">
               Search and add products above
             </div>
           ) : (
@@ -312,7 +312,7 @@ export default function NewOrderPage() {
               {items.map((item) => (
                 <div
                   key={item.key}
-                  className="flex items-start gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3"
+                  className="flex items-start gap-3 rounded-lg border border-border/70 bg-muted/40 p-3"
                 >
                   {item.product_image && (
                     <img
@@ -322,12 +322,12 @@ export default function NewOrderPage() {
                     />
                   )}
                   <div className="min-w-0 flex-1 space-y-2">
-                    <p className="truncate text-sm font-medium text-gray-900">
+                    <p className="truncate text-sm font-medium text-foreground">
                       {item.product_name}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <div className="w-20">
-                        <label className="mb-0.5 block text-xs text-gray-500">
+                        <label className="mb-0.5 block text-xs text-muted-foreground">
                           Qty
                         </label>
                         <input
@@ -345,7 +345,7 @@ export default function NewOrderPage() {
                         />
                       </div>
                       <div className="w-24">
-                        <label className="mb-0.5 block text-xs text-gray-500">
+                        <label className="mb-0.5 block text-xs text-muted-foreground">
                           Size
                         </label>
                         <input
@@ -359,7 +359,7 @@ export default function NewOrderPage() {
                         />
                       </div>
                       <div className="w-28">
-                        <label className="mb-0.5 block text-xs text-gray-500">
+                        <label className="mb-0.5 block text-xs text-muted-foreground">
                           Price ({currencySymbol})
                         </label>
                         <input
@@ -374,7 +374,7 @@ export default function NewOrderPage() {
                         />
                       </div>
                       <div className="flex items-end">
-                        <p className="pb-1 text-sm font-medium text-gray-700">
+                        <p className="pb-1 text-sm font-medium text-foreground">
                           = {currencySymbol}
                           {(
                             Number(item.price || 0) * item.quantity
@@ -386,7 +386,7 @@ export default function NewOrderPage() {
                   <button
                     type="button"
                     onClick={() => removeItem(item.key)}
-                    className="mt-1 rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-red-600"
+                    className="mt-1 rounded p-1 text-muted-foreground hover:bg-muted hover:text-destructive"
                     title="Remove item"
                   >
                     <svg
@@ -406,8 +406,8 @@ export default function NewOrderPage() {
                 </div>
               ))}
 
-              <div className="flex justify-end border-t border-gray-200 pt-3">
-                <p className="text-lg font-bold text-gray-900">
+              <div className="flex justify-end border-t border-border pt-3">
+                <p className="text-lg font-bold text-foreground">
                   Total: {currencySymbol}{total.toLocaleString()}
                 </p>
               </div>
@@ -420,14 +420,14 @@ export default function NewOrderPage() {
           <button
             type="button"
             onClick={() => router.back()}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving || items.length === 0}
-            className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             {saving ? "Creating..." : "Create Order"}
           </button>
@@ -448,9 +448,9 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-gray-700">
+      <label className="mb-1 block text-sm font-medium text-foreground">
         {label}
-        {required && <span className="text-red-500"> *</span>}
+        {required && <span className="text-destructive"> *</span>}
       </label>
       {children}
     </div>

@@ -2,11 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import { useBranding } from "@/context/BrandingContext";
 import type { Product, PaginatedResponse } from "@/types";
 
 export default function ProductsPage() {
+  const router = useRouter();
   const { currencySymbol } = useBranding();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,22 +101,34 @@ export default function ProductsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-2xl font-medium text-gray-900">
-          Products ({count})
-        </h1>
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-muted/80 px-1 py-1">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              aria-label="Go back"
+              className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
+            >
+              <Undo2 className="h-4 w-4" />
+            </button>
+          </div>
+          <h1 className="text-2xl font-medium text-foreground">
+            Products ({count})
+          </h1>
+        </div>
         <div className="flex items-center gap-2">
           {someSelected && (
             <button
               onClick={handleDeleteSelected}
               disabled={deleting}
-              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+              className="rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground transition hover:bg-destructive/90 disabled:opacity-50"
             >
               {deleting ? "Deleting…" : `Delete selected (${selectedIds.size})`}
             </button>
           )}
           <Link
             href="/products/new"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
           >
             Add Product
           </Link>
@@ -126,37 +141,49 @@ export default function ProductsPage() {
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-border bg-card">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
+                <tr className="border-b border-border bg-muted/40">
                   <th className="w-10 px-4 py-3">
                     <input
                       type="checkbox"
                       checked={allSelected}
                       onChange={toggleSelectAll}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                       aria-label="Select all products on this page"
                     />
                   </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase whitespace-nowrap">Product</th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase whitespace-nowrap">Brand</th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase whitespace-nowrap">Category</th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase whitespace-nowrap">Price</th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase whitespace-nowrap">Stock</th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase whitespace-nowrap">Status</th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+                    Product
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+                    Brand
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+                    Category
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+                    Price
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+                    Stock
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+                    Status
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border/60">
                 {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
+                  <tr key={product.id} className="hover:bg-muted/40">
                     <td className="w-10 px-4 py-3">
                       <input
                         type="checkbox"
                         checked={selectedIds.has(product.id)}
                         onChange={() => toggleSelect(product.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                         aria-label={`Select ${product.name}`}
                       />
                     </td>
@@ -172,14 +199,18 @@ export default function ProductsPage() {
                             className="h-10 w-10 rounded-lg object-cover flex-shrink-0"
                           />
                         )}
-                        <span className="font-medium text-blue-600 hover:underline truncate max-w-xs">
+                        <span className="font-medium text-primary hover:underline truncate max-w-xs">
                           {product.name}
                         </span>
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{product.brand}</td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{product.category_name}</td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                    <td className="px-4 py-3 text-foreground whitespace-nowrap">
+                      {product.brand}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                      {product.category_name}
+                    </td>
+                    <td className="px-4 py-3 text-foreground whitespace-nowrap">
                       {currencySymbol}{Number(product.price).toLocaleString()}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -199,12 +230,14 @@ export default function ProductsPage() {
                           onBlur={() => updateProduct(product.id, { stock: product.stock })}
                           onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
                           className={`w-16 rounded border px-2 py-1 text-sm ${
-                            product.stock === 0 ? "border-red-300 text-red-600" : "border-gray-300 text-gray-700"
-                          } focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                            product.stock === 0
+                              ? "border-destructive text-destructive"
+                              : "border-input text-foreground"
+                          } focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring`}
                           disabled={updatingId === product.id}
                         />
                         {updatingId === product.id && (
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                         )}
                       </div>
                     </td>
@@ -213,10 +246,10 @@ export default function ProductsPage() {
                         value={product.is_active ? "active" : "inactive"}
                         onChange={(e) => handleStatusChange(product, e.target.value === "active")}
                         disabled={updatingId === product.id}
-                        className={`rounded-full border-0 px-2.5 py-1 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
+                        className={`rounded-full border-0 px-2.5 py-1 text-xs font-semibold focus:ring-2 focus:ring-ring focus:ring-offset-1 ${
                           product.is_active
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-500"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : "bg-muted text-muted-foreground"
                         } disabled:opacity-70`}
                       >
                         <option value="active">Active</option>
@@ -233,15 +266,15 @@ export default function ProductsPage() {
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-40"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted disabled:opacity-40"
             >
               Previous
             </button>
-            <span className="text-sm text-gray-500">Page {page}</span>
+            <span className="text-sm text-muted-foreground">Page {page}</span>
             <button
               disabled={!hasNext}
               onClick={() => setPage((p) => p + 1)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-40"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted disabled:opacity-40"
             >
               Next
             </button>

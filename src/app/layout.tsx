@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono } from "next/font/google";
+import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-const ibmPlexMono = IBM_Plex_Mono({
+const openSans = Open_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-ibm-plex-mono",
+  variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
-  title: "Dashboard | Gadzilla Admin",
-  description: "Admin dashboard for Gadzilla",
+  title: "Core",
+  description: "Core dashboard",
 };
 
 export default function RootLayout({
@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={ibmPlexMono.variable}>
+    <html lang="en" className={openSans.variable} data-theme="light">
       <body className="antialiased font-sans">
         <TooltipProvider>
           <AuthProvider>{children}</AuthProvider>

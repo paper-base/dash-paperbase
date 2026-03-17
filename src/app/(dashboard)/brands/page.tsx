@@ -1,6 +1,8 @@
- "use client";
+"use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import type { Brand, PaginatedResponse } from "@/types";
 
@@ -19,6 +21,7 @@ function formatDate(value: string): string {
 }
 
 export default function BrandsPage() {
+  const router = useRouter();
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<number | "new" | null>(null);
@@ -103,13 +106,37 @@ export default function BrandsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-medium text-gray-900">Brands ({brands.length})</h1>
-        <button onClick={openNew} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Add Brand</button>
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-muted/80 px-1 py-1">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              aria-label="Go back"
+              className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
+            >
+              <Undo2 className="h-4 w-4" />
+            </button>
+          </div>
+          <h1 className="text-2xl font-medium text-foreground">
+            Brands ({brands.length})
+          </h1>
+        </div>
+        <button
+          onClick={openNew}
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+        >
+          Add Brand
+        </button>
       </div>
 
       {editing !== null && (
-        <form onSubmit={handleSave} className="space-y-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <p className="text-sm font-semibold text-blue-800">{editing === "new" ? "New Brand" : "Edit Brand"}</p>
+        <form
+          onSubmit={handleSave}
+          className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4"
+        >
+          <p className="text-sm font-semibold text-primary">
+            {editing === "new" ? "New Brand" : "Edit Brand"}
+          </p>
           <div className="grid grid-cols-2 gap-3">
             <input required placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input" />
             <input required placeholder="Slug" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="input" />
@@ -121,55 +148,111 @@ export default function BrandsPage() {
               <option value="accessories">Accessories</option>
             </select>
             <input type="number" placeholder="Order" value={form.order} onChange={(e) => setForm({ ...form, order: e.target.value })} className="input" />
-            <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] ?? null)} className="input" />
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Active
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+              className="input"
+            />
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={form.is_active}
+                onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+              />{" "}
+              Active
             </label>
           </div>
           <div className="flex gap-2">
-            <button type="submit" disabled={saving} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
               {saving ? "Saving..." : "Save"}
             </button>
-            <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button
+              type="button"
+              onClick={() => setEditing(null)}
+              className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-muted"
+            >
+              Cancel
+            </button>
           </div>
         </form>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Brand</th>
-              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Type</th>
-              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Order</th>
-              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Status</th>
-              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Created</th>
-              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Actions</th>
+            <tr className="border-b border-border bg-muted/40">
+              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                Brand
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                Type
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                Order
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                Status
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                Created
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                Actions
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border/60">
             {brands.map((brand) => (
-              <tr key={brand.id} className="hover:bg-gray-50">
+              <tr key={brand.id} className="hover:bg-muted/40">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    {brand.image && <img src={brand.image} alt={brand.name} className="h-8 w-8 rounded-lg object-contain" />}
-                    <span className="font-medium text-gray-900">{brand.name}</span>
+                    {brand.image && (
+                      <img
+                        src={brand.image}
+                        alt={brand.name}
+                        className="h-8 w-8 rounded-lg object-contain"
+                      />
+                    )}
+                    <span className="font-medium text-foreground">{brand.name}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-gray-500 capitalize">{brand.brand_type}</td>
-                <td className="px-4 py-3 text-gray-700">{brand.order}</td>
+                <td className="px-4 py-3 text-muted-foreground capitalize">
+                  {brand.brand_type}
+                </td>
+                <td className="px-4 py-3 text-foreground">{brand.order}</td>
                 <td className="px-4 py-3">
-                  <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${brand.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                  <span
+                    className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      brand.is_active
+                        ? "bg-emerald-500/20 text-emerald-400"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
                     {brand.is_active ? "Active" : "Inactive"}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-gray-500">
+                <td className="px-4 py-3 text-muted-foreground">
                   {formatDate(brand.created_at)}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
-                    <button onClick={() => openEdit(brand)} className="text-sm text-blue-600 hover:underline">Edit</button>
-                    <button onClick={() => handleDelete(brand.id)} className="text-sm text-red-600 hover:underline">Delete</button>
+                    <button
+                      onClick={() => openEdit(brand)}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(brand.id)}
+                      className="text-sm text-destructive hover:underline"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </td>
               </tr>

@@ -17,8 +17,10 @@ import {
   PanelRightClose,
   Search,
   LogOut,
-  ExternalLink,
   CircleUserRound,
+  Settings,
+  Store,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +48,7 @@ import { useBranding, defaultBranding } from "@/context/BrandingContext";
 import { useSearchModal } from "@/context/SearchModalContext";
 import { useNavCounts } from "@/hooks/useNavCounts";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function logoUrl(url: string | null): string | null {
   if (!url) return null;
@@ -91,6 +93,42 @@ function SidebarContent({
   const { counts, formatCount } = useNavCounts();
   const [usersOpen, setUsersOpen] = useState(false);
   const [celeryOpen, setCeleryOpen] = useState(false);
+  const [storesOpen, setStoresOpen] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark" | "system">("light");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("core-theme");
+    let initial: "light" | "dark" | "system" = "light";
+    if (stored === "light" || stored === "dark" || stored === "system") {
+      initial = stored;
+    } else if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
+      initial = "system";
+    }
+    setTheme(initial);
+    const root = document.documentElement;
+    const applied =
+      initial === "system"
+        ? window.matchMedia?.("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light"
+        : initial;
+    root.setAttribute("data-theme", applied);
+  }, []);
+
+  const handleThemeChange = (next: "light" | "dark" | "system") => {
+    setTheme(next);
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("core-theme", next);
+    const root = document.documentElement;
+    const applied =
+      next === "system"
+        ? window.matchMedia?.("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light"
+        : next;
+    root.setAttribute("data-theme", applied);
+  };
 
   const adminName = branding?.admin_name ?? defaultBranding.admin_name;
   const adminSubtitle = branding?.admin_subtitle ?? defaultBranding.admin_subtitle;
@@ -138,7 +176,7 @@ function SidebarContent({
               </span>
             )}
             <div className="min-w-0 flex-1">
-              <span className="block truncate text-base font-semibold text-foreground">
+              <span className="block truncate text-lg font-medium text-foreground">
                 {adminName}
               </span>
               <span className="block truncate text-xs text-muted-foreground">
@@ -223,7 +261,7 @@ function SidebarContent({
                     counts != null &&
                     counts[item.countKey] > 0 && (
                       <Badge
-                        className="h-5 min-w-5 rounded-full border-0 bg-red-50 px-1.5 text-xs font-medium text-red-700"
+                        className="h-5 min-w-5 rounded-full border-0 bg-primary/15 px-1.5 text-xs font-medium text-primary"
                       >
                         {formatCount(counts[item.countKey])}
                       </Badge>
@@ -319,7 +357,7 @@ function SidebarContent({
                 >
                   <span>Contacts</span>
                   {counts != null && counts.contacts > 0 && (
-                    <Badge className="h-5 min-w-5 rounded-full border-0 bg-red-50 px-1.5 text-xs font-medium text-red-700">
+                    <Badge className="h-5 min-w-5 rounded-full border-0 bg-primary/15 px-1.5 text-xs font-medium text-primary">
                       {formatCount(counts.contacts)}
                     </Badge>
                   )}
@@ -345,10 +383,10 @@ function SidebarContent({
                 <>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">
-                      Sample Example
+                      John Smith
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      sample@example.com
+                      john.doe@example.com
                     </p>
                   </div>
                   <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
@@ -358,12 +396,98 @@ function SidebarContent({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56" side="top">
-            <DropdownMenuItem asChild>
-              <a href="/" className="flex cursor-pointer items-center gap-2">
-                <ExternalLink className="size-4" />
-                View site
-              </a>
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault();
+                setStoresOpen((prev) => !prev);
+              }}
+            >
+              <Store className="size-4" />
+              <span className="flex-1">Stores</span>
+              <ChevronRight
+                className={cn(
+                  "size-4 text-muted-foreground transition-transform",
+                  storesOpen && "rotate-90"
+                )}
+              />
             </DropdownMenuItem>
+            {storesOpen && (
+              <>
+                <DropdownMenuItem disabled>
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Current store
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="h-2.5 w-2.5 bg-emerald-400"
+                      style={{ borderRadius: "999px" }}
+                    />
+                    <span>Example Store</span>
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem disabled>
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <Plus className="size-3.5" />
+                    <span>Add another store</span>
+                  </span>
+                </DropdownMenuItem>
+              </>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link
+                href="/settings"
+                onClick={handleLinkClick}
+                className="flex cursor-pointer items-center gap-2"
+              >
+                <Settings className="size-4" />
+                Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <div className="px-2 pb-1">
+              <div className="flex items-center justify-between gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange("light")}
+                  className={cn(
+                    "flex-1 rounded-md px-2 py-1 text-xs font-medium",
+                    theme === "light"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  Light
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange("dark")}
+                  className={cn(
+                    "flex-1 rounded-md px-2 py-1 text-xs font-medium",
+                    theme === "dark"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  Dark
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange("system")}
+                  className={cn(
+                    "flex-1 rounded-md px-2 py-1 text-xs font-medium",
+                    theme === "system"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  System
+                </button>
+              </div>
+            </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"

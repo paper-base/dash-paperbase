@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import type { NavbarCategory, Category, PaginatedResponse } from "@/types";
 
@@ -11,6 +13,7 @@ const emptyNavForm: NavForm = { name: "", slug: "", description: "", order: "0",
 const emptySubForm: SubForm = { name: "", slug: "", description: "", navbar_category: "", order: "0", is_active: true };
 
 export default function CategoriesPage() {
+  const router = useRouter();
   const [navCategories, setNavCategories] = useState<NavbarCategory[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,63 +153,139 @@ export default function CategoriesPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-medium text-gray-900">Categories</h1>
+      <div className="flex items-center gap-3">
+        <div className="rounded-lg bg-muted/80 px-1 py-1">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            aria-label="Go back"
+            className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
+          >
+            <Undo2 className="h-4 w-4" />
+          </button>
+        </div>
+        <h1 className="text-2xl font-medium text-foreground">Categories</h1>
+      </div>
 
       {/* ── Navbar Categories ── */}
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-gray-900">Navbar Categories ({navCategories.length})</h2>
-          <button onClick={openNavNew} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Add Category</button>
+          <h2 className="text-lg font-medium text-foreground">
+            Navbar Categories ({navCategories.length})
+          </h2>
+          <button
+            onClick={openNavNew}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Add Category
+          </button>
         </div>
 
         {navEditing !== null && (
-          <form onSubmit={saveNav} className="mb-4 space-y-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
-            <p className="text-sm font-medium text-blue-800">{navEditing === "new" ? "New Navbar Category" : "Edit Navbar Category"}</p>
+          <form
+            onSubmit={saveNav}
+            className="mb-4 space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4"
+          >
+            <p className="text-sm font-medium text-primary">
+              {navEditing === "new" ? "New Navbar Category" : "Edit Navbar Category"}
+            </p>
             <div className="grid grid-cols-2 gap-3">
               <input required placeholder="Name" value={navForm.name} onChange={(e) => setNavForm({ ...navForm, name: e.target.value })} className="input" />
               <input required placeholder="Slug" value={navForm.slug} onChange={(e) => setNavForm({ ...navForm, slug: e.target.value })} className="input" />
             </div>
             <input placeholder="Description" value={navForm.description} onChange={(e) => setNavForm({ ...navForm, description: e.target.value })} className="input" />
             <div className="grid grid-cols-3 gap-3">
-              <input type="number" placeholder="Order" value={navForm.order} onChange={(e) => setNavForm({ ...navForm, order: e.target.value })} className="input" />
-              <input type="file" accept="image/*" onChange={(e) => setNavImageFile(e.target.files?.[0] ?? null)} className="input" />
-              <label className="flex items-center gap-2 text-sm text-gray-700">
-                <input type="checkbox" checked={navForm.is_active} onChange={(e) => setNavForm({ ...navForm, is_active: e.target.checked })} /> Active
+              <input
+                type="number"
+                placeholder="Order"
+                value={navForm.order}
+                onChange={(e) => setNavForm({ ...navForm, order: e.target.value })}
+                className="input"
+              />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setNavImageFile(e.target.files?.[0] ?? null)}
+                className="input"
+              />
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={navForm.is_active}
+                  onChange={(e) =>
+                    setNavForm({ ...navForm, is_active: e.target.checked })
+                  }
+                />{" "}
+                Active
               </label>
             </div>
             <div className="flex gap-2">
-              <button type="submit" disabled={navSaving} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+              <button
+                type="submit"
+                disabled={navSaving}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
                 {navSaving ? "Saving..." : "Save"}
               </button>
-              <button type="button" onClick={() => setNavEditing(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+              <button
+                type="button"
+                onClick={() => setNavEditing(null)}
+                className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-muted"
+              >
+                Cancel
+              </button>
             </div>
           </form>
         )}
 
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Name</th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Slug</th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Subcategories</th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Order</th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Actions</th>
+              <tr className="border-b border-border bg-muted/40">
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Name
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Slug
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Subcategories
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Order
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Actions
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border/60">
               {navCategories.map((cat) => (
-                <tr key={cat.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{cat.name}</td>
-                  <td className="px-4 py-3 text-gray-500">{cat.slug}</td>
-                  <td className="px-4 py-3 text-gray-700">{cat.subcategory_count}</td>
-                  <td className="px-4 py-3 text-gray-700">{cat.order}</td>
-                  <td className="px-4 py-3"><ActiveBadge active={cat.is_active} /></td>
+                <tr key={cat.id} className="hover:bg-muted/40">
+                  <td className="px-4 py-3 font-medium text-foreground">{cat.name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{cat.slug}</td>
+                  <td className="px-4 py-3 text-foreground">{cat.subcategory_count}</td>
+                  <td className="px-4 py-3 text-foreground">{cat.order}</td>
+                  <td className="px-4 py-3">
+                    <ActiveBadge active={cat.is_active} />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      <button onClick={() => openNavEdit(cat)} className="text-sm text-blue-600 hover:underline">Edit</button>
-                      <button onClick={() => deleteNav(cat.id)} className="text-sm text-red-600 hover:underline">Delete</button>
+                      <button
+                        onClick={() => openNavEdit(cat)}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteNav(cat.id)}
+                        className="text-sm text-destructive hover:underline"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -219,13 +298,25 @@ export default function CategoriesPage() {
       {/* ── Subcategories ── */}
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-gray-900">Subcategories ({categories.length})</h2>
-          <button onClick={openSubNew} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Add Subcategory</button>
+          <h2 className="text-lg font-medium text-foreground">
+            Subcategories ({categories.length})
+          </h2>
+          <button
+            onClick={openSubNew}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            Add Subcategory
+          </button>
         </div>
 
         {subEditing !== null && (
-          <form onSubmit={saveSub} className="mb-4 space-y-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
-            <p className="text-sm font-semibold text-blue-800">{subEditing === "new" ? "New Subcategory" : "Edit Subcategory"}</p>
+          <form
+            onSubmit={saveSub}
+            className="mb-4 space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4"
+          >
+            <p className="text-sm font-semibold text-primary">
+              {subEditing === "new" ? "New Subcategory" : "Edit Subcategory"}
+            </p>
             <div className="grid grid-cols-2 gap-3">
               <input required placeholder="Name" value={subForm.name} onChange={(e) => setSubForm({ ...subForm, name: e.target.value })} className="input" />
               <input required placeholder="Slug" value={subForm.slug} onChange={(e) => setSubForm({ ...subForm, slug: e.target.value })} className="input" />
@@ -240,45 +331,99 @@ export default function CategoriesPage() {
               <input placeholder="Description" value={subForm.description} onChange={(e) => setSubForm({ ...subForm, description: e.target.value })} className="input" />
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <input type="number" placeholder="Order" value={subForm.order} onChange={(e) => setSubForm({ ...subForm, order: e.target.value })} className="input" />
-              <input type="file" accept="image/*" onChange={(e) => setSubImageFile(e.target.files?.[0] ?? null)} className="input" />
-              <label className="flex items-center gap-2 text-sm text-gray-700">
-                <input type="checkbox" checked={subForm.is_active} onChange={(e) => setSubForm({ ...subForm, is_active: e.target.checked })} /> Active
+              <input
+                type="number"
+                placeholder="Order"
+                value={subForm.order}
+                onChange={(e) => setSubForm({ ...subForm, order: e.target.value })}
+                className="input"
+              />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setSubImageFile(e.target.files?.[0] ?? null)}
+                className="input"
+              />
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={subForm.is_active}
+                  onChange={(e) =>
+                    setSubForm({ ...subForm, is_active: e.target.checked })
+                  }
+                />{" "}
+                Active
               </label>
             </div>
             <div className="flex gap-2">
-              <button type="submit" disabled={subSaving} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+              <button
+                type="submit"
+                disabled={subSaving}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
                 {subSaving ? "Saving..." : "Save"}
               </button>
-              <button type="button" onClick={() => setSubEditing(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+              <button
+                type="button"
+                onClick={() => setSubEditing(null)}
+                className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-muted"
+              >
+                Cancel
+              </button>
             </div>
           </form>
         )}
 
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Name</th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Parent</th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Products</th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Order</th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">Actions</th>
+              <tr className="border-b border-border bg-muted/40">
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Name
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Parent
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Products
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Order
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Actions
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border/60">
               {categories.map((cat) => (
-                <tr key={cat.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{cat.name}</td>
-                  <td className="px-4 py-3 text-gray-500">{cat.navbar_category_name}</td>
-                  <td className="px-4 py-3 text-gray-700">{cat.product_count}</td>
-                  <td className="px-4 py-3 text-gray-700">{cat.order}</td>
-                  <td className="px-4 py-3"><ActiveBadge active={cat.is_active} /></td>
+                <tr key={cat.id} className="hover:bg-muted/40">
+                  <td className="px-4 py-3 font-medium text-foreground">{cat.name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {cat.navbar_category_name}
+                  </td>
+                  <td className="px-4 py-3 text-foreground">{cat.product_count}</td>
+                  <td className="px-4 py-3 text-foreground">{cat.order}</td>
+                  <td className="px-4 py-3">
+                    <ActiveBadge active={cat.is_active} />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      <button onClick={() => openSubEdit(cat)} className="text-sm text-blue-600 hover:underline">Edit</button>
-                      <button onClick={() => deleteSub(cat.id)} className="text-sm text-red-600 hover:underline">Delete</button>
+                      <button
+                        onClick={() => openSubEdit(cat)}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteSub(cat.id)}
+                        className="text-sm text-destructive hover:underline"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -293,7 +438,11 @@ export default function CategoriesPage() {
 
 function ActiveBadge({ active }: { active: boolean }) {
   return (
-    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+    <span
+      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+        active ? "bg-emerald-500/20 text-emerald-400" : "bg-muted text-muted-foreground"
+      }`}
+    >
       {active ? "Active" : "Inactive"}
     </span>
   );

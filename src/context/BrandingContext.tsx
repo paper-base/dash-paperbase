@@ -21,8 +21,8 @@ interface BrandingState {
 
 const defaultBranding: Branding = {
   logo_url: null,
-  admin_name: "Gadzilla",
-  admin_subtitle: "Admin dashboard",
+  admin_name: "Core",
+  admin_subtitle: "Core dashboard",
   currency_symbol: "৳",
 };
 

@@ -26,27 +26,27 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
         {
           key: "orders",
           label: "Orders",
-          color: "hsl(var(--primary))",
+          color: "hsl(var(--chart-orders))",
         },
         {
           key: "products",
           label: "Products",
-          color: "hsl(var(--chart-1, 221 83% 53%))",
+          color: "hsl(var(--chart-products))",
         },
         {
           key: "cartItems",
           label: "Cart items",
-          color: "hsl(var(--chart-2, 142 76% 36%))",
+          color: "hsl(var(--chart-carts))",
         },
         {
           key: "wishlistItems",
           label: "Wishlist",
-          color: "hsl(var(--chart-3, 38 92% 50%))",
+          color: "hsl(var(--chart-wishlist))",
         },
         {
           key: "contacts",
           label: "Contacts",
-          color: "hsl(var(--chart-4, 0 84% 60%))",
+          color: "hsl(var(--chart-contacts))",
         },
       ] as const,
     [],
@@ -57,7 +57,7 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
   const [activeMetric, setActiveMetric] = useState<MetricKey | "all">("all");
 
   return (
-    <Card className="h-[360px]">
+    <Card className="h-[360px] border border-border bg-card">
       <CardContent className="h-full pb-2 pt-4">
         {data.length === 0 ? (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -73,28 +73,41 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
             <BarChart
               data={data}
               margin={{ top: 8, left: 0, right: 0, bottom: 0 }}
+              style={{ background: "hsl(var(--card))", borderRadius: 0 }}
             >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="hsl(var(--border))"
+              />
               <XAxis
                 dataKey="label"
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
                 minTickGap={24}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
                 allowDecimals={false}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
               />
               <Tooltip
                 labelClassName="text-xs font-medium"
+                cursor={{
+                  fill: "hsl(var(--muted))",
+                  opacity: 0.25,
+                }}
                 contentStyle={{
                   borderRadius: 0,
                   border: "1px solid hsl(var(--border))",
-                  boxShadow: "0 10px 25px rgba(15, 23, 42, 0.12)",
+                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.25)",
                   fontSize: 12,
+                  backgroundColor: "hsl(var(--card))",
+                  color: "hsl(var(--foreground))",
                 }}
               />
               <Legend

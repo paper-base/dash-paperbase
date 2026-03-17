@@ -1,6 +1,8 @@
- "use client";
+"use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import type { ContactSubmission, PaginatedResponse } from "@/types";
 
@@ -14,6 +16,7 @@ function formatDateTime(value: string): string {
 }
 
 export default function ContactsPage() {
+  const router = useRouter();
   const [contacts, setContacts] = useState<ContactSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -49,13 +52,25 @@ export default function ContactsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-medium text-gray-900">
-        Contact Submissions ({count})
-      </h1>
+      <div className="flex items-center gap-3">
+        <div className="rounded-lg bg-muted/80 px-1 py-1">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            aria-label="Go back"
+            className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
+          >
+            <Undo2 className="h-4 w-4" />
+          </button>
+        </div>
+        <h1 className="text-2xl font-medium text-foreground">
+          Contact Submissions ({count})
+        </h1>
+      </div>
 
       {loading ? (
         <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       ) : (
         <>
@@ -63,16 +78,16 @@ export default function ContactsPage() {
             {contacts.map((contact) => (
               <div
                 key={contact.id}
-                className="rounded-xl border border-gray-200 bg-white p-4"
+                className="rounded-xl border border-border bg-card p-4"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-medium text-gray-900">{contact.name}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="font-medium text-foreground">{contact.name}</p>
+                    <p className="text-sm text-muted-foreground">
                       {contact.phone}
                       {contact.email && ` · ${contact.email}`}
                     </p>
-                    <p className="mt-1 text-xs text-gray-400">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {formatDateTime(contact.created_at)}
                     </p>
                   </div>
@@ -81,20 +96,20 @@ export default function ContactsPage() {
                       onClick={() =>
                         setExpanded(expanded === contact.id ? null : contact.id)
                       }
-                      className="text-sm text-blue-600 hover:underline"
+                      className="text-sm text-primary hover:underline"
                     >
                       {expanded === contact.id ? "Hide" : "View"}
                     </button>
                     <button
                       onClick={() => handleDelete(contact.id)}
-                      className="text-sm text-red-600 hover:underline"
+                      className="text-sm text-destructive hover:underline"
                     >
                       Delete
                     </button>
                   </div>
                 </div>
                 {expanded === contact.id && (
-                  <div className="mt-3 rounded-lg bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap">
+                  <div className="mt-3 rounded-lg bg-muted p-3 text-sm text-foreground whitespace-pre-wrap">
                     {contact.message}
                   </div>
                 )}
@@ -106,15 +121,15 @@ export default function ContactsPage() {
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-40"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted disabled:opacity-40"
             >
               Previous
             </button>
-            <span className="text-sm text-gray-500">Page {page}</span>
+            <span className="text-sm text-muted-foreground">Page {page}</span>
             <button
               disabled={!hasNext}
               onClick={() => setPage((p) => p + 1)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-40"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted disabled:opacity-40"
             >
               Next
             </button>

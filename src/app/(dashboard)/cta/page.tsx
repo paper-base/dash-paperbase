@@ -1,6 +1,8 @@
- "use client";
+"use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import type { Notification, PaginatedResponse } from "@/types";
 
@@ -35,6 +37,7 @@ function formatDate(value: string | null): string {
 }
 
 export default function CtaPage() {
+  const router = useRouter();
   const [ctas, setCtas] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<number | "new" | null>(null);
@@ -139,12 +142,24 @@ export default function CtaPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-medium text-gray-900">
-          CTA banners ({ctas.length})
-        </h1>
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-muted/80 px-1 py-1">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              aria-label="Go back"
+              className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
+            >
+              <Undo2 className="h-4 w-4" />
+            </button>
+          </div>
+          <h1 className="text-2xl font-medium text-foreground">
+            CTA banners ({ctas.length})
+          </h1>
+        </div>
         <button
           onClick={openNew}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
         >
           Add CTA
         </button>
@@ -153,9 +168,9 @@ export default function CtaPage() {
       {editing !== null && (
         <form
           onSubmit={handleSave}
-          className="space-y-3 rounded-xl border border-blue-200 bg-blue-50 p-4"
+          className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4"
         >
-          <p className="text-sm font-semibold text-blue-800">
+          <p className="text-sm font-semibold text-primary">
             {editing === "new" ? "New CTA" : "Edit CTA"}
           </p>
           <textarea
@@ -185,7 +200,7 @@ export default function CtaPage() {
               onChange={(e) => setForm({ ...form, order: e.target.value })}
               className="input"
             />
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-sm text-foreground">
               <input
                 type="checkbox"
                 checked={form.is_active}
@@ -215,7 +230,7 @@ export default function CtaPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs text-gray-500">
+              <label className="mb-1 block text-xs text-muted-foreground">
                 Start date (optional)
               </label>
               <input
@@ -228,7 +243,7 @@ export default function CtaPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-gray-500">
+              <label className="mb-1 block text-xs text-muted-foreground">
                 End date (optional)
               </label>
               <input
@@ -245,14 +260,14 @@ export default function CtaPage() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save CTA"}
             </button>
             <button
               type="button"
               onClick={() => setEditing(null)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-muted"
             >
               Cancel
             </button>
@@ -260,34 +275,34 @@ export default function CtaPage() {
         </form>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+            <tr className="border-b border-border bg-muted/40">
+              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 Text
               </th>
-              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 Type
               </th>
-              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 Active
               </th>
-              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 Schedule
               </th>
-              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+              <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border/60">
             {ctas.map((n) => (
-              <tr key={n.id} className="hover:bg-gray-50">
-                <td className="max-w-xs truncate px-4 py-3 font-medium text-gray-900">
+              <tr key={n.id} className="hover:bg-muted/40">
+                <td className="max-w-xs truncate px-4 py-3 font-medium text-foreground">
                   {n.text}
                 </td>
-                <td className="px-4 py-3 text-gray-500 capitalize">
+                <td className="px-4 py-3 text-muted-foreground capitalize">
                   {n.notification_type}
                 </td>
                 <td className="px-4 py-3">
@@ -295,14 +310,14 @@ export default function CtaPage() {
                     onClick={() => toggleActive(n)}
                     className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                       n.is_active
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-500"
+                        ? "bg-emerald-500/20 text-emerald-400"
+                        : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {n.is_active ? "Active" : "Inactive"}
                   </button>
                 </td>
-                <td className="px-4 py-3 text-xs text-gray-500">
+                <td className="px-4 py-3 text-xs text-muted-foreground">
                   {n.start_date
                     ? `${formatDate(n.start_date)} - ${
                         n.end_date ? formatDate(n.end_date) : "∞"
@@ -313,13 +328,13 @@ export default function CtaPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => openEdit(n)}
-                      className="text-sm text-blue-600 hover:underline"
+                      className="text-sm text-primary hover:underline"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(n.id)}
-                      className="text-sm text-red-600 hover:underline"
+                      className="text-sm text-destructive hover:underline"
                     >
                       Delete
                     </button>

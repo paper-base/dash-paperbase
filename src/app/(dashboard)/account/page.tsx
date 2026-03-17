@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import { useBranding, defaultBranding } from "@/context/BrandingContext";
 import { Button } from "@/components/ui/button";
@@ -30,6 +32,7 @@ const defaultPrefs: NotificationPrefs = {
 };
 
 export default function AccountPage() {
+  const router = useRouter();
   const { branding, isLoading, refetch } = useBranding();
   const [adminName, setAdminName] = useState(defaultBranding.admin_name);
   const [adminSubtitle, setAdminSubtitle] = useState(defaultBranding.admin_subtitle);
@@ -112,10 +115,31 @@ export default function AccountPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-medium text-foreground">Account</h1>
-      <p className="text-muted-foreground">
-        Manage your account branding and notification preferences for the admin dashboard.
-      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-muted/80 px-1 py-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Go back"
+              onClick={() => router.back()}
+              className="shrink-0"
+            >
+              <Undo2 className="size-4" />
+            </Button>
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Account
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Manage your account branding and notification preferences for the admin
+              dashboard.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="max-w-xl space-y-6">
         {/* Logo */}

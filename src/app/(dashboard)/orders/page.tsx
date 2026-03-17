@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import { useBranding } from "@/context/BrandingContext";
 import type { Order, PaginatedResponse } from "@/types";
@@ -22,6 +24,7 @@ function formatDate(value: string): string {
 }
 
 export default function OrdersPage() {
+  const router = useRouter();
   const { currencySymbol } = useBranding();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,22 +108,34 @@ export default function OrdersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-2xl font-medium text-gray-900">
-          Orders ({count})
-        </h1>
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-muted/80 px-1 py-1">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              aria-label="Go back"
+              className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
+            >
+              <Undo2 className="h-4 w-4" />
+            </button>
+          </div>
+          <h1 className="text-2xl font-medium text-foreground">
+            Orders ({count})
+          </h1>
+        </div>
         <div className="flex items-center gap-2">
           {someSelected && (
             <button
               onClick={handleDeleteSelected}
               disabled={deleting}
-              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+              className="rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground transition hover:bg-destructive/90 disabled:opacity-50"
             >
               {deleting ? "Deleting…" : `Delete selected (${selectedIds.size})`}
             </button>
           )}
           <Link
             href="/orders/new"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
           >
             Add Order
           </Link>
@@ -133,56 +148,74 @@ export default function OrdersPage() {
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-border bg-card">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
+                <tr className="border-b border-border bg-muted/40">
                   <th className="w-10 px-2 py-3">
                     <input
                       type="checkbox"
                       checked={allSelected}
                       onChange={toggleSelectAll}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                       aria-label="Select all orders on this page"
                     />
                   </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase whitespace-nowrap">Order #</th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase whitespace-nowrap">Customer</th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase whitespace-nowrap">Phone</th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase whitespace-nowrap">Status</th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase whitespace-nowrap">Total</th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase whitespace-nowrap">Delivery</th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-gray-500 uppercase whitespace-nowrap">Date</th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+                    Order #
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+                    Customer
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+                    Phone
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+                    Total
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+                    Delivery
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+                    Date
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border/60">
                 {orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
+                  <tr key={order.id} className="hover:bg-muted/40">
                     <td className="w-10 px-2 py-3">
                       <input
                         type="checkbox"
                         checked={selectedIds.has(order.id)}
                         onChange={() => toggleSelect(order.id)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                         aria-label={`Select order ${order.order_number}`}
                       />
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <Link
                         href={`/orders/${order.id}`}
-                        className="font-medium text-blue-600 hover:underline whitespace-nowrap"
+                        className="font-medium text-primary hover:underline whitespace-nowrap"
                       >
                         {order.order_number}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{order.shipping_name || "—"}</td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{order.phone || "—"}</td>
+                    <td className="px-4 py-3 text-foreground whitespace-nowrap">
+                      {order.shipping_name || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-foreground whitespace-nowrap">
+                      {order.phone || "—"}
+                    </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <select
                         value={order.status}
                         onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
                         disabled={updatingStatusId === order.id}
-                        className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm font-medium capitalize focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+                        className="rounded-md border border-input bg-background px-2 py-1.5 text-sm font-medium capitalize focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60"
                       >
                         {STATUS_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>
@@ -194,11 +227,13 @@ export default function OrdersPage() {
                         <span className="ml-1.5 inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                    <td className="px-4 py-3 text-foreground whitespace-nowrap">
                       {currencySymbol}{Number(order.total).toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{order.delivery_area_label}</td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                      {order.delivery_area_label}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {formatDate(order.created_at)}
                     </td>
                   </tr>
@@ -211,15 +246,15 @@ export default function OrdersPage() {
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-40"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted disabled:opacity-40"
             >
               Previous
             </button>
-            <span className="text-sm text-gray-500">Page {page}</span>
+            <span className="text-sm text-muted-foreground">Page {page}</span>
             <button
               disabled={!hasNext}
               onClick={() => setPage((p) => p + 1)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-40"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted disabled:opacity-40"
             >
               Next
             </button>
