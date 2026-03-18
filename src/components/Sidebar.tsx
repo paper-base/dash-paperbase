@@ -46,6 +46,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useBranding, defaultBranding } from "@/context/BrandingContext";
 import { useSearchModal } from "@/context/SearchModalContext";
 import { useNavCounts } from "@/hooks/useNavCounts";
+import { useEnabledApps } from "@/hooks/useEnabledApps";
+import {
+  APP_CONFIG,
+  MAIN_NAV_APP_IDS,
+  CATEGORIES_BRANDS_APP_IDS,
+  MORE_APP_IDS,
+} from "@/config/apps";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
@@ -56,14 +63,12 @@ function logoUrl(url: string | null): string | null {
   return base ? `${base.replace(/\/$/, "")}${url.startsWith("/") ? "" : "/"}${url}` : url;
 }
 
-const MAIN_NAV = [
-  { href: "/", label: "Home", icon: Birdhouse, countKey: null as keyof NavCounts | null },
-  { href: "/orders", label: "Orders", icon: Package, countKey: "orders" as keyof NavCounts | null },
-  { href: "/products", label: "Products", icon: Box, countKey: "products" as keyof NavCounts | null },
-  { href: "/cta", label: "CTA", icon: Bell, countKey: "notifications" as keyof NavCounts | null },
-  { href: "/carts", label: "Carts", icon: ShoppingCart, countKey: "carts" as keyof NavCounts | null },
-  { href: "/wishlist", label: "Wishlist", icon: Heart, countKey: "wishlist" as keyof NavCounts | null },
-];
+const HOME_NAV = {
+  href: "/",
+  label: "Home",
+  icon: Birdhouse,
+  countKey: null as keyof NavCounts | null,
+};
 
 export interface NavCounts {
   orders: number;
@@ -90,7 +95,29 @@ function SidebarContent({
   const { branding } = useBranding();
   const { setOpen: setSearchOpen } = useSearchModal();
   const { counts, formatCount } = useNavCounts();
+  const { isEnabled } = useEnabledApps();
   const [usersOpen, setUsersOpen] = useState(false);
+
+  const mainNavItems = [
+    HOME_NAV,
+    ...MAIN_NAV_APP_IDS.filter((id) => isEnabled(id) && APP_CONFIG[id]?.href).map((id) => {
+      const app = APP_CONFIG[id];
+      return {
+        href: app.href!,
+        label: app.label,
+        icon: app.icon,
+        countKey: app.countKey,
+      };
+    }),
+  ];
+
+  const categoriesBrandsLinks = CATEGORIES_BRANDS_APP_IDS.filter(
+    (id) => isEnabled(id) && APP_CONFIG[id]?.href
+  );
+  const showCategoriesBrands = categoriesBrandsLinks.length > 0;
+
+  const showMore = MORE_APP_IDS.some((id) => isEnabled(id) && APP_CONFIG[id]?.href);
+  const moreLinks = MORE_APP_IDS.filter((id) => isEnabled(id) && APP_CONFIG[id]?.href);
   const [celeryOpen, setCeleryOpen] = useState(false);
   const [storesOpen, setStoresOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark" | "system">("light");
@@ -238,7 +265,7 @@ function SidebarContent({
             Navigation
           </p>
         )}
-        {MAIN_NAV.map((item) => {
+        {mainNavItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
           return (
@@ -274,7 +301,8 @@ function SidebarContent({
           );
         })}
 
-        {/* Collapsible: Users & Groups */}
+        {/* Collapsible: Categories & Brands */}
+        {showCategoriesBrands && (
         <Collapsible open={usersOpen} onOpenChange={setUsersOpen}>
           <CollapsibleTrigger
             onClick={() => {
@@ -301,26 +329,35 @@ function SidebarContent({
           <CollapsibleContent>
             {!collapsed && (
               <div className="ml-4 mt-2 space-y-1 border-l border-border pl-3">
-                <Link
-                  href="/categories"
-                  onClick={handleLinkClick}
-                  className="block rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                >
-                  Categories
-                </Link>
-                <Link
-                  href="/brands"
-                  onClick={handleLinkClick}
-                  className="block rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                >
-                  Brands
-                </Link>
+                {categoriesBrandsLinks.map((id) => {
+                  const app = APP_CONFIG[id];
+                  if (!app?.href) return null;
+                  return (
+                    <Link
+                      key={id}
+                      href={app.href}
+                      onClick={handleLinkClick}
+                      className="flex items-center justify-between rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <span>{app.label}</span>
+                      {app.countKey &&
+                        counts != null &&
+                        counts[app.countKey] > 0 && (
+                          <Badge className="h-5 min-w-5 rounded-full border-0 bg-primary/15 px-1.5 text-xs font-medium text-primary">
+                            {formatCount(counts[app.countKey])}
+                          </Badge>
+                        )}
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </CollapsibleContent>
         </Collapsible>
+        )}
 
-        {/* Collapsible: Celery Tasks */}
+        {/* Collapsible: More */}
+        {showMore && (
         <Collapsible open={celeryOpen} onOpenChange={setCeleryOpen}>
           <CollapsibleTrigger
             onClick={() => {
@@ -338,7 +375,7 @@ function SidebarContent({
             {!collapsed && (
               <>
                 <span className="flex-1 truncate text-left">More</span>
-                {counts != null && counts.contacts > 0 && (
+                {counts != null && moreLinks.some((id) => APP_CONFIG[id]?.countKey && counts[APP_CONFIG[id].countKey!] > 0) && (
                   <span className="relative mr-1 inline-flex h-2 w-2 shrink-0 rounded-full bg-red-500">
                     <span className="absolute inset-0 animate-ping rounded-full bg-red-400/80" />
                   </span>
@@ -352,22 +389,32 @@ function SidebarContent({
           <CollapsibleContent>
             {!collapsed && (
               <div className="ml-4 mt-2 space-y-1 border-l border-border pl-3">
-                <Link
-                  href="/contacts"
-                  onClick={handleLinkClick}
-                  className="flex items-center justify-between rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                >
-                  <span>Contacts</span>
-                  {counts != null && counts.contacts > 0 && (
-                    <Badge className="h-5 min-w-5 rounded-full border-0 bg-primary/15 px-1.5 text-xs font-medium text-primary">
-                      {formatCount(counts.contacts)}
-                    </Badge>
-                  )}
-                </Link>
+                {moreLinks.map((id) => {
+                  const app = APP_CONFIG[id];
+                  if (!app?.href) return null;
+                  return (
+                    <Link
+                      key={id}
+                      href={app.href}
+                      onClick={handleLinkClick}
+                      className="flex items-center justify-between rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <span>{app.label}</span>
+                      {app.countKey &&
+                        counts != null &&
+                        counts[app.countKey] > 0 && (
+                          <Badge className="h-5 min-w-5 rounded-full border-0 bg-primary/15 px-1.5 text-xs font-medium text-primary">
+                            {formatCount(counts[app.countKey])}
+                          </Badge>
+                        )}
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </CollapsibleContent>
         </Collapsible>
+        )}
       </nav>
 
       {/* User menu (no avatar) */}

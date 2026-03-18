@@ -112,7 +112,7 @@ export default function ActivitiesPage() {
         <p className="text-sm text-muted-foreground">No activities found.</p>
       ) : (
         <>
-          <div className="overflow-hidden rounded-xl border border-border bg-background">
+          <div className="overflow-hidden rounded-xl border border-dashed border-border bg-background">
             <div className="overflow-x-auto">
               <div className="min-w-max divide-y divide-border">
                 {results.map((item) => (

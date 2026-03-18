@@ -115,7 +115,7 @@ export default function NotificationsFeedPage() {
 
       {!isLoading && !error && notifications.length > 0 && (
         <>
-          <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background">
+          <div className="divide-y divide-border overflow-hidden rounded-xl border border-dashed border-border bg-background">
             {notifications.map((notification) => (
               <button
                 key={notification.id}

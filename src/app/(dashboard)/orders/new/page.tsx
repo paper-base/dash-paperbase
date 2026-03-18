@@ -166,7 +166,7 @@ export default function NewOrderPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Customer info */}
-        <section className="rounded-xl border border-card-border bg-card p-6">
+        <section className="rounded-xl border border-dashed border-card-border bg-card p-6">
           <h2 className="mb-4 text-lg font-semibold text-foreground">
             Customer Information
           </h2>
@@ -245,7 +245,7 @@ export default function NewOrderPage() {
         </section>
 
         {/* Order items */}
-        <section className="rounded-xl border border-card-border bg-card p-6">
+        <section className="rounded-xl border border-dashed border-card-border bg-card p-6">
           <h2 className="mb-4 text-lg font-semibold text-foreground">
             Order Items
           </h2>

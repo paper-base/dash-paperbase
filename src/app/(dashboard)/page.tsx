@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import Link from "next/link";
-import { History, CircleUserRound } from "lucide-react";
+import { History } from "lucide-react";
 import StatsCard from "@/components/StatsCard";
 import DashboardBarChart from "@/components/DashboardBarChart";
 import DateRangeFilter, {
@@ -82,16 +82,6 @@ export default function DashboardPage() {
               <History className="size-5" />
             </Button>
           </Link>
-          <Link href="/account">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Account"
-              className="shrink-0 text-muted-foreground hover:text-foreground"
-            >
-              <CircleUserRound className="size-5" />
-            </Button>
-          </Link>
         </div>
       </header>
 
@@ -122,7 +112,7 @@ export default function DashboardPage() {
             No recent admin activity yet.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border bg-background">
+          <div className="overflow-hidden rounded-xl border border-dashed border-border bg-background">
             <div className="overflow-x-auto">
               <div className="min-w-max divide-y divide-border">
                 {recentActivities.map((item) => (
