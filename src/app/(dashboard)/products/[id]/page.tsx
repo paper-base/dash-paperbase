@@ -7,6 +7,9 @@ import { Undo2, FileText, Check, Plus, X } from "lucide-react";
 import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ExtraFieldsFormSection, validateExtraFields } from "@/components/ExtraFieldsFormSection";
+import { useExtraFieldsSchema } from "@/hooks/useExtraFieldsSchema";
+import type { ExtraFieldValues } from "@/types/extra-fields";
 import type { Product, NavbarCategory, Category } from "@/types";
 
 const BADGE_OPTIONS = [
@@ -44,6 +47,9 @@ export default function EditProductPage() {
     is_featured: false,
     is_active: true,
   });
+  const [extraFields, setExtraFields] = useState<ExtraFieldValues>({});
+  const [extraFieldsErrors, setExtraFieldsErrors] = useState<Record<string, string>>({});
+  const { schema: extraFieldsSchema } = useExtraFieldsSchema("product");
 
   const [imageFiles, setImageFiles] = useState<(File | null)[]>(
     () => Array(MAX_IMAGES).fill(null)
@@ -117,6 +123,16 @@ export default function EditProductPage() {
   async function handleSubmit(e: FormEvent, asDraft: boolean) {
     e.preventDefault();
     if (!product) return;
+
+    const schemaWithNames = extraFieldsSchema.filter((f) => f.name.trim());
+    const extraErrors = validateExtraFields(schemaWithNames, extraFields);
+    if (Object.keys(extraErrors).length > 0) {
+      setExtraFieldsErrors(extraErrors);
+      setError("Please fill in all required extra fields.");
+      return;
+    }
+    setExtraFieldsErrors({});
+
     setSaving(true);
     setError("");
 
@@ -399,6 +415,28 @@ export default function EditProductPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Extra Fields (JSONB) */}
+          {extraFieldsSchema.some((f) => f.name.trim()) && (
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base font-semibold text-foreground">
+                  Extra Fields
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Custom fields defined in Settings → Dynamic Fields.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <ExtraFieldsFormSection
+                  entityType="product"
+                  values={extraFields}
+                  onChange={setExtraFields}
+                  errors={extraFieldsErrors}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right column */}

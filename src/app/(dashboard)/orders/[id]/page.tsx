@@ -15,6 +15,9 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import { useBranding } from "@/context/BrandingContext";
+import { ExtraFieldsFormSection, validateExtraFields } from "@/components/ExtraFieldsFormSection";
+import { useExtraFieldsSchema } from "@/hooks/useExtraFieldsSchema";
+import type { ExtraFieldValues } from "@/types/extra-fields";
 import type { Order, OrderItem } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -103,6 +106,9 @@ export default function OrderDetailPage() {
     delivery_area: "inside",
     tracking_number: "",
   });
+  const [extraFields, setExtraFields] = useState<ExtraFieldValues>({});
+  const [extraFieldsErrors, setExtraFieldsErrors] = useState<Record<string, string>>({});
+  const { schema: extraFieldsSchema } = useExtraFieldsSchema("order");
   const [saving, setSaving] = useState(false);
   const rightColRef = useRef<HTMLDivElement>(null);
   const [rightColHeight, setRightColHeight] = useState<number | null>(null);
@@ -151,6 +157,13 @@ export default function OrderDetailPage() {
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
+    const schemaWithNames = extraFieldsSchema.filter((f) => f.name.trim());
+    const extraErrors = validateExtraFields(schemaWithNames, extraFields);
+    if (Object.keys(extraErrors).length > 0) {
+      setExtraFieldsErrors(extraErrors);
+      return;
+    }
+    setExtraFieldsErrors({});
     setSaving(true);
     try {
       const { data } = await api.patch<Order>(`/api/admin/orders/${id}/`, form);
@@ -501,6 +514,22 @@ export default function OrderDetailPage() {
                     />
                   </div>
                 </div>
+                {extraFieldsSchema.some((f) => f.name.trim()) && (
+                  <div className="border-t border-border pt-4">
+                    <h3 className="mb-3 text-sm font-medium text-foreground">
+                      Extra Fields
+                    </h3>
+                    <p className="mb-3 text-xs text-muted-foreground">
+                      Custom fields defined in Settings → Dynamic Fields.
+                    </p>
+                    <ExtraFieldsFormSection
+                      entityType="order"
+                      values={extraFields}
+                      onChange={setExtraFields}
+                      errors={extraFieldsErrors}
+                    />
+                  </div>
+                )}
                 <div className="flex gap-2 pt-2">
                   <Button type="submit" disabled={saving}>
                     {saving ? "Saving…" : "Save Changes"}

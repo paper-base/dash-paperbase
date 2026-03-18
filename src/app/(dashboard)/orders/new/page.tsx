@@ -4,6 +4,9 @@ import { useEffect, useState, useRef, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { useBranding } from "@/context/BrandingContext";
+import { ExtraFieldsFormSection, validateExtraFields } from "@/components/ExtraFieldsFormSection";
+import { useExtraFieldsSchema } from "@/hooks/useExtraFieldsSchema";
+import type { ExtraFieldValues } from "@/types/extra-fields";
 import type { Product, PaginatedResponse } from "@/types";
 
 const DELIVERY_OPTIONS = [
@@ -35,6 +38,9 @@ export default function NewOrderPage() {
     district: "",
     delivery_area: "inside",
   });
+  const [extraFields, setExtraFields] = useState<ExtraFieldValues>({});
+  const [extraFieldsErrors, setExtraFieldsErrors] = useState<Record<string, string>>({});
+  const { schema: extraFieldsSchema } = useExtraFieldsSchema("order");
 
   const [items, setItems] = useState<OrderItemRow[]>([]);
   const nextKey = useRef(0);
@@ -123,6 +129,15 @@ export default function NewOrderPage() {
       setError("Add at least one product to the order.");
       return;
     }
+
+    const schemaWithNames = extraFieldsSchema.filter((f) => f.name.trim());
+    const extraErrors = validateExtraFields(schemaWithNames, extraFields);
+    if (Object.keys(extraErrors).length > 0) {
+      setExtraFieldsErrors(extraErrors);
+      setError("Please fill in all required extra fields.");
+      return;
+    }
+    setExtraFieldsErrors({});
 
     setSaving(true);
     setError("");
@@ -242,6 +257,23 @@ export default function NewOrderPage() {
               </select>
             </Field>
           </div>
+
+          {extraFieldsSchema.some((f) => f.name.trim()) && (
+            <div className="mt-4 border-t border-border pt-4">
+              <h3 className="mb-3 text-sm font-medium text-foreground">
+                Extra Fields
+              </h3>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Custom fields defined in Settings → Dynamic Fields.
+              </p>
+              <ExtraFieldsFormSection
+                entityType="order"
+                values={extraFields}
+                onChange={setExtraFields}
+                errors={extraFieldsErrors}
+              />
+            </div>
+          )}
         </section>
 
         {/* Order items */}
