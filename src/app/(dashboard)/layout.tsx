@@ -12,6 +12,7 @@ import AnnouncementBanner from "@/components/AnnouncementBanner";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
+import { logout } from "@/lib/auth";
 
 interface MeSubscription {
   active: boolean;
@@ -76,7 +77,7 @@ export default function DashboardLayout({
               Contact support
             </a>
             <button
-              onClick={() => { localStorage.clear(); router.replace("/login"); }}
+              onClick={() => logout()}
               className="block w-full rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
             >
               Sign out

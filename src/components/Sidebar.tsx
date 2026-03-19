@@ -1,13 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Birdhouse,
-  Bell,
-  ShoppingCart,
-  Heart,
-  Users,
   ListTodo,
   ChevronDown,
   ChevronRight,
@@ -34,7 +30,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
@@ -52,6 +47,7 @@ import {
   CATALOG_SUB_APP_IDS,
   MORE_APP_IDS,
 } from "@/config/apps";
+import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
@@ -101,13 +97,13 @@ function SidebarContent({
   onToggle?: () => void;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { logout, isAuthenticated } = useAuth();
   const { branding } = useBranding();
-  const { canAddStore } = useStoreLimit(isAuthenticated);
+  const { canAddStore, maxStores } = useStoreLimit(isAuthenticated);
   const { setOpen: setSearchOpen } = useSearchModal();
   const { counts, formatCount } = useNavCounts();
   const { isEnabled } = useEnabledApps();
-  const [usersOpen, setUsersOpen] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
 
   const isActive = (href: string) => {
@@ -132,6 +128,12 @@ function SidebarContent({
   const moreLinks = MORE_APP_IDS.filter((id) => isEnabled(id) && APP_CONFIG[id]?.href);
   const [celeryOpen, setCeleryOpen] = useState(false);
   const [storesOpen, setStoresOpen] = useState(false);
+  const [storesLoading, setStoresLoading] = useState(false);
+  const [storeSwitchingId, setStoreSwitchingId] = useState<string | null>(null);
+  const [availableStores, setAvailableStores] = useState<
+    Array<{ id: string; name: string; role?: string }>
+  >([]);
+  const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
   const [theme, setTheme] = useState<"light" | "dark" | "system">("light");
 
   useEffect(() => {
@@ -178,6 +180,116 @@ function SidebarContent({
   const handleLinkClick = () => {
     onNavigate?.();
   };
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setAvailableStores([]);
+      setActiveStoreId(null);
+      return;
+    }
+
+    const token = window.localStorage.getItem("access_token");
+    if (!token) {
+      setActiveStoreId(null);
+      return;
+    }
+
+    try {
+      const parts = token.split(".");
+      if (parts.length < 2) {
+        setActiveStoreId(null);
+        return;
+      }
+      const payload = parts[1];
+      const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+      const decoded = JSON.parse(atob(padded)) as { active_store_id?: unknown };
+      const val = decoded.active_store_id;
+      if (typeof val === "string" && val.trim()) {
+        setActiveStoreId(val);
+      } else if (typeof val === "number" && Number.isFinite(val)) {
+        setActiveStoreId(String(val));
+      } else {
+        setActiveStoreId(null);
+      }
+    } catch {
+      setActiveStoreId(null);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !storesOpen) return;
+    let cancelled = false;
+
+    async function loadStores() {
+      setStoresLoading(true);
+      try {
+        const { data } = await api.get<{
+          stores?: Array<{
+            id?: string | number;
+            public_id?: string | number;
+            name?: string;
+            role?: string;
+          }>;
+        }>("auth/me/");
+        if (cancelled) return;
+        const normalized = (data.stores || []).reduce<
+          Array<{ id: string; name: string; role?: string }>
+        >((acc, store) => {
+          const rawId = store.public_id ?? store.id;
+          if (rawId == null) return acc;
+          acc.push(
+            store.role
+              ? {
+                  id: String(rawId),
+                  name: store.name?.trim() || "Store",
+                  role: store.role,
+                }
+              : {
+                  id: String(rawId),
+                  name: store.name?.trim() || "Store",
+                }
+          );
+          return acc;
+        }, []);
+        setAvailableStores(normalized);
+      } catch {
+        if (!cancelled) setAvailableStores([]);
+      } finally {
+        if (!cancelled) setStoresLoading(false);
+      }
+    }
+
+    loadStores();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, storesOpen]);
+
+  const handleSwitchStore = async (storeId: string) => {
+    if (!storeId || storeId === activeStoreId || storeSwitchingId) return;
+    setStoreSwitchingId(storeId);
+    try {
+      const { data } = await api.post<{
+        access: string;
+        refresh: string;
+        active_store_id: string | number;
+      }>("auth/switch-store/", { store_id: storeId });
+      window.localStorage.setItem("access_token", data.access);
+      window.localStorage.setItem("refresh_token", data.refresh);
+      setActiveStoreId(String(data.active_store_id));
+      onNavigate?.();
+      router.refresh();
+      window.location.reload();
+    } finally {
+      setStoreSwitchingId(null);
+    }
+  };
+
+  const hasReachedStoreLimit =
+    maxStores != null && availableStores.length >= maxStores;
+  const showAddStoreOption =
+    canAddStore === null ? !hasReachedStoreLimit : canAddStore && !hasReachedStoreLimit;
 
   return (
     <>
@@ -510,27 +622,54 @@ function SidebarContent({
               <>
                 <DropdownMenuItem disabled>
                   <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Current store
+                    Available stores
                   </span>
                 </DropdownMenuItem>
-                <DropdownMenuItem disabled>
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 bg-emerald-400"
-                      style={{ borderRadius: "999px" }}
-                    />
-                    <span className="truncate">{adminName || "Store"}</span>
-                  </span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {canAddStore === false ? (
+                {storesLoading ? (
                   <DropdownMenuItem disabled>
-                    <span className="flex items-center gap-2 text-muted-foreground">
-                      <Plus className="size-3.5" />
-                      <span>Add another store</span>
-                    </span>
+                    <span className="text-muted-foreground">Loading stores...</span>
                   </DropdownMenuItem>
+                ) : availableStores.length > 0 ? (
+                  availableStores.map((store) => {
+                    const isCurrent = activeStoreId === store.id;
+                    const isSwitching = storeSwitchingId === store.id;
+                    return (
+                      <DropdownMenuItem
+                        key={store.id}
+                        onSelect={(event) => {
+                          event.preventDefault();
+                          void handleSwitchStore(store.id);
+                        }}
+                        disabled={isCurrent || !!storeSwitchingId}
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span
+                            className={cn(
+                              "h-2.5 w-2.5 shrink-0 rounded-full",
+                              isCurrent ? "bg-emerald-400" : "bg-muted-foreground/40"
+                            )}
+                          />
+                          <span className="truncate">
+                            {store.name}
+                            {store.role ? ` (${store.role})` : ""}
+                          </span>
+                          {isCurrent ? (
+                            <span className="text-xs text-muted-foreground">Current</span>
+                          ) : null}
+                          {isSwitching ? (
+                            <span className="text-xs text-muted-foreground">Switching...</span>
+                          ) : null}
+                        </span>
+                      </DropdownMenuItem>
+                    );
+                  })
                 ) : (
+                  <DropdownMenuItem disabled>
+                    <span className="text-muted-foreground">No stores available</span>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                {showAddStoreOption ? (
                   <DropdownMenuItem asChild>
                     <Link
                       href="/onboarding?add=1"
@@ -541,7 +680,7 @@ function SidebarContent({
                       <span>Add another store</span>
                     </Link>
                   </DropdownMenuItem>
-                )}
+                ) : null}
               </>
             )}
             <DropdownMenuSeparator />

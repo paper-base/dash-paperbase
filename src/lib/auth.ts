@@ -14,6 +14,19 @@ export interface RegisterPayload {
   password_confirm: string;
 }
 
+/**
+ * Set a lightweight routing cookie for the Next.js edge middleware.
+ * This is NOT the JWT itself — it is only a hint that a session exists.
+ * The Django backend independently verifies the JWT on every API call.
+ */
+function setAuthSessionCookie() {
+  document.cookie = "auth_session=1; path=/; SameSite=Strict";
+}
+
+function clearAuthSessionCookie() {
+  document.cookie = "auth_session=; path=/; max-age=0; SameSite=Strict";
+}
+
 export async function register(
   email: string,
   password: string,
@@ -26,6 +39,7 @@ export async function register(
   });
   localStorage.setItem("access_token", data.access);
   localStorage.setItem("refresh_token", data.refresh);
+  setAuthSessionCookie();
   return data;
 }
 
@@ -39,12 +53,14 @@ export async function login(
   });
   localStorage.setItem("access_token", data.access);
   localStorage.setItem("refresh_token", data.refresh);
+  setAuthSessionCookie();
   return data;
 }
 
 export function logout() {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
+  clearAuthSessionCookie();
   window.location.href = "/login";
 }
 
