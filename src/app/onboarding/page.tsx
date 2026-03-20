@@ -20,6 +20,7 @@ function OnboardingPageContent() {
     step,
     loading,
     error,
+    fieldErrors,
     formData,
     selectedApps,
     updateField,
@@ -49,6 +50,7 @@ function OnboardingPageContent() {
             <StoreDetailsStep
               formData={formData}
               error={error}
+              fieldErrors={fieldErrors}
               onFieldChange={updateField}
               onSubmit={handleStep1Submit}
             />

@@ -5,6 +5,7 @@ import type { StoreFormData } from "./useOnboarding";
 interface StoreDetailsStepProps {
   formData: StoreFormData;
   error: string;
+  fieldErrors: Partial<Record<keyof StoreFormData, string>>;
   onFieldChange: <K extends keyof StoreFormData>(
     key: K,
     value: StoreFormData[K]
@@ -15,6 +16,7 @@ interface StoreDetailsStepProps {
 export function StoreDetailsStep({
   formData,
   error,
+  fieldErrors,
   onFieldChange,
   onSubmit,
 }: StoreDetailsStepProps) {
@@ -38,7 +40,11 @@ export function StoreDetailsStep({
           onChange={(e) => onFieldChange("name", e.target.value)}
           placeholder="e.g. My Shop"
           className="rounded-none"
+          aria-invalid={!!fieldErrors.name}
         />
+        {fieldErrors.name && (
+          <p className="text-xs text-destructive">{fieldErrors.name}</p>
+        )}
       </div>
 
       <div className="form-field">
@@ -53,7 +59,11 @@ export function StoreDetailsStep({
           placeholder="e.g. Fashion, Retail, E-commerce"
           maxLength={60}
           className="rounded-none"
+          aria-invalid={!!fieldErrors.store_type}
         />
+        {fieldErrors.store_type && (
+          <p className="text-xs text-destructive">{fieldErrors.store_type}</p>
+        )}
         <p className="text-xs text-muted-foreground">Max 4 words. Optional.</p>
       </div>
 
@@ -70,7 +80,11 @@ export function StoreDetailsStep({
             onChange={(e) => onFieldChange("owner_first_name", e.target.value)}
             placeholder="e.g. John"
             className="rounded-none"
+            aria-invalid={!!fieldErrors.owner_first_name}
           />
+          {fieldErrors.owner_first_name && (
+            <p className="text-xs text-destructive">{fieldErrors.owner_first_name}</p>
+          )}
         </div>
         <div className="form-field">
           <label htmlFor="owner_last_name" className="field-label">
@@ -84,7 +98,11 @@ export function StoreDetailsStep({
             onChange={(e) => onFieldChange("owner_last_name", e.target.value)}
             placeholder="e.g. Doe"
             className="rounded-none"
+            aria-invalid={!!fieldErrors.owner_last_name}
           />
+          {fieldErrors.owner_last_name && (
+            <p className="text-xs text-destructive">{fieldErrors.owner_last_name}</p>
+          )}
         </div>
       </div>
 
@@ -100,7 +118,11 @@ export function StoreDetailsStep({
           value={formData.owner_email}
           placeholder="owner@example.com"
           className="cursor-not-allowed rounded-none opacity-70"
+          aria-invalid={!!fieldErrors.owner_email}
         />
+        {fieldErrors.owner_email && (
+          <p className="text-xs text-destructive">{fieldErrors.owner_email}</p>
+        )}
       </div>
 
       <div className="form-field">
@@ -114,7 +136,11 @@ export function StoreDetailsStep({
           onChange={(e) => onFieldChange("contact_email", e.target.value)}
           placeholder="store@example.com"
           className="rounded-none"
+          aria-invalid={!!fieldErrors.contact_email}
         />
+        {fieldErrors.contact_email && (
+          <p className="text-xs text-destructive">{fieldErrors.contact_email}</p>
+        )}
       </div>
 
       <div className="form-field">
@@ -128,7 +154,11 @@ export function StoreDetailsStep({
           onChange={(e) => onFieldChange("phone", e.target.value)}
           placeholder="+1 234 567 8900"
           className="rounded-none"
+          aria-invalid={!!fieldErrors.phone}
         />
+        {fieldErrors.phone && (
+          <p className="text-xs text-destructive">{fieldErrors.phone}</p>
+        )}
       </div>
 
       <div className="form-field">
@@ -142,7 +172,11 @@ export function StoreDetailsStep({
           onChange={(e) => onFieldChange("address", e.target.value)}
           className="input resize-none rounded-none"
           placeholder="123 Main St, City, Country"
+          aria-invalid={!!fieldErrors.address}
         />
+        {fieldErrors.address && (
+          <p className="text-xs text-destructive">{fieldErrors.address}</p>
+        )}
       </div>
 
       <Button type="submit" className="mt-2 w-full rounded-none">

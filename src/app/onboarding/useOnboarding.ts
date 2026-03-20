@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
+import { verifyTwoFactorChallenge } from "@/lib/auth";
 import { OPTIONAL_APP_IDS } from "@/config/apps";
 import { parseValidation, storeCreateSchema } from "@/lib/validation";
 
@@ -19,6 +20,8 @@ export interface StoreFormData {
   contact_email: string;
   address: string;
 }
+
+type StoreFormErrors = Partial<Record<keyof StoreFormData, string>>;
 
 interface MeResponse {
   active_store_id: string | null;
@@ -38,6 +41,7 @@ export function useOnboarding() {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<StoreFormErrors>({});
 
   const [formData, setFormData] = useState<StoreFormData>({
     name: "",
@@ -87,6 +91,12 @@ export function useOnboarding() {
     value: StoreFormData[K]
   ) {
     setFormData((prev) => ({ ...prev, [key]: value }));
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   }
 
   function toggleApp(appId: string) {
@@ -105,6 +115,13 @@ export function useOnboarding() {
     e.preventDefault();
     const validation = parseValidation(storeCreateSchema, formData);
     if (!validation.success) {
+      const nextFieldErrors: StoreFormErrors = {};
+      for (const key of Object.keys(validation.errors) as Array<keyof StoreFormData>) {
+        if (validation.errors[key]) {
+          nextFieldErrors[key] = validation.errors[key];
+        }
+      }
+      setFieldErrors(nextFieldErrors);
       setError(
         validation.errors.name ??
           validation.errors.store_type ??
@@ -115,6 +132,7 @@ export function useOnboarding() {
       );
       return;
     }
+    setFieldErrors({});
     setError("");
     setStep(2);
   }
@@ -143,11 +161,22 @@ export function useOnboarding() {
       const { data: switchData } = await api.post<{
         access: string;
         refresh: string;
-        active_store_id: string;
+        active_store_id?: string;
+        ["2fa_required"]?: boolean;
+        challenge_id?: string;
       }>("auth/switch-store/", { store_id: store.public_id });
 
-      localStorage.setItem("access_token", switchData.access);
-      localStorage.setItem("refresh_token", switchData.refresh);
+      if ("2fa_required" in switchData && switchData["2fa_required"] && switchData.challenge_id) {
+        const otpCode = window.prompt("Enter your 2FA code to activate this store:");
+        if (!otpCode) {
+          setError("2FA code is required to switch stores.");
+          return;
+        }
+        await verifyTwoFactorChallenge(switchData.challenge_id, otpCode);
+      } else {
+        localStorage.setItem("access_token", switchData.access);
+        localStorage.setItem("refresh_token", switchData.refresh);
+      }
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify(
@@ -176,6 +205,7 @@ export function useOnboarding() {
     step,
     loading,
     error,
+    fieldErrors,
     formData,
     selectedApps,
     updateField,

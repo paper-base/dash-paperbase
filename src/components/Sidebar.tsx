@@ -52,6 +52,7 @@ import {
   MORE_APP_IDS,
 } from "@/config/apps";
 import api from "@/lib/api";
+import { verifyTwoFactorChallenge } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
@@ -279,10 +280,21 @@ function SidebarContent({
         access: string;
         refresh: string;
         active_store_id: string | number;
+        ["2fa_required"]?: boolean;
+        challenge_id?: string;
       }>("auth/switch-store/", { store_id: storeId });
-      window.localStorage.setItem("access_token", data.access);
-      window.localStorage.setItem("refresh_token", data.refresh);
-      setActiveStoreId(String(data.active_store_id));
+      if ("2fa_required" in data && data["2fa_required"] && data.challenge_id) {
+        const otpCode = window.prompt("Enter your 2FA code to switch stores:");
+        if (!otpCode) {
+          return;
+        }
+        const verified = await verifyTwoFactorChallenge(data.challenge_id, otpCode);
+        setActiveStoreId(String(verified.active_store_id));
+      } else {
+        window.localStorage.setItem("access_token", data.access);
+        window.localStorage.setItem("refresh_token", data.refresh);
+        setActiveStoreId(String(data.active_store_id));
+      }
       onNavigate?.();
       router.refresh();
       window.location.reload();

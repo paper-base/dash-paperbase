@@ -1,8 +1,85 @@
  "use client";
 
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import api from "@/lib/api";
 
 export default function SecuritySection({ hidden }: { hidden: boolean }) {
+  const [isEnabled, setIsEnabled] = useState(false);
+  const [qrCode, setQrCode] = useState("");
+  const [secret, setSecret] = useState("");
+  const [setupCode, setSetupCode] = useState("");
+  const [disablePassword, setDisablePassword] = useState("");
+  const [disableCode, setDisableCode] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (hidden) return;
+    void loadStatus();
+  }, [hidden]);
+
+  async function loadStatus() {
+    try {
+      const { data } = await api.get<{ is_enabled: boolean }>("auth/2fa/status/");
+      setIsEnabled(!!data.is_enabled);
+    } catch {
+      setMessage("Failed to load 2FA status.");
+    }
+  }
+
+  async function startSetup() {
+    setLoading(true);
+    setMessage("");
+    try {
+      const { data } = await api.get<{ qr_code: string; secret: string }>("auth/2fa/setup/");
+      setQrCode(data.qr_code);
+      setSecret(data.secret);
+      setMessage("Scan the QR code, then enter the OTP to enable 2FA.");
+    } catch {
+      setMessage("Could not start 2FA setup.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function verifySetup() {
+    setLoading(true);
+    setMessage("");
+    try {
+      await api.post("auth/2fa/verify/", { code: setupCode });
+      setIsEnabled(true);
+      setQrCode("");
+      setSecret("");
+      setSetupCode("");
+      setMessage("2FA enabled successfully.");
+    } catch {
+      setMessage("Invalid OTP code.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function disable2FA() {
+    setLoading(true);
+    setMessage("");
+    try {
+      await api.post("auth/2fa/disable/", {
+        password: disablePassword,
+        code: disableCode,
+      });
+      setIsEnabled(false);
+      setDisablePassword("");
+      setDisableCode("");
+      setMessage("2FA disabled successfully.");
+    } catch {
+      setMessage("Failed to disable 2FA. Check password and OTP code.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <section
       id="panel-security"
@@ -12,30 +89,58 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
       className="rounded-xl border border-dashed border-border bg-background p-4 md:p-6"
     >
       <h2 className="text-lg font-medium text-foreground">Security</h2>
-      <p className="mb-4 text-sm text-muted-foreground">
-        Change password, manage 2FA, active sessions, and login activity.
-      </p>
+      <p className="mb-4 text-sm text-muted-foreground">Manage your authenticator-based 2FA.</p>
 
       <div className="w-full max-w-6xl space-y-4">
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-foreground">Change Password</label>
-          <Input type="password" placeholder="••••••••" disabled />
+        <div className="text-sm">
+          Status:{" "}
+          <span className={isEnabled ? "text-emerald-500" : "text-muted-foreground"}>
+            {isEnabled ? "2FA Enabled" : "2FA Disabled"}
+          </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <input type="checkbox" disabled className="rounded" />
-          <label className="text-sm text-muted-foreground">Two-factor authentication (2FA)</label>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-foreground">Active Sessions</label>
-          <Input placeholder="View and manage sessions" disabled />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-foreground">Login Activity</label>
-          <Input placeholder="View login history" disabled />
-        </div>
+        {!isEnabled ? (
+          <div className="space-y-3 rounded-lg border border-border p-4">
+            <Button type="button" onClick={startSetup} disabled={loading}>
+              Enable 2FA
+            </Button>
+            {qrCode ? <img src={qrCode} alt="2FA QR Code" className="h-44 w-44 border border-border" /> : null}
+            {secret ? <p className="text-xs text-muted-foreground">Secret (shown once): {secret}</p> : null}
+            {qrCode ? (
+              <div className="flex gap-2">
+                <Input
+                  value={setupCode}
+                  onChange={(e) => setSetupCode(e.target.value)}
+                  placeholder="Enter OTP from app"
+                />
+                <Button type="button" onClick={verifySetup} disabled={loading}>
+                  Verify
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="space-y-3 rounded-lg border border-border p-4">
+            <p className="text-sm text-muted-foreground">
+              To disable 2FA, confirm with your password and current OTP.
+            </p>
+            <Input
+              type="password"
+              value={disablePassword}
+              onChange={(e) => setDisablePassword(e.target.value)}
+              placeholder="Current password"
+            />
+            <Input
+              value={disableCode}
+              onChange={(e) => setDisableCode(e.target.value)}
+              placeholder="Current OTP code"
+            />
+            <Button type="button" variant="destructive" onClick={disable2FA} disabled={loading}>
+              Disable 2FA
+            </Button>
+          </div>
+        )}
+        {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
       </div>
     </section>
   );

@@ -11,13 +11,14 @@ import { loginSchema, parseValidation } from "@/lib/validation";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, pendingTwoFactor, verifyTwoFactorChallenge } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -34,9 +35,29 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const result = await login(validation.data.email, validation.data.password);
-      router.push(result.active_store_id ? "/" : "/onboarding");
+      if (!("2fa_required" in result)) {
+        router.push(result.active_store_id ? "/" : "/onboarding");
+      }
     } catch {
       setError("Invalid credentials. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleOtpSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!pendingTwoFactor) return;
+    setError("");
+    setLoading(true);
+    try {
+      const result = await verifyTwoFactorChallenge(
+        pendingTwoFactor.challenge_id,
+        otpCode
+      );
+      router.push(result.active_store_id ? "/" : "/onboarding");
+    } catch {
+      setError("Invalid verification code. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -60,51 +81,72 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form
+          onSubmit={pendingTwoFactor ? handleOtpSubmit : handleSubmit}
+          className="space-y-6"
+        >
           {error && (
             <div className="border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
             </div>
           )}
 
-          <div className="form-field">
-            <label htmlFor="email" className="field-label">
-              Email
-            </label>
-            <Input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. johndoe@email.com"
-            />
-          </div>
+          {!pendingTwoFactor ? (
+            <>
+              <div className="form-field">
+                <label htmlFor="email" className="field-label">
+                  Email
+                </label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="e.g. johndoe@email.com"
+                />
+              </div>
 
-          <div className="form-field">
-            <label htmlFor="password" className="field-label">
-              Password
-            </label>
-            <div className="relative">
+              <div className="form-field">
+                <label htmlFor="password" className="field-label">
+                  Password
+                </label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground focus:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="form-field">
+              <label htmlFor="otp" className="field-label">
+                Verification code
+              </label>
               <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
+                id="otp"
+                type="text"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className="pr-10"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                placeholder="Enter 6-digit code"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground focus:outline-none"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
             </div>
-          </div>
+          )}
 
           <div className="flex items-center text-sm">
             <label className="inline-flex items-center gap-2 text-muted-foreground">
@@ -113,6 +155,7 @@ export default function LoginPage() {
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="h-4 w-4 border-border"
+                disabled={!!pendingTwoFactor}
               />
               <span>Remember me</span>
             </label>
@@ -123,7 +166,7 @@ export default function LoginPage() {
             disabled={loading}
             className="mt-2 w-full"
           >
-            {loading ? "Signing in..." : "Login"}
+            {loading ? "Please wait..." : pendingTwoFactor ? "Verify code" : "Login"}
           </Button>
         </form>
 

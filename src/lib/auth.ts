@@ -8,6 +8,14 @@ export interface LoginResponse {
   active_store_id: string | null;
 }
 
+export interface PendingTwoFactorResponse {
+  ["2fa_required"]: true;
+  challenge_id: string;
+  flow: "login" | "register" | "switch_store";
+}
+
+export type LoginResult = LoginResponse | PendingTwoFactorResponse;
+
 export interface RegisterPayload {
   email: string;
   password: string;
@@ -31,26 +39,47 @@ export async function register(
   email: string,
   password: string,
   password_confirm: string
-): Promise<LoginResponse> {
-  const { data } = await axios.post<LoginResponse>(`${BASE_URL}/auth/register/`, {
+): Promise<LoginResult> {
+  const { data } = await axios.post<LoginResult>(`${BASE_URL}/auth/register/`, {
     email: email.trim().toLowerCase(),
     password,
     password_confirm,
   });
-  localStorage.setItem("access_token", data.access);
-  localStorage.setItem("refresh_token", data.refresh);
-  setAuthSessionCookie();
+  if (!("2fa_required" in data)) {
+    localStorage.setItem("access_token", data.access);
+    localStorage.setItem("refresh_token", data.refresh);
+    setAuthSessionCookie();
+  }
   return data;
 }
 
 export async function login(
   email: string,
   password: string
-): Promise<LoginResponse> {
-  const { data } = await axios.post<LoginResponse>(`${BASE_URL}/auth/token/`, {
+): Promise<LoginResult> {
+  const { data } = await axios.post<LoginResult>(`${BASE_URL}/auth/token/`, {
     email: email.trim().toLowerCase(),
     password,
   });
+  if (!("2fa_required" in data)) {
+    localStorage.setItem("access_token", data.access);
+    localStorage.setItem("refresh_token", data.refresh);
+    setAuthSessionCookie();
+  }
+  return data;
+}
+
+export async function verifyTwoFactorChallenge(
+  challengeId: string,
+  code: string
+): Promise<LoginResponse> {
+  const { data } = await axios.post<LoginResponse>(
+    `${BASE_URL}/auth/2fa/challenge/verify/`,
+    {
+      challenge_id: challengeId,
+      code,
+    }
+  );
   localStorage.setItem("access_token", data.access);
   localStorage.setItem("refresh_token", data.refresh);
   setAuthSessionCookie();
