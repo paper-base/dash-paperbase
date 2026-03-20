@@ -39,7 +39,6 @@ export const storeUpdateSchema = z.object({
 
 export const accountSettingsSchema = z.object({
   ownerName: requiredString("Owner name"),
-  ownerEmail: emailSchema,
 });
 
 export const deleteStoreConfirmSchema = z.object({

@@ -37,7 +37,6 @@ export default function SettingsPage() {
     ownerName,
     setOwnerName,
     ownerEmail,
-    setOwnerEmail,
     storeName,
     setStoreName,
     storeType,
@@ -162,7 +161,6 @@ export default function SettingsPage() {
             ownerName={ownerName}
             ownerEmail={ownerEmail}
             onOwnerNameChange={setOwnerName}
-            onOwnerEmailChange={setOwnerEmail}
             accountSaving={accountSaving}
             accountMessage={accountMessage}
             onSubmit={handleAccountSubmit}

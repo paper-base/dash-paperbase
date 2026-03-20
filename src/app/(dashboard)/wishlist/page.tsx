@@ -32,9 +32,9 @@ export default function WishlistPage() {
 
   const groupedItems = useMemo(() => {
     const map = new Map<
-      number,
+      string,
       {
-        product: number;
+        product_public_id: string;
         product_name: string;
         product_brand?: string;
         count: number;
@@ -42,12 +42,13 @@ export default function WishlistPage() {
     >();
 
     for (const item of items) {
-      const existing = map.get(item.product);
+      const pid = item.product_public_id ?? "";
+      const existing = map.get(pid);
       if (existing) {
         existing.count += 1;
       } else {
-        map.set(item.product, {
-          product: item.product,
+        map.set(pid, {
+          product_public_id: pid,
           product_name: item.product_name,
           product_brand: item.product_brand,
           count: 1,
@@ -95,10 +96,10 @@ export default function WishlistPage() {
               </thead>
               <tbody className="divide-y divide-border/60">
                 {groupedItems.map((item) => (
-                  <tr key={item.product} className="hover:bg-muted/40">
+                  <tr key={item.product_public_id} className="hover:bg-muted/40">
                     <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">
                       <Link
-                        href={`/products/${item.product}`}
+                        href={`/products/${item.product_public_id}`}
                         className="text-primary hover:underline"
                       >
                         {item.product_name}

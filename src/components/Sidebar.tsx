@@ -229,8 +229,7 @@ function SidebarContent({
       try {
         const { data } = await api.get<{
           stores?: Array<{
-            id?: string | number;
-            public_id?: string | number;
+            public_id?: string;
             name?: string;
             role?: string;
           }>;
@@ -239,7 +238,7 @@ function SidebarContent({
         const normalized = (data.stores || []).reduce<
           Array<{ public_id: string; name: string; role?: string }>
         >((acc, store) => {
-          const rawId = store.public_id ?? store.id;
+          const rawId = store.public_id;
           if (rawId == null) return acc;
           acc.push(
             store.role

@@ -133,7 +133,6 @@ export default function useSettingsPageController() {
     ownerName: account.ownerName,
     setOwnerName: account.setOwnerName,
     ownerEmail: account.ownerEmail,
-    setOwnerEmail: account.setOwnerEmail,
     accountSaving: account.saving,
     accountMessage: account.message,
     handleAccountSubmit: account.handleSubmit,

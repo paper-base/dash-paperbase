@@ -305,7 +305,7 @@ export default function ProductAttributesPage() {
                     className="rounded-lg border border-border bg-muted/20 p-3 space-y-2"
                   >
                     <p className="text-sm font-medium">
-                      {editingValue.id === "new" ? "New value" : "Edit value"}
+                      {editingValue.public_id === "new" ? "New value" : "Edit value"}
                     </p>
                     <input
                       required

@@ -23,14 +23,12 @@ export function useAccountSettings({ onSaveSuccess }: UseAccountSettingsOptions 
     e.preventDefault();
     const validation = parseValidation(accountSettingsSchema, {
       ownerName,
-      ownerEmail,
     });
     if (!validation.success) {
       setMessage({
         type: "error",
         text:
           validation.errors.ownerName ??
-          validation.errors.ownerEmail ??
           "Please correct the highlighted fields.",
       });
       return;
@@ -41,7 +39,6 @@ export function useAccountSettings({ onSaveSuccess }: UseAccountSettingsOptions 
     try {
       const formData = new FormData();
       formData.append("owner_name", validation.data.ownerName.slice(0, 255));
-      formData.append("owner_email", validation.data.ownerEmail.slice(0, 254));
       await api.patch("admin/branding/", formData);
       onSaveSuccess?.();
       setMessage({ type: "success", text: "Account settings saved." });

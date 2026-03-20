@@ -12,7 +12,6 @@ export default function AccountSection({
   ownerName,
   ownerEmail,
   onOwnerNameChange,
-  onOwnerEmailChange,
   accountSaving,
   accountMessage,
   onSubmit,
@@ -22,7 +21,6 @@ export default function AccountSection({
   ownerName: string;
   ownerEmail: string;
   onOwnerNameChange: Dispatch<SetStateAction<string>> | ((value: string) => void);
-  onOwnerEmailChange: Dispatch<SetStateAction<string>> | ((value: string) => void);
   accountSaving: boolean;
   accountMessage: SettingsMessage;
   onSubmit: (e: FormEvent) => void;
@@ -66,10 +64,13 @@ export default function AccountSection({
                 id="owner_email"
                 type="email"
                 value={ownerEmail}
-                onChange={(e) => onOwnerEmailChange(e.target.value)}
-                placeholder="e.g. owner@yourstore.com"
-                className="w-full"
+                readOnly
+                tabIndex={-1}
+                className="w-full cursor-not-allowed bg-muted text-muted-foreground"
               />
+              <p className="text-xs text-muted-foreground">
+                Your email address cannot be changed from the dashboard. Contact support if you need to update it.
+              </p>
             </div>
           </div>
 
