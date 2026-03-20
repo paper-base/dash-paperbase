@@ -112,7 +112,7 @@ export default function NewOrderPage() {
                   >
                     <option value="">Auto (cheapest match)</option>
                     {shippingMethods.map((m) => (
-                      <option key={m.id} value={String(m.id)}>
+                      <option key={m.public_id} value={m.public_id}>
                         {m.name}
                       </option>
                     ))}
@@ -126,7 +126,7 @@ export default function NewOrderPage() {
                   >
                     <option value="">Auto (match by district/area)</option>
                     {shippingZones.map((z) => (
-                      <option key={z.id} value={String(z.id)}>
+                      <option key={z.public_id} value={z.public_id}>
                         {z.name}
                       </option>
                     ))}
@@ -252,7 +252,7 @@ export default function NewOrderPage() {
                   <div className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto border border-card-border bg-card shadow-lg">
                     {results.map((product) => (
                       <button
-                        key={product.id}
+                        key={product.public_id}
                         type="button"
                         onClick={() => addProduct(product)}
                         className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
@@ -307,8 +307,8 @@ export default function NewOrderPage() {
                         const loadingVariants =
                           variantsLoadingByProductId[item.product_id] ?? false;
                         const selectedVariant =
-                          item.variant_id != null
-                            ? variants.find((v) => v.id === item.variant_id) ?? null
+                          item.variant_public_id != null
+                            ? variants.find((v) => v.public_id === item.variant_public_id) ?? null
                             : null;
                         return (
                           <tr key={item.key} className="bg-card">
@@ -322,11 +322,7 @@ export default function NewOrderPage() {
                                 <Select
                                   size="sm"
                                   className="w-[190px]"
-                                  value={
-                                    item.variant_id == null
-                                      ? ""
-                                      : String(item.variant_id)
-                                  }
+                                  value={item.variant_public_id ?? ""}
                                   onFocus={() =>
                                     ensureVariantsLoaded(item.product_id)
                                   }
@@ -334,8 +330,8 @@ export default function NewOrderPage() {
                                     const raw = e.target.value;
                                     updateItem(
                                       item.key,
-                                      "variant_id",
-                                      raw ? Number(raw) : null
+                                      "variant_public_id",
+                                      raw || null
                                     );
                                   }}
                                   disabled={loadingVariants}
@@ -344,9 +340,9 @@ export default function NewOrderPage() {
                                     {loadingVariants ? "Loading…" : "Default"}
                                   </option>
                                   {variants.map((v) => (
-                                    <option key={v.id} value={String(v.id)}>
+                                    <option key={v.public_id} value={v.public_id}>
                                       {(v.option_labels?.join(" · ") || v.sku) ??
-                                        `#${v.id}`}
+                                        v.public_id}
                                     </option>
                                   ))}
                                 </Select>

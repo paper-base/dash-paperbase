@@ -96,7 +96,7 @@ export default function EditProductPage() {
       .then(([prodRes, parentRes, catRes]) => {
         const p = prodRes.data;
         const cats = catRes.data.results ?? catRes.data;
-        const cat = cats.find((c: Category) => String(c.id) === String(p.category));
+        const cat = cats.find((c: Category) => c.public_id === p.category);
         const parentId = cat?.parent ?? null;
         setProduct(p);
         setParentCategories(parentRes.data.results ?? parentRes.data);
@@ -693,7 +693,7 @@ export default function EditProductPage() {
                 >
                   <option value="">Select parent...</option>
                   {parentCategories.map((c) => (
-                    <option key={c.public_id} value={c.id}>
+                    <option key={c.public_id} value={c.public_id}>
                       {c.name}
                     </option>
                   ))}
@@ -710,7 +710,7 @@ export default function EditProductPage() {
                 >
                   <option value="">Select child (optional)...</option>
                   {filteredChildCategories.map((c) => (
-                    <option key={c.public_id} value={c.id}>
+                    <option key={c.public_id} value={c.public_id}>
                       {c.name}
                     </option>
                   ))}

@@ -23,12 +23,11 @@ export interface Branding {
 
 export interface OrderItem {
   public_id: string;
-  id: number;
   product: string;
   product_name: string;
   product_brand?: string;
   product_image: string | null;
-  variant?: number | null;
+  variant_public_id?: string | null;
   variant_sku?: string | null;
   variant_stock_quantity?: number | null;
   variant_option_labels?: string[];
@@ -39,16 +38,15 @@ export interface OrderItem {
 
 export interface Order {
   public_id: string;
-  id: string;
   order_number: string;
   extra_data?: Record<string, string | number | boolean>;
-  user: number | null;
+  user_public_id?: string | null;
   email: string;
   status: "pending" | "confirmed" | "cancelled";
   subtotal?: string;
   shipping_cost?: string;
-  shipping_zone?: number | null;
-  shipping_method?: number | null;
+  shipping_zone_public_id?: string | null;
+  shipping_method_public_id?: string | null;
   total: string;
   shipping_name: string;
   shipping_address: string;
@@ -64,7 +62,6 @@ export interface Order {
 }
 
 export interface Product {
-  id: string;
   public_id: string;
   name: string;
   brand: string;
@@ -74,10 +71,9 @@ export interface Product {
   image: string | null;
   image_url?: string | null;
   badge: string | null;
-  category: number;
+  category: string;
+  category_public_id?: string;
   category_name: string;
-  sub_category: number | null;
-  sub_category_name: string | null;
   description?: string;
   stock: number;
   /** Number of ProductVariant rows (admin API). */
@@ -94,7 +90,6 @@ export interface Product {
 
 export interface ProductImage {
   public_id: string;
-  id: number;
   product: string;
   image: string;
   order: number;
@@ -102,14 +97,13 @@ export interface ProductImage {
 
 /** Admin API: product variant (SKU) row. */
 export interface ProductVariant {
-  id: number;
   public_id: string;
   product: string;
   sku: string;
   price_override: string | null;
   stock_quantity: number;
   is_active: boolean;
-  attribute_value_ids: number[];
+  attribute_value_public_ids: string[];
   option_labels: string[];
   created_at: string;
   updated_at: string;
@@ -117,7 +111,6 @@ export interface ProductVariant {
 
 /** Admin API: global attribute type (Color, Size, …). */
 export interface ProductAttributeAdmin {
-  id: number;
   public_id: string;
   name: string;
   slug: string;
@@ -126,9 +119,8 @@ export interface ProductAttributeAdmin {
 }
 
 export interface ProductAttributeValueAdmin {
-  id: number;
   public_id: string;
-  attribute: number;
+  attribute_public_id?: string;
   attribute_name?: string;
   value: string;
   order: number;
@@ -136,7 +128,6 @@ export interface ProductAttributeValueAdmin {
 
 export interface ParentCategory {
   public_id: string;
-  id: number;
   name: string;
   slug: string;
   description: string;
@@ -148,12 +139,11 @@ export interface ParentCategory {
 
 export interface Category {
   public_id: string;
-  id: number;
   name: string;
   slug: string;
   description: string;
   image: string | null;
-  parent: number | null;
+  parent: string | null;
   parent_name: string;
   order: number;
   is_active: boolean;
@@ -162,7 +152,6 @@ export interface Category {
 
 export interface Notification {
   public_id: string;
-  id: number;
   text: string;
   notification_type: string;
   is_active: boolean;
@@ -178,7 +167,6 @@ export interface Notification {
 
 export interface ContactSubmission {
   public_id: string;
-  id: number;
   name: string;
   phone: string;
   email: string;
@@ -210,8 +198,7 @@ export interface DashboardStats {
 
 export interface CartItem {
   public_id: string;
-  id: number;
-  product: number;
+  product_public_id?: string;
   product_name: string;
   product_brand?: string;
   quantity: number;
@@ -222,7 +209,6 @@ export interface CartItem {
 
 export interface Cart {
   public_id: string;
-  id: number;
   items: CartItem[];
   created_at: string;
   updated_at: string;
@@ -230,8 +216,7 @@ export interface Cart {
 
 export interface WishlistItem {
   public_id: string;
-  id: number;
-  product: number;
+  product_public_id?: string;
   product_name: string;
   product_brand?: string;
   created_at: string;
@@ -246,14 +231,12 @@ export interface PaginatedResponse<T> {
 
 export interface ActivityActor {
   public_id: string;
-  id: number;
-  username: string;
   email: string;
+  full_name: string;
 }
 
 export interface ActivityLog {
   public_id: string;
-  id: number;
   created_at: string;
   actor: ActivityActor | null;
   action: "create" | "update" | "delete" | "custom";
@@ -265,10 +248,9 @@ export interface ActivityLog {
 
 export interface Inventory {
   public_id: string;
-  id: number;
-  product: string;
+  product_public_id: string;
   product_name: string;
-  variant: number | null;
+  variant_public_id: string | null;
   variant_sku: string | null;
   quantity: number;
   low_stock_threshold: number;
@@ -279,17 +261,15 @@ export interface Inventory {
 
 export interface StockMovement {
   public_id: string;
-  id: number;
   change: number;
   reason: string;
   reference: string;
   created_at: string;
-  actor: number | null;
+  actor_public_id: string | null;
 }
 
 export interface Coupon {
   public_id: string;
-  id: number;
   code: string;
   discount_type: string;
   discount_value: string;
@@ -304,8 +284,6 @@ export interface Coupon {
 }
 
 export interface Banner {
-  id: number;
-  store: number;
   public_id: string;
   image: string;
   title: string;
@@ -324,10 +302,8 @@ export interface Banner {
 
 export interface Review {
   public_id: string;
-  id: number;
   product: string;
   product_name: string;
-  user: number;
   user_email: string;
   rating: number;
   title: string;
@@ -339,8 +315,7 @@ export interface Review {
 
 export interface Customer {
   public_id: string;
-  id: number;
-  user: number;
+  user_public_id: string;
   user_email: string;
   user_username: string;
   phone: string;
@@ -352,7 +327,6 @@ export interface Customer {
 
 export interface ShippingZone {
   public_id: string;
-  id: number;
   name: string;
   delivery_areas: string;
   districts: string;
@@ -363,21 +337,19 @@ export interface ShippingZone {
 
 export interface ShippingMethod {
   public_id: string;
-  id: number;
   name: string;
   method_type: "standard" | "express" | "pickup" | "other";
   is_active: boolean;
   order: number;
-  zone_ids: number[];
+  zone_public_ids: string[];
   created_at: string;
   updated_at: string;
 }
 
 export interface ShippingRate {
   public_id: string;
-  id: number;
-  shipping_method: number;
-  shipping_zone: number;
+  shipping_method: string;
+  shipping_zone: string;
   rate_type: "flat" | "weight" | "order_total";
   min_order_total: string | null;
   max_order_total: string | null;

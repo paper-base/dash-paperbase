@@ -28,7 +28,7 @@ export default function ProductAttributesPage() {
   const [attrSaving, setAttrSaving] = useState(false);
 
   const [valueEditing, setValueEditing] = useState<
-    { attributeId: number | null; attributePublicId: string; id: string | "new" } | null
+    { attributePublicId: string; public_id: string | "new" } | null
   >(null);
   const [valueForm, setValueForm] = useState<ValueForm>(emptyValue);
   const [valueSaving, setValueSaving] = useState(false);
@@ -109,34 +109,30 @@ export default function ProductAttributesPage() {
     }
   }
 
-  function openValueNew(attributeId: number | null, attributePublicId: string) {
-    setValueEditing({ attributeId, attributePublicId, id: "new" });
+  function openValueNew(attributePublicId: string) {
+    setValueEditing({ attributePublicId, public_id: "new" });
     setValueForm(emptyValue);
   }
 
-  function openValueEdit(attributeId: number | null, attributePublicId: string, v: ProductAttributeValueAdmin) {
-    setValueEditing({ attributeId, attributePublicId, id: v.public_id });
+  function openValueEdit(attributePublicId: string, v: ProductAttributeValueAdmin) {
+    setValueEditing({ attributePublicId, public_id: v.public_id });
     setValueForm({ value: v.value, order: String(v.order) });
   }
 
   async function saveValue(e: FormEvent) {
     e.preventDefault();
     if (!valueEditing) return;
-    if (valueEditing.attributeId == null) {
-      setError("Could not determine attribute ID for saving this value.");
-      return;
-    }
     setValueSaving(true);
     try {
       const payload = {
-        attribute: valueEditing.attributeId,
+        attribute: valueEditing.attributePublicId,
         value: valueForm.value.trim(),
         order: parseInt(valueForm.order, 10) || 0,
       };
-      if (valueEditing.id === "new") {
+      if (valueEditing.public_id === "new") {
         await api.post("admin/product-attribute-values/", payload);
       } else {
-        await api.patch(`admin/product-attribute-values/${valueEditing.id}/`, payload);
+        await api.patch(`admin/product-attribute-values/${valueEditing.public_id}/`, payload);
       }
       setValueEditing(null);
       await fetchData();
@@ -296,7 +292,7 @@ export default function ProductAttributesPage() {
                     variant="outline"
                     size="sm"
                     disabled={valueEditing !== null || attrEditing !== null}
-                    onClick={() => openValueNew(a.id, a.public_id)}
+                    onClick={() => openValueNew(a.public_id)}
                   >
                     <Plus className="mr-1 size-3.5" />
                     Add value
@@ -361,7 +357,7 @@ export default function ProductAttributesPage() {
                             size="icon-xs"
                             aria-label="Edit value"
                             disabled={valueEditing !== null || attrEditing !== null}
-                            onClick={() => openValueEdit(a.id, a.public_id, v)}
+                            onClick={() => openValueEdit(a.public_id, v)}
                           >
                             <Pencil className="size-4" />
                           </Button>

@@ -26,7 +26,6 @@ export default function ProductsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const getProductApiId = (product: Product) => product.public_id || product.id;
 
   const fetchProducts = useCallback(() => {
     setLoading(true);
@@ -60,7 +59,7 @@ export default function ProductsPage() {
     if (selectedIds.size === products.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(products.map((p) => getProductApiId(p))));
+      setSelectedIds(new Set(products.map((p) => p.public_id)));
     }
   };
 
@@ -82,13 +81,12 @@ export default function ProductsPage() {
   }
 
   async function updateProduct(product: Product, payload: { stock?: number; is_active?: boolean }) {
-    const apiId = getProductApiId(product);
-    setUpdatingId(apiId);
+    setUpdatingId(product.public_id);
     try {
-      await api.patch(`admin/products/${apiId}/`, payload);
+      await api.patch(`admin/products/${product.public_id}/`, payload);
       setProducts((prev) =>
         prev.map((p) =>
-          p.id === product.id ? { ...p, ...payload } : p
+          p.public_id === product.public_id ? { ...p, ...payload } : p
         )
       );
     } catch (err) {
@@ -173,12 +171,12 @@ export default function ProductsPage() {
               </thead>
               <tbody className="divide-y divide-border/60">
                 {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-muted/40">
+                  <tr key={product.public_id} className="hover:bg-muted/40">
                     <td className="w-10 px-4 py-3">
                       <input
                         type="checkbox"
-                        checked={selectedIds.has(getProductApiId(product))}
-                        onChange={() => toggleSelect(getProductApiId(product))}
+                        checked={selectedIds.has(product.public_id)}
+                        onChange={() => toggleSelect(product.public_id)}
                         onClick={(e) => e.stopPropagation()}
                         className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                         aria-label={`Select ${product.name}`}
@@ -186,7 +184,7 @@ export default function ProductsPage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <Link
-                        href={`/products/${getProductApiId(product)}`}
+                        href={`/products/${product.public_id}`}
                         className="flex items-center gap-3"
                       >
                         {product.image_url && (
@@ -223,7 +221,7 @@ export default function ProductsPage() {
                             {product.total_stock ?? product.stock}
                           </span>
                           <Link
-                            href={`/variants?product=${encodeURIComponent(product.id)}`}
+                            href={`/variants?product=${encodeURIComponent(product.public_id)}`}
                             className="text-xs text-primary underline-offset-2 hover:underline"
                             title="Stock lives on each variant (SKUs)."
                           >
@@ -240,7 +238,7 @@ export default function ProductsPage() {
                               const v = parseInt(e.target.value, 10);
                               setProducts((prev) =>
                                 prev.map((p) =>
-                                  p.id === product.id
+                                  p.public_id === product.public_id
                                     ? { ...p, stock: Number.isNaN(v) ? 0 : Math.max(0, v) }
                                     : p
                                 )
@@ -253,9 +251,9 @@ export default function ProductsPage() {
                                 ? "border-destructive text-destructive"
                                 : "border-input text-foreground"
                             } focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring`}
-                            disabled={updatingId === getProductApiId(product)}
+                            disabled={updatingId === product.public_id}
                           />
-                          {updatingId === getProductApiId(product) && (
+                          {updatingId === product.public_id && (
                             <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                           )}
                         </div>
@@ -268,7 +266,7 @@ export default function ProductsPage() {
                           if (!value) return;
                           handleStatusChange(product, value === "active");
                         }}
-                        disabled={updatingId === getProductApiId(product)}
+                        disabled={updatingId === product.public_id}
                       >
                         <ComboboxInput
                           placeholder="Status"

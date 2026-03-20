@@ -23,7 +23,7 @@ export interface OrderItemRow {
   product_id: string;
   product_name: string;
   product_image: string | null;
-  variant_id: number | null;
+  variant_public_id: string | null;
   quantity: number;
   price: string;
 }
@@ -154,15 +154,15 @@ export function useNewOrder() {
   }
 
   function addProduct(product: Product) {
-    ensureVariantsLoaded(product.id);
+    ensureVariantsLoaded(product.public_id);
     setItems((prev) => [
       ...prev,
       {
         key: nextKey.current++,
-        product_id: product.id,
+        product_id: product.public_id,
         product_name: product.name,
         product_image: product.image_url ?? product.image,
-        variant_id: null,
+        variant_public_id: null,
         quantity: 1,
         price: product.price,
       },
@@ -227,11 +227,11 @@ export function useNewOrder() {
     try {
       const payload = {
         ...form,
-        shipping_zone: form.shipping_zone ? Number(form.shipping_zone) : null,
-        shipping_method: form.shipping_method ? Number(form.shipping_method) : null,
+        shipping_zone: form.shipping_zone || null,
+        shipping_method: form.shipping_method || null,
         items: items.map((item) => ({
           product: item.product_id,
-          variant: item.variant_id,
+          variant_public_id: item.variant_public_id,
           quantity: item.quantity,
           price: item.price,
         })),

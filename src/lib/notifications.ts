@@ -65,8 +65,8 @@ export async function fetchNotifications(): Promise<DashboardNotification[]> {
     : (ordersRes.data as any as Order[]);
   for (const order of orders) {
     notifications.push({
-      id: `order-${order.id}`,
-      resourceId: String(order.id),
+      id: `order-${order.public_id}`,
+      resourceId: order.public_id,
       type: "new_order",
       title: "New order placed",
       message: `Order #${order.order_number} from ${order.shipping_name}`,
@@ -82,8 +82,8 @@ export async function fetchNotifications(): Promise<DashboardNotification[]> {
   for (const cart of carts) {
     for (const item of cart.items) {
       notifications.push({
-        id: `cart-${item.id}`,
-        resourceId: String(item.id),
+        id: `cart-${item.public_id}`,
+        resourceId: item.public_id,
         type: "added_to_cart",
         title: "Product added to cart",
         message: item.product_name,
@@ -96,8 +96,8 @@ export async function fetchNotifications(): Promise<DashboardNotification[]> {
   const wishlistItems = (wishlistRes.data as PaginatedResponse<WishlistItem>).results ?? [];
   for (const item of wishlistItems) {
     notifications.push({
-      id: `wishlist-${item.id}`,
-      resourceId: String(item.id),
+      id: `wishlist-${item.public_id}`,
+      resourceId: item.public_id,
       type: "added_to_wishlist",
       title: "Product added to wishlist",
       message: item.product_name,
@@ -109,8 +109,8 @@ export async function fetchNotifications(): Promise<DashboardNotification[]> {
   const contacts = (contactsRes.data as PaginatedResponse<ContactSubmission>).results ?? [];
   for (const contact of contacts) {
     notifications.push({
-      id: `contact-${contact.id}`,
-      resourceId: String(contact.id),
+      id: `contact-${contact.public_id}`,
+      resourceId: contact.public_id,
       type: "contact_submission",
       title: "New contact submission",
       message: `${contact.name} (${contact.phone || contact.email})`,

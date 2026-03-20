@@ -15,7 +15,6 @@ function getActiveStoreIdFromJwt(token: string): string | null {
     const json = atob(padded);
     const data = JSON.parse(json) as { active_store_id?: unknown };
     const val = data.active_store_id;
-    if (typeof val === "number" && Number.isFinite(val)) return String(val);
     if (typeof val === "string" && val.trim()) return val;
     return null;
   } catch {

@@ -116,7 +116,7 @@ export default function DashboardPage() {
             <div className="overflow-x-auto">
               <div className="min-w-max divide-y divide-border">
                 {recentActivities.map((item) => (
-                  <div key={item.id} className="px-4 py-2.5 text-xs">
+                  <div key={item.public_id} className="px-4 py-2.5 text-xs">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="font-medium text-foreground whitespace-nowrap">

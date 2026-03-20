@@ -163,8 +163,8 @@ export default function NewProductPage() {
     }
 
     try {
-      const { data } = await api.post<{ id: string }>("admin/products/", formData);
-      const productId = data.id;
+      const { data } = await api.post<{ public_id: string }>("admin/products/", formData);
+      const productId = data.public_id;
       for (let i = 1; i < MAX_IMAGES; i++) {
         const file = imageFiles[i];
         if (!file) continue;
@@ -615,7 +615,7 @@ export default function NewProductPage() {
                 >
                   <option value="">Select parent...</option>
                   {parentCategories.map((c) => (
-                    <option key={c.public_id} value={c.id}>
+                    <option key={c.public_id} value={c.public_id}>
                       {c.name}
                     </option>
                   ))}
@@ -632,7 +632,7 @@ export default function NewProductPage() {
                 >
                   <option value="">Select child (optional)...</option>
                   {filteredChildCategories.map((c) => (
-                    <option key={c.public_id} value={c.id}>
+                    <option key={c.public_id} value={c.public_id}>
                       {c.name}
                     </option>
                   ))}

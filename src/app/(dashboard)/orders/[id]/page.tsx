@@ -134,7 +134,7 @@ export default function OrderDetailPage() {
   const [extraFieldsErrors, setExtraFieldsErrors] = useState<Record<string, string>>({});
   const { schema: extraFieldsSchema } = useExtraFieldsSchema("order");
   const [saving, setSaving] = useState(false);
-  const [itemEdits, setItemEdits] = useState<Record<number, { variant_id: number | null; quantity: number; price: string }>>({});
+  const [itemEdits, setItemEdits] = useState<Record<string, { variant_public_id: string | null; quantity: number; price: string }>>({});
   const [variantsByProductId, setVariantsByProductId] = useState<Record<string, ProductVariant[]>>({});
   const [variantsLoadingByProductId, setVariantsLoadingByProductId] = useState<Record<string, boolean>>({});
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
@@ -198,18 +198,18 @@ export default function OrderDetailPage() {
       district: order.district,
       delivery_area: order.delivery_area,
       tracking_number: order.tracking_number,
-      shipping_zone: order.shipping_zone != null ? String(order.shipping_zone) : "",
-      shipping_method: order.shipping_method != null ? String(order.shipping_method) : "",
+      shipping_zone: order.shipping_zone_public_id ?? "",
+      shipping_method: order.shipping_method_public_id ?? "",
     });
     setExtraFields(
       typeof order.extra_data === "object" && order.extra_data !== null
         ? (order.extra_data as ExtraFieldValues)
         : {}
     );
-    const nextEdits: Record<number, { variant_id: number | null; quantity: number; price: string }> = {};
+    const nextEdits: Record<string, { variant_public_id: string | null; quantity: number; price: string }> = {};
     for (const item of order.items ?? []) {
-      nextEdits[item.id] = {
-        variant_id: item.variant != null ? (item.variant as number) : null,
+      nextEdits[item.public_id] = {
+        variant_public_id: item.variant_public_id ?? null,
         quantity: item.quantity,
         price: String(item.price),
       };
@@ -250,13 +250,13 @@ export default function OrderDetailPage() {
     try {
       const payload = {
         ...form,
-        shipping_zone: form.shipping_zone ? Number(form.shipping_zone) : null,
-        shipping_method: form.shipping_method ? Number(form.shipping_method) : null,
+        shipping_zone: form.shipping_zone || null,
+        shipping_method: form.shipping_method || null,
         items: orderItems.map((it) => ({
-          id: it.id,
-          variant: itemEdits[it.id]?.variant_id ?? null,
-          quantity: itemEdits[it.id]?.quantity ?? it.quantity,
-          price: itemEdits[it.id]?.price ?? String(it.price),
+          public_id: it.public_id,
+          variant_public_id: itemEdits[it.public_id]?.variant_public_id ?? null,
+          quantity: itemEdits[it.public_id]?.quantity ?? it.quantity,
+          price: itemEdits[it.public_id]?.price ?? String(it.price),
         })),
         ...(Object.keys(extraFields).length > 0 && { extra_data: extraFields }),
       };
@@ -313,12 +313,12 @@ export default function OrderDetailPage() {
   const shippingCostNum = order.shipping_cost != null ? Number(order.shipping_cost) : 0;
   const totalNum = order.total != null ? Number(order.total) : subtotalNum + shippingCostNum;
   const zoneLabel =
-    (order.shipping_zone != null
-      ? shippingZones.find((z) => z.id === order.shipping_zone)?.name
+    (order.shipping_zone_public_id
+      ? shippingZones.find((z) => z.public_id === order.shipping_zone_public_id)?.name
       : null) || "—";
   const methodLabel =
-    (order.shipping_method != null
-      ? shippingMethods.find((m) => m.id === order.shipping_method)?.name
+    (order.shipping_method_public_id
+      ? shippingMethods.find((m) => m.public_id === order.shipping_method_public_id)?.name
       : null) || "—";
   const timelineEvents = buildTimelineEvents(order);
 
@@ -416,15 +416,15 @@ export default function OrderDetailPage() {
                       ? (Number(item.original_price) - Number(item.price)) * item.quantity
                       : 0;
                   const imageUrl = resolveImageUrl(item.product_image);
-                  const edit = itemEdits[item.id];
+                  const edit = itemEdits[item.public_id];
                   const variants = variantsByProductId[item.product] ?? [];
                   const variantsLoading = variantsLoadingByProductId[item.product] ?? false;
                   const selectedVariant =
-                    edit?.variant_id != null
-                      ? variants.find((v) => v.id === edit.variant_id) ?? null
+                    edit?.variant_public_id != null
+                      ? variants.find((v) => v.public_id === edit.variant_public_id) ?? null
                       : null;
                   return (
-                    <tr key={item.id} className="border-b border-border/50">
+                    <tr key={item.public_id} className="border-b border-border/50">
                       <td className="py-3 pr-4">
                         <div className="flex items-center gap-3">
                           {imageUrl ? (
@@ -476,10 +476,10 @@ export default function OrderDetailPage() {
                             onChange={(e) =>
                               setItemEdits((prev) => ({
                                 ...prev,
-                                [item.id]: {
-                                  variant_id: prev[item.id]?.variant_id ?? (item.variant ?? null),
+                                [item.public_id]: {
+                                  variant_public_id: prev[item.public_id]?.variant_public_id ?? (item.variant_public_id ?? null),
                                   quantity: Math.max(1, parseInt(e.target.value) || 1),
-                                  price: prev[item.id]?.price ?? String(item.price),
+                                  price: prev[item.public_id]?.price ?? String(item.price),
                                 },
                               }))
                             }
@@ -500,9 +500,9 @@ export default function OrderDetailPage() {
                               onChange={(e) =>
                                 setItemEdits((prev) => ({
                                   ...prev,
-                                  [item.id]: {
-                                    variant_id: prev[item.id]?.variant_id ?? (item.variant ?? null),
-                                    quantity: prev[item.id]?.quantity ?? item.quantity,
+                                  [item.public_id]: {
+                                    variant_public_id: prev[item.public_id]?.variant_public_id ?? (item.variant_public_id ?? null),
+                                    quantity: prev[item.public_id]?.quantity ?? item.quantity,
                                     price: e.target.value,
                                   },
                                 }))
@@ -512,17 +512,16 @@ export default function OrderDetailPage() {
                             <div className="flex items-center gap-2">
                               <select
                                 className="input !h-8 !py-1 w-[220px]"
-                                value={edit?.variant_id == null ? "" : String(edit.variant_id)}
+                                value={edit?.variant_public_id ?? ""}
                                 onFocus={() => ensureVariantsLoaded(item.product)}
                                 onChange={(e) => {
                                   const raw = e.target.value;
-                                  const next = raw ? Number(raw) : null;
                                   setItemEdits((prev) => ({
                                     ...prev,
-                                    [item.id]: {
-                                      variant_id: next,
-                                      quantity: prev[item.id]?.quantity ?? item.quantity,
-                                      price: prev[item.id]?.price ?? String(item.price),
+                                    [item.public_id]: {
+                                      variant_public_id: raw || null,
+                                      quantity: prev[item.public_id]?.quantity ?? item.quantity,
+                                      price: prev[item.public_id]?.price ?? String(item.price),
                                     },
                                   }));
                                 }}
@@ -532,8 +531,8 @@ export default function OrderDetailPage() {
                                   {variantsLoading ? "Loading…" : "Default"}
                                 </option>
                                 {variants.map((v) => (
-                                  <option key={v.id} value={String(v.id)}>
-                                    {(v.option_labels?.join(" · ") || v.sku) ?? `#${v.id}`}
+                                  <option key={v.public_id} value={v.public_id}>
+                                    {(v.option_labels?.join(" · ") || v.sku) ?? v.public_id}
                                   </option>
                                 ))}
                               </select>
@@ -643,7 +642,7 @@ export default function OrderDetailPage() {
                     >
                       <option value="">Auto (cheapest match)</option>
                       {shippingMethods.map((m) => (
-                        <option key={m.id} value={String(m.id)}>
+                        <option key={m.public_id} value={m.public_id}>
                           {m.name}
                         </option>
                       ))}
@@ -660,7 +659,7 @@ export default function OrderDetailPage() {
                     >
                       <option value="">Auto (match by district/area)</option>
                       {shippingZones.map((z) => (
-                        <option key={z.id} value={String(z.id)}>
+                        <option key={z.public_id} value={z.public_id}>
                           {z.name}
                         </option>
                       ))}

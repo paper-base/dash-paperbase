@@ -9,7 +9,7 @@ interface FeaturesResponse {
 }
 
 interface MeResponse {
-  stores: { id: number; name: string }[];
+  stores: { public_id: string; name: string }[];
 }
 
 export interface StoreLimitState {

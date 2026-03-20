@@ -48,13 +48,13 @@ type VariantForm = {
   price_override: string;
   stock_quantity: string;
   is_active: boolean;
-  /** one value id per attribute (or empty) */
-  picks: Record<number, string>;
+  /** one value public_id per attribute (or empty) */
+  picks: Record<string, string>;
 };
 
 const emptyForm = (attrs: ProductAttributeAdmin[]): VariantForm => {
-  const picks: Record<number, string> = {};
-  for (const a of attrs) picks[a.id] = "";
+  const picks: Record<string, string> = {};
+  for (const a of attrs) picks[a.public_id] = "";
   return {
     sku: "",
     price_override: "",
@@ -81,7 +81,7 @@ export default function VariantsPage() {
   const [saving, setSaving] = useState(false);
 
   const selectedProduct = useMemo(
-    () => products.find((p) => p.id === productId) ?? null,
+    () => products.find((p) => p.public_id === productId) ?? null,
     [products, productId]
   );
 
@@ -144,13 +144,13 @@ export default function VariantsPage() {
   }
 
   function openEdit(v: ProductVariant) {
-    const picks: Record<number, string> = {};
-    for (const a of attributes) picks[a.id] = "";
-    for (const vid of v.attribute_value_ids) {
+    const picks: Record<string, string> = {};
+    for (const a of attributes) picks[a.public_id] = "";
+    for (const valPublicId of v.attribute_value_public_ids) {
       for (const a of attributes) {
-        const match = a.values.find((x) => x.id === vid);
+        const match = a.values.find((x) => x.public_id === valPublicId);
         if (match) {
-          picks[a.id] = String(vid);
+          picks[a.public_id] = valPublicId;
           break;
         }
       }
@@ -175,16 +175,16 @@ export default function VariantsPage() {
     if (!productId || !form) return;
     setSaving(true);
     setError("");
-    const attribute_value_ids: number[] = [];
+    const attribute_value_public_ids: string[] = [];
     for (const a of attributes) {
-      const raw = form.picks[a.id];
-      if (raw) attribute_value_ids.push(parseInt(raw, 10));
+      const raw = form.picks[a.public_id];
+      if (raw) attribute_value_public_ids.push(raw);
     }
     const payload: Record<string, unknown> = {
       product: productId,
       stock_quantity: parseInt(form.stock_quantity, 10) || 0,
       is_active: form.is_active,
-      attribute_value_ids,
+      attribute_value_public_ids,
     };
     const sku = form.sku.trim();
     if (sku) payload.sku = sku;
@@ -288,7 +288,7 @@ export default function VariantsPage() {
           >
             <option value="">Select a product…</option>
             {products.map((p) => (
-              <option key={p.public_id} value={p.id}>
+              <option key={p.public_id} value={p.public_id}>
                 {p.name}
               </option>
             ))}
@@ -374,17 +374,17 @@ export default function VariantsPage() {
                             <span className="text-xs text-muted-foreground">{a.name}</span>
                             <select
                               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                              value={form.picks[a.id] ?? ""}
+                              value={form.picks[a.public_id] ?? ""}
                               onChange={(e) =>
                                 setForm({
                                   ...form,
-                                  picks: { ...form.picks, [a.id]: e.target.value },
+                                  picks: { ...form.picks, [a.public_id]: e.target.value },
                                 })
                               }
                             >
                               <option value="">— None —</option>
                               {a.values.map((v) => (
-                                <option key={v.public_id} value={String(v.id)}>
+                                <option key={v.public_id} value={v.public_id}>
                                   {v.value}
                                 </option>
                               ))}

@@ -325,7 +325,7 @@ export default function CategoriesPage() {
               <select required value={childForm.parent} onChange={(e) => setChildForm({ ...childForm, parent: e.target.value })} className="input">
                 <option value="">Parent category...</option>
                 {parentCategories.map((pc) => (
-                  <option key={pc.public_id} value={pc.id}>{pc.name}</option>
+                  <option key={pc.public_id} value={pc.public_id}>{pc.name}</option>
                 ))}
               </select>
               <input placeholder="Description" value={childForm.description} onChange={(e) => setChildForm({ ...childForm, description: e.target.value })} className="input" />

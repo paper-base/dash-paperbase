@@ -74,7 +74,7 @@ export default function OrdersPage() {
     if (selectedIds.size === orders.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(orders.map((o) => o.id)));
+      setSelectedIds(new Set(orders.map((o) => o.public_id)));
     }
   };
 
@@ -83,7 +83,7 @@ export default function OrdersPage() {
     try {
       await api.patch(`admin/orders/${orderId}/`, { status: newStatus });
       setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+        prev.map((o) => (o.public_id === orderId ? { ...o, status: newStatus } : o))
       );
     } catch (err) {
       console.error(err);
@@ -180,19 +180,19 @@ export default function OrdersPage() {
               </thead>
               <tbody className="divide-y divide-border/60">
                 {orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-muted/40">
+                  <tr key={order.public_id} className="hover:bg-muted/40">
                     <td className="w-10 px-2 py-3">
                       <input
                         type="checkbox"
-                        checked={selectedIds.has(order.id)}
-                        onChange={() => toggleSelect(order.id)}
+                        checked={selectedIds.has(order.public_id)}
+                        onChange={() => toggleSelect(order.public_id)}
                         className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                         aria-label={`Select order ${order.order_number}`}
                       />
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <Link
-                        href={`/orders/${order.id}`}
+                        href={`/orders/${order.public_id}`}
                         className="font-medium text-primary hover:underline whitespace-nowrap"
                       >
                         {order.order_number}
@@ -209,9 +209,9 @@ export default function OrdersPage() {
                         value={order.status}
                         onValueChange={(value) => {
                           if (!value) return;
-                          handleStatusChange(order.id, value);
+                          handleStatusChange(order.public_id, value);
                         }}
-                        disabled={updatingStatusId === order.id}
+                        disabled={updatingStatusId === order.public_id}
                       >
                         <ComboboxInput
                           placeholder="Select status"
@@ -229,7 +229,7 @@ export default function OrdersPage() {
                           </ComboboxList>
                         </ComboboxContent>
                       </Combobox>
-                      {updatingStatusId === order.id && (
+                      {updatingStatusId === order.public_id && (
                         <span className="ml-1.5 inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
                       )}
                     </td>

@@ -112,7 +112,7 @@ export default function InventoryPage() {
                   >
                     <td className="px-4 py-3 font-medium text-foreground">
                       <Link
-                        href={`/products/${inv.product}`}
+                        href={`/products/${inv.product_public_id}`}
                         className="text-primary hover:underline"
                       >
                         {inv.product_name}

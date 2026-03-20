@@ -25,7 +25,7 @@ type MethodForm = {
   method_type: ShippingMethod["method_type"];
   order: string;
   is_active: boolean;
-  zone_ids: number[];
+  zone_public_ids: string[];
 };
 
 type RateForm = {
@@ -50,7 +50,7 @@ const emptyMethod: MethodForm = {
   method_type: "standard",
   order: "0",
   is_active: true,
-  zone_ids: [],
+  zone_public_ids: [],
 };
 
 const emptyRate: RateForm = {
@@ -86,14 +86,14 @@ export default function ShippingPage() {
 
   const [saving, setSaving] = useState(false);
 
-  const methodById = useMemo(() => {
-    const m = new Map<number, ShippingMethod>();
-    methods.forEach((x) => m.set(x.id, x));
+  const methodByPublicId = useMemo(() => {
+    const m = new Map<string, ShippingMethod>();
+    methods.forEach((x) => m.set(x.public_id, x));
     return m;
   }, [methods]);
-  const zoneById = useMemo(() => {
-    const m = new Map<number, ShippingZone>();
-    zones.forEach((x) => m.set(x.id, x));
+  const zoneByPublicId = useMemo(() => {
+    const m = new Map<string, ShippingZone>();
+    zones.forEach((x) => m.set(x.public_id, x));
     return m;
   }, [zones]);
 
@@ -159,7 +159,7 @@ export default function ShippingPage() {
       method_type: m.method_type,
       order: String(m.order ?? 0),
       is_active: m.is_active,
-      zone_ids: Array.isArray(m.zone_ids) ? m.zone_ids : [],
+      zone_public_ids: Array.isArray(m.zone_public_ids) ? m.zone_public_ids : [],
     });
   }
 
@@ -170,8 +170,8 @@ export default function ShippingPage() {
   function openEditRate(r: ShippingRate) {
     setEditingRate(r.public_id);
     setRateForm({
-      shipping_method: String(r.shipping_method),
-      shipping_zone: String(r.shipping_zone),
+      shipping_method: r.shipping_method,
+      shipping_zone: r.shipping_zone,
       rate_type: r.rate_type,
       min_order_total: r.min_order_total || "",
       max_order_total: r.max_order_total || "",
@@ -223,7 +223,7 @@ export default function ShippingPage() {
       method_type: methodForm.method_type,
       order: parseInt(methodForm.order || "0", 10) || 0,
       is_active: methodForm.is_active,
-      zone_ids: methodForm.zone_ids,
+      zone_public_ids: methodForm.zone_public_ids,
     };
     try {
       if (editingMethod === "new") {
@@ -254,8 +254,8 @@ export default function ShippingPage() {
     setSaving(true);
     setError("");
     const payload: Record<string, unknown> = {
-      shipping_method: parseInt(rateForm.shipping_method, 10),
-      shipping_zone: parseInt(rateForm.shipping_zone, 10),
+      shipping_method: rateForm.shipping_method,
+      shipping_zone: rateForm.shipping_zone,
       rate_type: rateForm.rate_type,
       price: rateForm.price,
       is_active: rateForm.is_active,
@@ -489,17 +489,15 @@ export default function ShippingPage() {
                 <label className="mb-1 block text-sm font-medium">Applies to zones</label>
                 <select
                   multiple
-                  value={methodForm.zone_ids.map(String)}
+                  value={methodForm.zone_public_ids}
                   onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions).map((o) =>
-                      parseInt(o.value, 10)
-                    );
-                    setMethodForm((f) => ({ ...f, zone_ids: selected }));
+                    const selected = Array.from(e.target.selectedOptions).map((o) => o.value);
+                    setMethodForm((f) => ({ ...f, zone_public_ids: selected }));
                   }}
                   className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
                 >
                   {zones.map((z) => (
-                    <option key={z.public_id} value={z.id}>
+                    <option key={z.public_id} value={z.public_id}>
                       {z.name}
                     </option>
                   ))}
@@ -553,8 +551,8 @@ export default function ShippingPage() {
                     </div>
                     <div className="text-xs text-muted-foreground">
                       type: {m.method_type} · order: {m.order} · zones:{" "}
-                      {(m.zone_ids || [])
-                        .map((id) => zoneById.get(id)?.name || `#${id}`)
+                      {(m.zone_public_ids || [])
+                        .map((pid) => zoneByPublicId.get(pid)?.name || pid)
                         .join(", ") || "all"}
                     </div>
                   </div>
@@ -612,7 +610,7 @@ export default function ShippingPage() {
                   Select method
                 </option>
                 {methods.map((m) => (
-                  <option key={m.public_id} value={m.id}>
+                  <option key={m.public_id} value={m.public_id}>
                     {m.name}
                   </option>
                 ))}
@@ -629,10 +627,10 @@ export default function ShippingPage() {
                   Select zone
                 </option>
                 {zones.map((z) => (
-                  <option key={z.public_id} value={z.id}>
-                    {z.name}
-                  </option>
-                ))}
+                    <option key={z.public_id} value={z.public_id}>
+                      {z.name}
+                    </option>
+                  ))}
               </select>
               <div className="grid grid-cols-2 gap-3">
                 <select
@@ -713,8 +711,8 @@ export default function ShippingPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-medium">
-                      {methodById.get(r.shipping_method)?.name || `Method #${r.shipping_method}`}{" "}
-                      → {zoneById.get(r.shipping_zone)?.name || `Zone #${r.shipping_zone}`}
+                      {methodByPublicId.get(r.shipping_method)?.name || r.shipping_method}{" "}
+                      → {zoneByPublicId.get(r.shipping_zone)?.name || r.shipping_zone}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {r.is_active ? "Active" : "Inactive"} · {r.rate_type} · price:{" "}

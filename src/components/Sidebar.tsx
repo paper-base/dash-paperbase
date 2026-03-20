@@ -15,6 +15,8 @@ import {
   Store,
   Plus,
   LayoutGrid,
+  Ellipsis,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -130,8 +132,9 @@ function SidebarContent({
   const [storesOpen, setStoresOpen] = useState(false);
   const [storesLoading, setStoresLoading] = useState(false);
   const [storeSwitchingId, setStoreSwitchingId] = useState<string | null>(null);
+  const [copiedStoreId, setCopiedStoreId] = useState<string | null>(null);
   const [availableStores, setAvailableStores] = useState<
-    Array<{ id: string; name: string; role?: string }>
+    Array<{ public_id: string; name: string; role?: string }>
   >([]);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
   const [theme, setTheme] = useState<"light" | "dark" | "system">("light");
@@ -234,19 +237,19 @@ function SidebarContent({
         }>("auth/me/");
         if (cancelled) return;
         const normalized = (data.stores || []).reduce<
-          Array<{ id: string; name: string; role?: string }>
+          Array<{ public_id: string; name: string; role?: string }>
         >((acc, store) => {
           const rawId = store.public_id ?? store.id;
           if (rawId == null) return acc;
           acc.push(
             store.role
               ? {
-                  id: String(rawId),
+                  public_id: String(rawId),
                   name: store.name?.trim() || "Store",
                   role: store.role,
                 }
               : {
-                  id: String(rawId),
+                  public_id: String(rawId),
                   name: store.name?.trim() || "Store",
                 }
           );
@@ -283,6 +286,19 @@ function SidebarContent({
       window.location.reload();
     } finally {
       setStoreSwitchingId(null);
+    }
+  };
+
+  const handleCopyStoreId = async (storeId: string) => {
+    if (!storeId || typeof window === "undefined") return;
+    try {
+      await window.navigator.clipboard.writeText(storeId);
+      setCopiedStoreId(storeId);
+      window.setTimeout(() => {
+        setCopiedStoreId((prev) => (prev === storeId ? null : prev));
+      }, 1400);
+    } catch {
+      // Ignore clipboard permission/runtime errors.
     }
   };
 
@@ -632,35 +648,62 @@ function SidebarContent({
                   </DropdownMenuItem>
                 ) : availableStores.length > 0 ? (
                   availableStores.map((store) => {
-                    const isCurrent = activeStoreId === store.id;
-                    const isSwitching = storeSwitchingId === store.id;
+                    const isCurrent = activeStoreId === store.public_id;
+                    const isSwitching = storeSwitchingId === store.public_id;
                     return (
                       <DropdownMenuItem
-                        key={store.id}
+                        key={store.public_id}
                         onSelect={(event) => {
                           event.preventDefault();
-                          void handleSwitchStore(store.id);
+                          void handleSwitchStore(store.public_id);
                         }}
-                        disabled={isCurrent || !!storeSwitchingId}
+                        disabled={!!storeSwitchingId}
                       >
-                        <span className="flex min-w-0 items-center gap-2">
+                        <span className="flex min-w-0 flex-1 items-center gap-2">
                           <span
                             className={cn(
                               "h-2.5 w-2.5 shrink-0 rounded-full",
                               isCurrent ? "bg-emerald-400" : "bg-muted-foreground/40"
                             )}
                           />
-                          <span className="truncate">
+                          <span className={cn("flex-1 truncate", isCurrent && "text-foreground")}>
                             {store.name}
-                            {store.role ? ` (${store.role})` : ""}
                           </span>
-                          {isCurrent ? (
-                            <span className="text-xs text-muted-foreground">Current</span>
-                          ) : null}
                           {isSwitching ? (
                             <span className="text-xs text-muted-foreground">Switching...</span>
                           ) : null}
                         </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="ml-2 inline-flex size-6 shrink-0 items-center justify-center rounded hover:bg-muted"
+                              aria-label="Store actions"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                              }}
+                            >
+                              <Ellipsis className="size-3.5" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" side="right">
+                            <DropdownMenuItem
+                              onSelect={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                void handleCopyStoreId(store.public_id);
+                              }}
+                            >
+                              <Copy className="size-3.5" />
+                              <span>
+                                {copiedStoreId === store.public_id
+                                  ? "Store id copied"
+                                  : "Copy store id"}
+                              </span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </DropdownMenuItem>
                     );
                   })

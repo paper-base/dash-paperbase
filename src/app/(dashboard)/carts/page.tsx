@@ -33,16 +33,16 @@ export default function CartsPage() {
   const allItems = useMemo(
     () =>
       carts.flatMap((cart) =>
-        cart.items.map((item) => ({ ...item, cartId: cart.id }))
+        cart.items.map((item) => ({ ...item, cartId: cart.public_id }))
       ),
     [carts]
   );
 
   const groupedItems = useMemo(() => {
     const map = new Map<
-      number,
+      string,
       {
-        product: number;
+        product_public_id: string;
         product_name: string;
         product_brand?: string;
         quantity: number;
@@ -50,12 +50,13 @@ export default function CartsPage() {
     >();
 
     for (const item of allItems) {
-      const existing = map.get(item.product);
+      const key = item.product_public_id ?? item.public_id;
+      const existing = map.get(key);
       if (existing) {
         existing.quantity += item.quantity;
       } else {
-        map.set(item.product, {
-          product: item.product,
+        map.set(key, {
+          product_public_id: item.product_public_id ?? "",
           product_name: item.product_name,
           product_brand: item.product_brand,
           quantity: item.quantity,
@@ -107,10 +108,10 @@ export default function CartsPage() {
               </thead>
               <tbody className="divide-y divide-border/60">
                 {groupedItems.map((item) => (
-                  <tr key={item.product} className="hover:bg-muted/40">
+                  <tr key={item.product_public_id} className="hover:bg-muted/40">
                     <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">
                       <Link
-                        href={`/products/${item.product}`}
+                        href={`/products/${item.product_public_id}`}
                         className="text-primary hover:underline"
                       >
                         {item.product_name}
