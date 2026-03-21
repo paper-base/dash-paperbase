@@ -8,7 +8,7 @@ import { SearchModalProvider } from "@/context/SearchModalContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import Sidebar, { SidebarContent } from "@/components/Sidebar";
 import MobileNavBar from "@/components/MobileNavBar";
-import AnnouncementBanner from "@/components/AnnouncementBanner";
+import SystemNotificationBanner from "@/components/system/SystemNotificationBanner";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
@@ -36,6 +36,7 @@ export default function DashboardLayout({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [systemBannerVisible, setSystemBannerVisible] = useState(false);
   const [subscription, setSubscription] = useState<MeSubscription | null>(null);
   const [storeCount, setStoreCount] = useState(0);
   const [subChecked, setSubChecked] = useState(false);
@@ -146,6 +147,8 @@ export default function DashboardLayout({
     );
   }
 
+  const showSystemBanner = systemBannerVisible && !bannerDismissed;
+
   return (
     <BrandingProvider>
       <SearchModalProvider>
@@ -153,8 +156,9 @@ export default function DashboardLayout({
           <div className="min-h-screen bg-muted/30">
             {/* Fixed banner at top - no scroll jitter, pixel-perfect alignment with sidebar header */}
             {!bannerDismissed && (
-              <AnnouncementBanner
+              <SystemNotificationBanner
                 onDismiss={() => setBannerDismissed(true)}
+                onPresenceChange={setSystemBannerVisible}
                 sidebarCollapsed={collapsed}
               />
             )}
@@ -183,13 +187,13 @@ export default function DashboardLayout({
               className={cn(
                 "min-h-screen border-t border-border transition-[margin,padding-top] duration-300",
                 collapsed ? "md:ml-16" : "md:ml-72",
-                !bannerDismissed && "pt-[var(--header-height)]"
+                showSystemBanner && "pt-[var(--header-height)]"
               )}
             >
               {/* Mobile: top bar with hamburger */}
               <MobileNavBar
                 onMenuClick={() => setMobileOpen(true)}
-                bannerVisible={!bannerDismissed}
+                bannerVisible={showSystemBanner}
               />
 
               <main className="px-4 py-4 md:px-6 md:py-6 lg:px-8">

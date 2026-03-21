@@ -1,0 +1,111 @@
+"use client";
+
+import { useEffect } from "react";
+import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
+import { useSystemNotification } from "@/hooks/useSystemNotification";
+import { cn } from "@/lib/utils";
+
+interface SystemNotificationBannerProps {
+  className?: string;
+  onDismiss: () => void;
+  sidebarCollapsed?: boolean;
+  /** When the banner should affect layout offset (has content and should show chrome). */
+  onPresenceChange?: (visible: boolean) => void;
+}
+
+type CtaTarget =
+  | { kind: "internal"; path: string }
+  | { kind: "external"; href: string };
+
+function parseCtaTarget(raw: string): CtaTarget | null {
+  const t = raw.trim();
+  if (!t || t.startsWith("//")) return null;
+
+  if (t.startsWith("/")) {
+    if (t.includes("\n") || t.includes("\r")) return null;
+    return { kind: "internal", path: t };
+  }
+
+  try {
+    const u = new URL(t);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    return { kind: "external", href: u.href };
+  } catch {
+    return null;
+  }
+}
+
+export default function SystemNotificationBanner({
+  className,
+  onDismiss,
+  sidebarCollapsed = false,
+  onPresenceChange,
+}: SystemNotificationBannerProps) {
+  const router = useRouter();
+  const { notification, isLoading, isError } = useSystemNotification();
+
+  useEffect(() => {
+    if (isLoading || isError) {
+      onPresenceChange?.(false);
+      return;
+    }
+    onPresenceChange?.(!!notification);
+  }, [isLoading, isError, notification, onPresenceChange]);
+
+  if (isLoading || isError || !notification) {
+    return null;
+  }
+
+  const ctaText = notification.cta_text?.trim();
+  const ctaUrlRaw = notification.cta_url?.trim();
+  const ctaTarget =
+    ctaText && ctaUrlRaw ? parseCtaTarget(ctaUrlRaw) : null;
+
+  return (
+    <div
+      role="banner"
+      aria-live="polite"
+      aria-label={`${notification.title}. ${notification.message}`}
+      className={cn(
+        "fixed right-0 top-0 z-50 flex h-[var(--header-height)] shrink-0 items-center border-b border-border bg-muted px-4 text-sm transition-[left] duration-300",
+        "left-0 md:left-16",
+        !sidebarCollapsed && "md:left-72",
+        className
+      )}
+    >
+      <div className="flex min-w-0 flex-1 items-center justify-center gap-x-3 gap-y-1 px-8 pr-12 text-center sm:px-10 sm:pr-14">
+        <p className="max-w-[min(100%,36rem)] truncate text-muted-foreground">
+          {notification.message}
+        </p>
+        {ctaText && ctaTarget && (
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto shrink-0 p-0 text-primary underline decoration-primary underline-offset-4"
+            onClick={() => {
+              if (ctaTarget.kind === "internal") {
+                router.push(ctaTarget.path);
+                return;
+              }
+              window.open(ctaTarget.href, "_blank", "noopener,noreferrer");
+            }}
+          >
+            {ctaText}
+          </Button>
+        )}
+      </div>
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        onClick={onDismiss}
+        aria-label="Dismiss announcement"
+        className="absolute right-3 top-1/2 shrink-0 -translate-y-1/2 text-muted-foreground hover:text-foreground sm:right-4"
+      >
+        <X className="size-4" />
+      </Button>
+    </div>
+  );
+}
