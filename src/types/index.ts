@@ -42,7 +42,7 @@ export interface Order {
   extra_data?: Record<string, string | number | boolean>;
   user_public_id?: string | null;
   email: string;
-  status: "pending" | "confirmed" | "cancelled";
+  status: string;
   subtotal?: string;
   shipping_cost?: string;
   shipping_zone_public_id?: string | null;
@@ -60,6 +60,7 @@ export interface Order {
   courier_tracking_code?: string;
   courier_status?: string;
   sent_to_courier?: boolean;
+  customer_confirmation_sent_at?: string | null;
   items?: OrderItem[];
   items_count?: number;
   created_at: string;

@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  useCallback,
+  type FormEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { useExtraFieldsSchema } from "@/hooks/useExtraFieldsSchema";
@@ -49,6 +56,7 @@ export function useNewOrder() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState<OrderForm>({
     shipping_name: "",
@@ -62,7 +70,14 @@ export function useNewOrder() {
     shipping_method: "",
   });
 
-  const [extraFields, setExtraFields] = useState<ExtraFieldValues>({});
+  const [extraFields, setExtraFieldsState] = useState<ExtraFieldValues>({});
+  const setExtraFields = useCallback(
+    (value: ExtraFieldValues | ((prev: ExtraFieldValues) => ExtraFieldValues)) => {
+      setFieldErrors({});
+      setExtraFieldsState(value);
+    },
+    [],
+  );
   const [extraFieldsErrors, setExtraFieldsErrors] = useState<Record<string, string>>({});
   const { schema: extraFieldsSchema } = useExtraFieldsSchema("order");
 
@@ -154,6 +169,7 @@ export function useNewOrder() {
   }
 
   function addProduct(product: Product) {
+    setFieldErrors({});
     ensureVariantsLoaded(product.public_id);
     setItems((prev) => [
       ...prev,
@@ -177,16 +193,19 @@ export function useNewOrder() {
     field: K,
     value: OrderItemRow[K]
   ) {
+    setFieldErrors({});
     setItems((prev) =>
       prev.map((item) => (item.key === key ? { ...item, [field]: value } : item))
     );
   }
 
   function removeItem(key: number) {
+    setFieldErrors({});
     setItems((prev) => prev.filter((item) => item.key !== key));
   }
 
   function updateForm(patch: Partial<OrderForm>) {
+    setFieldErrors({});
     setForm((prev) => ({ ...prev, ...patch }));
   }
 
@@ -204,23 +223,22 @@ export function useNewOrder() {
     e.preventDefault();
     const validation = parseValidation(orderCreateSchema, { ...form, items });
     if (!validation.success) {
-      setError(
-        validation.errors.items ??
-          validation.errors.shipping_name ??
-          validation.errors.email ??
-          validation.errors.phone ??
-          "Please correct the highlighted fields."
-      );
+      setFieldErrors(validation.errors);
+      const firstMessage =
+        Object.values(validation.errors)[0] ?? "Please correct the highlighted fields.";
+      setError(firstMessage);
       return;
     }
 
     const extraErrors = validateRequiredExtraFields(schemaWithNames, extraFields);
     if (Object.keys(extraErrors).length > 0) {
       setExtraFieldsErrors(extraErrors);
+      setFieldErrors({});
       setError("Please fill in all required extra fields.");
       return;
     }
     setExtraFieldsErrors({});
+    setFieldErrors({});
     setSaving(true);
     setError("");
 
@@ -249,6 +267,7 @@ export function useNewOrder() {
   return {
     saving,
     error,
+    fieldErrors,
     form,
     updateForm,
     extraFields,

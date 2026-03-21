@@ -3,6 +3,7 @@ import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "sonner";
 
 const openSans = Open_Sans({
   subsets: ["latin"],
@@ -24,7 +25,10 @@ export default function RootLayout({
     <html lang="en" className={openSans.variable} data-theme="light">
       <body className="antialiased font-sans">
         <TooltipProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            <Toaster richColors position="top-center" />
+          </AuthProvider>
         </TooltipProvider>
       </body>
     </html>

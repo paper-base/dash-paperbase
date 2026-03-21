@@ -1,9 +1,11 @@
- "use client";
+"use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useBranding } from "@/context/BrandingContext";
 import { useEnabledApps } from "@/hooks/useEnabledApps";
+import { useFeatures } from "@/hooks/useFeatures";
 import { useAutoExpire } from "@/hooks/useAutoExpire";
+import api from "@/lib/api";
 import { useAccountSettings } from "./useAccountSettings";
 import { useStoreSettings } from "./useStoreSettings";
 import { useDeleteStore } from "./useDeleteStore";
@@ -25,13 +27,15 @@ const defaultPrefs: NotificationPrefs = {
   carts: true,
   wishlist: true,
   contacts: true,
-  emailMeOnOrderReceived: true,
-  emailCustomerOnOrderConfirmed: true,
+  emailMeOnOrderReceived: false,
+  emailCustomerOnOrderConfirmed: false,
 };
 
 export default function useSettingsPageController() {
   const { branding, isLoading, refetch } = useBranding();
   const enabledApps = useEnabledApps();
+  const { hasFeature, loading: orderEmailFeatureLoading } = useFeatures();
+  const orderEmailNotificationsEnabled = hasFeature("order_email_notifications");
 
   // ── Focused sub-hooks ──────────────────────────────────────────────────────
   const account = useAccountSettings({ onSaveSuccess: refetch });
@@ -55,6 +59,7 @@ export default function useSettingsPageController() {
   // ── Notification preferences ───────────────────────────────────────────────
   const [notificationPrefs, setNotificationPrefs] =
     useState<NotificationPrefs>(defaultPrefs);
+  const [emailPrefsSaving, setEmailPrefsSaving] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -62,17 +67,79 @@ export default function useSettingsPageController() {
       const raw = window.localStorage.getItem(NOTIFICATION_PREFS_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw) as Partial<NotificationPrefs>;
-      setNotificationPrefs({ ...defaultPrefs, ...parsed });
+      setNotificationPrefs((prev) => ({
+        ...prev,
+        orders: parsed.orders ?? prev.orders,
+        carts: parsed.carts ?? prev.carts,
+        wishlist: parsed.wishlist ?? prev.wishlist,
+        contacts: parsed.contacts ?? prev.contacts,
+      }));
     } catch {
       // ignore and keep defaults
     }
   }, []);
 
+  useEffect(() => {
+    if (isLoading || !branding) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await api.get<{
+          email_notify_owner_on_order_received: boolean;
+          email_customer_on_order_confirmed: boolean;
+        }>("stores/settings/current/");
+        if (cancelled) return;
+        setNotificationPrefs((prev) => ({
+          ...prev,
+          emailMeOnOrderReceived: data.email_notify_owner_on_order_received,
+          emailCustomerOnOrderConfirmed: data.email_customer_on_order_confirmed,
+        }));
+      } catch {
+        // keep email defaults from state
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoading, branding]);
+
+  const updateEmailNotificationPref = useCallback(
+    async (key: "emailMeOnOrderReceived" | "emailCustomerOnOrderConfirmed", value: boolean) => {
+      if (!orderEmailNotificationsEnabled) return;
+      const patchKey =
+        key === "emailMeOnOrderReceived"
+          ? "email_notify_owner_on_order_received"
+          : "email_customer_on_order_confirmed";
+      setEmailPrefsSaving(true);
+      try {
+        await api.patch("stores/settings/current/", { [patchKey]: value });
+        setNotificationPrefs((prev) => ({ ...prev, [key]: value }));
+      } catch {
+        // keep previous values
+      } finally {
+        setEmailPrefsSaving(false);
+      }
+    },
+    [orderEmailNotificationsEnabled],
+  );
+
   function updateNotificationPref(key: keyof NotificationPrefs, value: boolean) {
+    if (key === "emailMeOnOrderReceived" || key === "emailCustomerOnOrderConfirmed") {
+      void updateEmailNotificationPref(key, value);
+      return;
+    }
     setNotificationPrefs((prev) => {
       const next = { ...prev, [key]: value };
       if (typeof window !== "undefined") {
-        window.localStorage.setItem(NOTIFICATION_PREFS_KEY, JSON.stringify(next));
+        window.localStorage.setItem(
+          NOTIFICATION_PREFS_KEY,
+          JSON.stringify({
+            orders: next.orders,
+            carts: next.carts,
+            wishlist: next.wishlist,
+            contacts: next.contacts,
+          }),
+        );
       }
       return next;
     });
@@ -120,6 +187,9 @@ export default function useSettingsPageController() {
     // Notifications
     notificationPrefs,
     updateNotificationPref,
+    orderEmailNotificationsEnabled,
+    orderEmailFeatureLoading,
+    emailPrefsSaving,
 
     // Delete store
     deleteEmailInput: deleteStore.emailInput,

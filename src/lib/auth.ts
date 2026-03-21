@@ -10,7 +10,7 @@ export interface LoginResponse {
 
 export interface PendingTwoFactorResponse {
   ["2fa_required"]: true;
-  challenge_id: string;
+  challenge_public_id: string;
   flow: "login" | "register" | "switch_store";
 }
 
@@ -76,7 +76,7 @@ export async function verifyTwoFactorChallenge(
   const { data } = await axios.post<LoginResponse>(
     `${BASE_URL}/auth/2fa/challenge/verify/`,
     {
-      challenge_id: challengeId,
+      challenge_public_id: challengeId,
       code,
     }
   );

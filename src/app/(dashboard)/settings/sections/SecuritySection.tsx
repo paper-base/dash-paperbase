@@ -1,6 +1,8 @@
  "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
@@ -12,6 +14,10 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
   const [setupCode, setSetupCode] = useState("");
   const [disablePassword, setDisablePassword] = useState("");
   const [disableCode, setDisableCode] = useState("");
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [recoveryRequestLoading, setRecoveryRequestLoading] = useState(false);
+  const [recoveryVerifyLoading, setRecoveryVerifyLoading] = useState(false);
+  const [recoveryMessage, setRecoveryMessage] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -61,6 +67,42 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
     }
   }
 
+  async function requestRecoveryCode() {
+    setRecoveryRequestLoading(true);
+    setRecoveryMessage("");
+    try {
+      await api.post("auth/2fa/recovery/request/");
+      setRecoveryMessage("Recovery code sent to your email");
+    } catch {
+      setRecoveryMessage("Could not send recovery code. Try again later.");
+    } finally {
+      setRecoveryRequestLoading(false);
+    }
+  }
+
+  async function verifyRecoveryAndDisable() {
+    setRecoveryVerifyLoading(true);
+    setRecoveryMessage("");
+    try {
+      const { data } = await api.post<{
+        is_enabled: boolean;
+        detail?: string;
+      }>("auth/2fa/recovery/verify/", { code: recoveryCode });
+      setIsEnabled(!!data.is_enabled);
+      setRecoveryCode("");
+      setDisablePassword("");
+      setDisableCode("");
+      setRecoveryMessage("");
+      toast.success(
+        data.detail ?? "2FA has been disabled successfully."
+      );
+    } catch {
+      setRecoveryMessage("Invalid or expired recovery code.");
+    } finally {
+      setRecoveryVerifyLoading(false);
+    }
+  }
+
   async function disable2FA() {
     setLoading(true);
     setMessage("");
@@ -72,7 +114,8 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
       setIsEnabled(false);
       setDisablePassword("");
       setDisableCode("");
-      setMessage("2FA disabled successfully.");
+      setMessage("");
+      toast.success("2FA disabled. Confirmation email sent.");
     } catch {
       setMessage("Failed to disable 2FA. Check password and OTP code.");
     } finally {
@@ -120,24 +163,63 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
             ) : null}
           </div>
         ) : (
-          <div className="space-y-3 rounded-lg border border-border p-4">
-            <p className="text-sm text-muted-foreground">
-              To disable 2FA, confirm with your password and current OTP.
-            </p>
-            <Input
-              type="password"
-              value={disablePassword}
-              onChange={(e) => setDisablePassword(e.target.value)}
-              placeholder="Current password"
-            />
-            <Input
-              value={disableCode}
-              onChange={(e) => setDisableCode(e.target.value)}
-              placeholder="Current OTP code"
-            />
-            <Button type="button" variant="destructive" onClick={disable2FA} disabled={loading}>
-              Disable 2FA
-            </Button>
+          <div className="space-y-6">
+            <div className="space-y-3 rounded-lg border border-border p-4">
+              <p className="text-sm text-muted-foreground">
+                To disable 2FA, confirm with your password and current OTP.
+              </p>
+              <Input
+                type="password"
+                value={disablePassword}
+                onChange={(e) => setDisablePassword(e.target.value)}
+                placeholder="Current password"
+              />
+              <Input
+                value={disableCode}
+                onChange={(e) => setDisableCode(e.target.value)}
+                placeholder="Current OTP code"
+              />
+              <Button type="button" variant="destructive" onClick={disable2FA} disabled={loading}>
+                Disable 2FA
+              </Button>
+            </div>
+
+            <div className="space-y-3 rounded-lg border border-border p-4">
+              <h3 className="text-sm font-medium text-foreground">
+                Can&apos;t access your 2FA device?
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                If you cannot access your authenticator device, you can request a recovery code via
+                email.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={requestRecoveryCode}
+                disabled={recoveryRequestLoading || recoveryVerifyLoading}
+              >
+                {recoveryRequestLoading ? "Sending…" : "Send recovery code"}
+              </Button>
+              <div className="space-y-2">
+                <Input
+                  value={recoveryCode}
+                  onChange={(e) => setRecoveryCode(e.target.value)}
+                  placeholder="Recovery code"
+                  autoComplete="one-time-code"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={verifyRecoveryAndDisable}
+                  disabled={recoveryVerifyLoading || !recoveryCode.trim()}
+                >
+                  {recoveryVerifyLoading ? "Verifying…" : "Verify & Disable 2FA"}
+                </Button>
+              </div>
+              {recoveryMessage ? (
+                <p className="text-sm text-muted-foreground">{recoveryMessage}</p>
+              ) : null}
+            </div>
           </div>
         )}
         {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}

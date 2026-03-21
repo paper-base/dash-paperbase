@@ -8,13 +8,21 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
+import { cn } from "@/lib/utils";
 import { useNewOrder, DELIVERY_OPTIONS } from "./useNewOrder";
+
+function firstLineItemError(fieldErrors: Record<string, string>): string | undefined {
+  if (fieldErrors.items) return fieldErrors.items;
+  const key = Object.keys(fieldErrors).find((k) => k.startsWith("items."));
+  return key ? fieldErrors[key] : undefined;
+}
 
 export default function NewOrderPage() {
   const { currencySymbol } = useBranding();
   const {
     saving,
     error,
+    fieldErrors,
     form,
     updateForm,
     extraFields,
@@ -109,6 +117,8 @@ export default function NewOrderPage() {
                   <Select
                     value={form.shipping_method}
                     onChange={(e) => updateForm({ shipping_method: e.target.value })}
+                    aria-invalid={!!fieldErrors.shipping_method}
+                    className={cn(fieldErrors.shipping_method && "border-destructive")}
                   >
                     <option value="">Auto (cheapest match)</option>
                     {shippingMethods.map((m) => (
@@ -123,6 +133,8 @@ export default function NewOrderPage() {
                   <Select
                     value={form.shipping_zone}
                     onChange={(e) => updateForm({ shipping_zone: e.target.value })}
+                    aria-invalid={!!fieldErrors.shipping_zone}
+                    className={cn(fieldErrors.shipping_zone && "border-destructive")}
                   >
                     <option value="">Auto (match by district/area)</option>
                     {shippingZones.map((z) => (
@@ -133,62 +145,87 @@ export default function NewOrderPage() {
                   </Select>
                 </FormField>
 
-                <FormField label="Name" required>
+                <FormField label="Name" required error={fieldErrors.shipping_name}>
                   <Input
+                    id="order-shipping-name"
                     type="text"
                     required
                     value={form.shipping_name}
                     onChange={(e) => updateForm({ shipping_name: e.target.value })}
                     placeholder="Customer name"
+                    aria-invalid={!!fieldErrors.shipping_name}
+                    className={cn(fieldErrors.shipping_name && "border-destructive")}
                   />
                 </FormField>
 
-                <FormField label="Phone" required>
+                <FormField label="Phone" required error={fieldErrors.phone}>
                   <Input
+                    id="order-phone"
                     type="tel"
                     required
                     value={form.phone}
                     onChange={(e) => updateForm({ phone: e.target.value })}
                     placeholder="01XXXXXXXXX"
+                    aria-invalid={!!fieldErrors.phone}
+                    className={cn(fieldErrors.phone && "border-destructive")}
                   />
                 </FormField>
 
-                <FormField label="Email">
+                <FormField label="Email" required error={fieldErrors.email}>
                   <Input
+                    id="order-email"
                     type="email"
                     value={form.email}
                     onChange={(e) => updateForm({ email: e.target.value })}
                     placeholder="customer@example.com"
+                    aria-invalid={!!fieldErrors.email}
+                    className={cn(fieldErrors.email && "border-destructive")}
                   />
                 </FormField>
 
-                <FormField label="District">
+                <FormField label="District" required error={fieldErrors.district}>
                   <Input
+                    id="order-district"
                     type="text"
                     value={form.district}
                     onChange={(e) => updateForm({ district: e.target.value })}
                     placeholder="Dhaka"
+                    aria-invalid={!!fieldErrors.district}
+                    className={cn(fieldErrors.district && "border-destructive")}
                   />
                 </FormField>
 
                 <div className="sm:col-span-2">
-                  <FormField label="Address" required>
+                  <FormField
+                    label="Address"
+                    required
+                    htmlFor="order-shipping-address"
+                    error={fieldErrors.shipping_address}
+                  >
                     <textarea
+                      id="order-shipping-address"
                       required
                       rows={2}
                       value={form.shipping_address}
                       onChange={(e) => updateForm({ shipping_address: e.target.value })}
-                      className="input"
+                      className={cn(
+                        "input",
+                        fieldErrors.shipping_address && "border-destructive aria-invalid:ring-destructive/20",
+                      )}
                       placeholder="Full shipping address"
+                      aria-invalid={!!fieldErrors.shipping_address}
                     />
                   </FormField>
                 </div>
 
-                <FormField label="Delivery area" required>
+                <FormField label="Delivery area" required error={fieldErrors.delivery_area}>
                   <Select
+                    id="order-delivery-area"
                     required
                     value={form.delivery_area}
                     onChange={(e) => updateForm({ delivery_area: e.target.value })}
+                    aria-invalid={!!fieldErrors.delivery_area}
+                    className={cn(fieldErrors.delivery_area && "border-destructive")}
                   >
                     {DELIVERY_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -198,11 +235,14 @@ export default function NewOrderPage() {
                   </Select>
                 </FormField>
 
-                <FormField label="Tracking number">
+                <FormField label="Tracking number" error={fieldErrors.tracking_number}>
                   <Input
+                    id="order-tracking"
                     value={form.tracking_number}
                     onChange={(e) => updateForm({ tracking_number: e.target.value })}
                     placeholder="Optional"
+                    aria-invalid={!!fieldErrors.tracking_number}
+                    className={cn(fieldErrors.tracking_number && "border-destructive")}
                   />
                 </FormField>
               </div>
@@ -280,6 +320,12 @@ export default function NewOrderPage() {
                 )}
               </div>
 
+              {firstLineItemError(fieldErrors) && (
+                <p className="text-xs text-destructive" role="alert">
+                  {firstLineItemError(fieldErrors)}
+                </p>
+              )}
+
               <div className="overflow-x-auto border border-border/70">
                 <table className="w-full text-left text-sm">
                   <thead>
@@ -302,7 +348,7 @@ export default function NewOrderPage() {
                         </td>
                       </tr>
                     ) : (
-                      items.map((item) => {
+                      items.map((item, index) => {
                         const variants = variantsByProductId[item.product_id] ?? [];
                         const loadingVariants =
                           variantsLoadingByProductId[item.product_id] ?? false;
@@ -310,18 +356,30 @@ export default function NewOrderPage() {
                           item.variant_public_id != null
                             ? variants.find((v) => v.public_id === item.variant_public_id) ?? null
                             : null;
+                        const rowVariantErr =
+                          fieldErrors[`items.${index}.variant_public_id`];
+                        const rowProductErr = fieldErrors[`items.${index}.product_id`];
+                        const rowQtyErr = fieldErrors[`items.${index}.quantity`];
+                        const rowPriceErr = fieldErrors[`items.${index}.price`];
                         return (
                           <tr key={item.key} className="bg-card">
                             <td className="px-3 py-2">
                               <p className="truncate font-medium text-foreground">
                                 {item.product_name}
                               </p>
+                              {rowProductErr && (
+                                <p className="mt-1 text-xs text-destructive">{rowProductErr}</p>
+                              )}
                             </td>
                             <td className="px-3 py-2">
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
                                 <Select
                                   size="sm"
-                                  className="w-[190px]"
+                                  className={cn(
+                                    "w-[190px]",
+                                    rowVariantErr && "border-destructive",
+                                  )}
                                   value={item.variant_public_id ?? ""}
                                   onFocus={() =>
                                     ensureVariantsLoaded(item.product_id)
@@ -335,6 +393,7 @@ export default function NewOrderPage() {
                                     );
                                   }}
                                   disabled={loadingVariants}
+                                  aria-invalid={!!rowVariantErr}
                                 >
                                   <option value="">
                                     {loadingVariants ? "Loading…" : "Default"}
@@ -353,6 +412,10 @@ export default function NewOrderPage() {
                                   </span>
                                 )}
                               </div>
+                                {rowVariantErr && (
+                                  <p className="text-xs text-destructive">{rowVariantErr}</p>
+                                )}
+                              </div>
                             </td>
                             <td className="px-3 py-2">
                               <Input
@@ -367,8 +430,15 @@ export default function NewOrderPage() {
                                     Math.max(1, parseInt(e.target.value) || 1)
                                   )
                                 }
-                                className="w-20 text-center"
+                                className={cn(
+                                  "w-20 text-center",
+                                  rowQtyErr && "border-destructive",
+                                )}
+                                aria-invalid={!!rowQtyErr}
                               />
+                              {rowQtyErr && (
+                                <p className="mt-1 text-xs text-destructive">{rowQtyErr}</p>
+                              )}
                             </td>
                             <td className="px-3 py-2">
                               <Input
@@ -380,8 +450,12 @@ export default function NewOrderPage() {
                                 onChange={(e) =>
                                   updateItem(item.key, "price", e.target.value)
                                 }
-                                className="w-28"
+                                className={cn("w-28", rowPriceErr && "border-destructive")}
+                                aria-invalid={!!rowPriceErr}
                               />
+                              {rowPriceErr && (
+                                <p className="mt-1 text-xs text-destructive">{rowPriceErr}</p>
+                              )}
                             </td>
                             <td className="px-3 py-2 text-right">
                               <Button

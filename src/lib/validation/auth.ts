@@ -16,3 +16,13 @@ export const registerSchema = z
     message: "Passwords do not match.",
     path: ["passwordConfirm"],
   });
+
+export const passwordResetConfirmSchema = z
+  .object({
+    newPassword: passwordSchema,
+    newPasswordConfirm: passwordSchema,
+  })
+  .refine((data) => data.newPassword === data.newPasswordConfirm, {
+    message: "Passwords do not match.",
+    path: ["newPasswordConfirm"],
+  });

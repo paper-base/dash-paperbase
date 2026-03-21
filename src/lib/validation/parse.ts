@@ -15,8 +15,12 @@ export function parseValidation<TSchema extends z.ZodTypeAny>(
 
   const errors: Record<string, string> = {};
   for (const issue of result.error.issues) {
-    const field = issue.path[0];
-    const key = typeof field === "string" ? field : "form";
+    const key =
+      issue.path.length === 0
+        ? "form"
+        : issue.path
+            .map((segment) => (typeof segment === "number" ? String(segment) : segment))
+            .join(".");
     if (!errors[key]) {
       errors[key] = issue.message;
     }

@@ -19,10 +19,16 @@ const PUBLIC_PATHS = [
   "/onboarding",
   "/reset-password",
   "/verify-email",
+  "/auth",
+  "/order",
+  "/billing",
 ];
 
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some(
+  if (pathname === "/auth" || pathname.startsWith("/auth/")) {
+    return true;
+  }
+  return PUBLIC_PATHS.filter((p) => p !== "/auth").some(
     (p) => pathname === p || pathname.startsWith(p + "/")
   );
 }

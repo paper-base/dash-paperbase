@@ -1,5 +1,7 @@
  "use client";
 
+import { Lock } from "lucide-react";
+
 type NotificationPrefs = {
   orders: boolean;
   carts: boolean;
@@ -13,11 +15,19 @@ export default function NotificationsSection({
   hidden,
   notificationPrefs,
   onUpdatePref,
+  orderEmailNotificationsEnabled,
+  orderEmailFeatureLoading,
+  emailPrefsSaving,
 }: {
   hidden: boolean;
   notificationPrefs: NotificationPrefs;
   onUpdatePref: (key: keyof NotificationPrefs, value: boolean) => void;
+  orderEmailNotificationsEnabled: boolean;
+  orderEmailFeatureLoading: boolean;
+  emailPrefsSaving: boolean;
 }) {
+  const emailLocked =
+    orderEmailFeatureLoading || !orderEmailNotificationsEnabled || emailPrefsSaving;
   return (
     <section
       id="panel-notifications"
@@ -69,23 +79,39 @@ export default function NotificationsSection({
         </div>
 
         <div className="border-t border-border pt-4">
-          <label className="text-sm font-medium text-foreground">Email notifications</label>
-          <p className="mb-3 text-xs text-muted-foreground">Control when emails are sent for order events.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-sm font-medium text-foreground">Email notifications</label>
+            {!orderEmailFeatureLoading && !orderEmailNotificationsEnabled && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground">
+                <Lock className="size-3 shrink-0" aria-hidden />
+                Premium
+              </span>
+            )}
+          </div>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Control when emails are sent for order events. Order email alerts are a Premium feature.
+          </p>
 
           <div className="space-y-3">
-            <label className="flex items-center justify-between gap-4 text-sm">
+            <label
+              className={`flex items-center justify-between gap-4 text-sm ${emailLocked ? "cursor-not-allowed opacity-70" : ""}`}
+            >
               <span className="text-foreground">Email me when an order is received</span>
               <input
                 type="checkbox"
+                disabled={emailLocked}
                 checked={notificationPrefs.emailMeOnOrderReceived}
                 onChange={(e) => onUpdatePref("emailMeOnOrderReceived", e.target.checked)}
               />
             </label>
 
-            <label className="flex items-center justify-between gap-4 text-sm">
+            <label
+              className={`flex items-center justify-between gap-4 text-sm ${emailLocked ? "cursor-not-allowed opacity-70" : ""}`}
+            >
               <span className="text-foreground">Email customer when an order is confirmed</span>
               <input
                 type="checkbox"
+                disabled={emailLocked}
                 checked={notificationPrefs.emailCustomerOnOrderConfirmed}
                 onChange={(e) => onUpdatePref("emailCustomerOnOrderConfirmed", e.target.checked)}
               />

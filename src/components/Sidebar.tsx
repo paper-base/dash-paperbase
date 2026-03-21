@@ -281,14 +281,14 @@ function SidebarContent({
         refresh: string;
         active_store_id: string | number;
         ["2fa_required"]?: boolean;
-        challenge_id?: string;
+        challenge_public_id?: string;
       }>("auth/switch-store/", { store_id: storeId });
-      if ("2fa_required" in data && data["2fa_required"] && data.challenge_id) {
+      if ("2fa_required" in data && data["2fa_required"] && data.challenge_public_id) {
         const otpCode = window.prompt("Enter your 2FA code to switch stores:");
         if (!otpCode) {
           return;
         }
-        const verified = await verifyTwoFactorChallenge(data.challenge_id, otpCode);
+        const verified = await verifyTwoFactorChallenge(data.challenge_public_id, otpCode);
         setActiveStoreId(String(verified.active_store_id));
       } else {
         window.localStorage.setItem("access_token", data.access);

@@ -52,7 +52,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const result = await verifyTwoFactorChallenge(
-        pendingTwoFactor.challenge_id,
+        pendingTwoFactor.challenge_public_id,
         otpCode
       );
       router.push(result.active_store_id ? "/" : "/onboarding");
@@ -130,6 +130,15 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+              </div>
+
+              <div className="text-right text-sm">
+                <Link
+                  href="/auth/password-reset"
+                  className="font-medium text-foreground underline-offset-4 hover:underline"
+                >
+                  Forgot password?
+                </Link>
               </div>
             </>
           ) : (

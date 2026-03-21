@@ -41,21 +41,10 @@ const DELIVERY_OPTIONS = [
   { value: "outside", label: "Outside Dhaka City" },
 ];
 
-const STATUS_OPTIONS = [
-  { value: "pending", label: "Pending" },
-  { value: "confirmed", label: "Confirmed" },
-  { value: "processing", label: "Processing" },
-  { value: "shipped", label: "Shipped" },
-  { value: "delivered", label: "Delivered" },
-  { value: "cancelled", label: "Cancelled" },
-  { value: "returned", label: "Returned" },
-] as const;
-
 type EditForm = {
   shipping_name: string;
   phone: string;
   email: string;
-  status: string;
   shipping_address: string;
   district: string;
   delivery_area: string;
@@ -63,6 +52,24 @@ type EditForm = {
   shipping_zone: string;
   shipping_method: string;
 };
+
+function formatOrderStatus(status: string): string {
+  if (!status) return "—";
+  return status.replace(/_/g, " ");
+}
+
+function extractApiDetail(err: unknown, fallback: string): string {
+  const raw = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+  if (typeof raw === "string") return raw;
+  if (raw && typeof raw === "object") {
+    try {
+      return JSON.stringify(raw);
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
 
 function resolveImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
@@ -122,7 +129,6 @@ export default function OrderDetailPage() {
     shipping_name: "",
     phone: "",
     email: "",
-    status: "pending",
     shipping_address: "",
     district: "",
     delivery_area: "inside",
@@ -141,6 +147,7 @@ export default function OrderDetailPage() {
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [sendingToCourier, setSendingToCourier] = useState(false);
   const [courierError, setCourierError] = useState("");
+  const [courierSuccess, setCourierSuccess] = useState(false);
   const [tracking, setTracking] = useState(false);
   const [trackingDetails, setTrackingDetails] = useState<Record<string, unknown> | null>(null);
   const rightColRef = useRef<HTMLDivElement>(null);
@@ -197,7 +204,6 @@ export default function OrderDetailPage() {
       shipping_name: order.shipping_name,
       phone: order.phone,
       email: order.email,
-      status: order.status,
       shipping_address: order.shipping_address,
       district: order.district,
       delivery_area: order.delivery_area,
@@ -253,7 +259,13 @@ export default function OrderDetailPage() {
     setSaving(true);
     try {
       const payload = {
-        ...form,
+        shipping_name: form.shipping_name,
+        phone: form.phone,
+        email: form.email,
+        shipping_address: form.shipping_address,
+        district: form.district,
+        delivery_area: form.delivery_area,
+        tracking_number: form.tracking_number,
         shipping_zone: form.shipping_zone || null,
         shipping_method: form.shipping_method || null,
         items: orderItems.map((it) => ({
@@ -287,17 +299,16 @@ export default function OrderDetailPage() {
   async function handleSendToCourier() {
     if (!order || order.sent_to_courier) return;
     setCourierError("");
+    setCourierSuccess(false);
     setSendingToCourier(true);
     try {
       const { data } = await api.post<Order>(
         `admin/orders/${id}/send-to-courier/`
       );
       setOrder(data);
+      setCourierSuccess(true);
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? "Failed to send order to courier.";
-      setCourierError(msg);
+      setCourierError(extractApiDetail(err, "Failed to send order to courier."));
     } finally {
       setSendingToCourier(false);
     }
@@ -313,11 +324,18 @@ export default function OrderDetailPage() {
         courier_consignment_id: string;
         courier_tracking_code: string;
         courier_status: string;
+        order_status?: string;
         details: Record<string, unknown>;
       }>(`admin/orders/${id}/track/`);
       setTrackingDetails(data.details);
       setOrder((prev) =>
-        prev ? { ...prev, courier_status: data.courier_status } : prev
+        prev
+          ? {
+              ...prev,
+              courier_status: data.courier_status,
+              status: data.order_status ?? prev.status,
+            }
+          : prev
       );
     } catch (err) {
       console.error(err);
@@ -676,6 +694,20 @@ export default function OrderDetailPage() {
                     className="input bg-muted/50"
                   />
                 </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Order status
+                  </label>
+                  <input
+                    value={formatOrderStatus(order.status)}
+                    readOnly
+                    className="input cursor-default bg-muted/50 capitalize"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Status updates when you send to courier and when courier tracking shows
+                    handoff.
+                  </p>
+                </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -737,22 +769,6 @@ export default function OrderDetailPage() {
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Status
-                    </label>
-                    <select
-                      value={form.status}
-                      onChange={(e) => setForm({ ...form, status: e.target.value })}
-                      className="input"
-                    >
-                      {STATUS_OPTIONS.map((s) => (
-                        <option key={s.value} value={s.value}>
-                          {s.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
                       Email
@@ -866,6 +882,11 @@ export default function OrderDetailPage() {
                     <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       General Information
                     </p>
+                    <p className="mb-1">
+                      <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize text-foreground">
+                        {formatOrderStatus(order.status)}
+                      </span>
+                    </p>
                     <p className="font-medium text-foreground">
                       {order.shipping_name || "—"}
                     </p>
@@ -960,6 +981,11 @@ export default function OrderDetailPage() {
           {courierError && (
             <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {courierError}
+            </div>
+          )}
+          {courierSuccess && !courierError && (
+            <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200">
+              Order sent to courier. Confirmation email was sent to the customer.
             </div>
           )}
 

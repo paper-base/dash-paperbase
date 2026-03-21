@@ -163,16 +163,16 @@ export function useOnboarding() {
         refresh: string;
         active_store_id?: string;
         ["2fa_required"]?: boolean;
-        challenge_id?: string;
+        challenge_public_id?: string;
       }>("auth/switch-store/", { store_id: store.public_id });
 
-      if ("2fa_required" in switchData && switchData["2fa_required"] && switchData.challenge_id) {
+      if ("2fa_required" in switchData && switchData["2fa_required"] && switchData.challenge_public_id) {
         const otpCode = window.prompt("Enter your 2FA code to activate this store:");
         if (!otpCode) {
           setError("2FA code is required to switch stores.");
           return;
         }
-        await verifyTwoFactorChallenge(switchData.challenge_id, otpCode);
+        await verifyTwoFactorChallenge(switchData.challenge_public_id, otpCode);
       } else {
         localStorage.setItem("access_token", switchData.access);
         localStorage.setItem("refresh_token", switchData.refresh);

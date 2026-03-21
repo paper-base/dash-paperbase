@@ -7,27 +7,17 @@ import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import { useBranding } from "@/context/BrandingContext";
 import type { Order, PaginatedResponse } from "@/types";
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox";
-
-const STATUS_OPTIONS = [
-  { value: "pending", label: "Pending" },
-  { value: "confirmed", label: "Confirmed" },
-  { value: "cancelled", label: "Cancelled" },
-] as const;
-
-type OrderStatus = (typeof STATUS_OPTIONS)[number]["value"];
 
 function formatDate(value: string): string {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   const pad = (n: number) => n.toString().padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function formatStatus(status: string): string {
+  if (!status) return "—";
+  return status.replace(/_/g, " ");
 }
 
 export default function OrdersPage() {
@@ -39,7 +29,6 @@ export default function OrdersPage() {
   const [count, setCount] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const fetchOrders = useCallback(() => {
@@ -77,20 +66,6 @@ export default function OrdersPage() {
       setSelectedIds(new Set(orders.map((o) => o.public_id)));
     }
   };
-
-  async function handleStatusChange(orderId: string, newStatus: OrderStatus) {
-    setUpdatingStatusId(orderId);
-    try {
-      await api.patch(`admin/orders/${orderId}/`, { status: newStatus });
-      setOrders((prev) =>
-        prev.map((o) => (o.public_id === orderId ? { ...o, status: newStatus } : o))
-      );
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setUpdatingStatusId(null);
-    }
-  }
 
   async function handleDeleteSelected() {
     if (selectedIds.size === 0) return;
@@ -205,33 +180,9 @@ export default function OrdersPage() {
                       {order.phone || "—"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <Combobox
-                        value={order.status}
-                        onValueChange={(value) => {
-                          if (!value) return;
-                          handleStatusChange(order.public_id, value);
-                        }}
-                        disabled={updatingStatusId === order.public_id}
-                      >
-                        <ComboboxInput
-                          placeholder="Select status"
-                          showClear={false}
-                          className="w-[110px]"
-                          inputClassName="cursor-pointer caret-transparent text-xs font-medium capitalize"
-                        />
-                        <ComboboxContent>
-                          <ComboboxList>
-                            {STATUS_OPTIONS.map((opt) => (
-                              <ComboboxItem key={opt.value} value={opt.value}>
-                                <span className="capitalize">{opt.label}</span>
-                              </ComboboxItem>
-                            ))}
-                          </ComboboxList>
-                        </ComboboxContent>
-                      </Combobox>
-                      {updatingStatusId === order.public_id && (
-                        <span className="ml-1.5 inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-                      )}
+                      <span className="text-xs font-medium capitalize text-foreground">
+                        {formatStatus(order.status)}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-foreground whitespace-nowrap">
                       {currencySymbol}{Number(order.total).toLocaleString()}

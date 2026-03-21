@@ -62,6 +62,9 @@ export default function SettingsPage() {
     setDynamicFieldsMessage,
     notificationPrefs,
     updateNotificationPref,
+    orderEmailNotificationsEnabled,
+    orderEmailFeatureLoading,
+    emailPrefsSaving,
     handleAccountSubmit,
     handleStoreSubmit,
     deleteEmailInput,
@@ -206,6 +209,9 @@ export default function SettingsPage() {
             hidden={activeSection !== "notifications"}
             notificationPrefs={notificationPrefs}
             onUpdatePref={updateNotificationPref}
+            orderEmailNotificationsEnabled={orderEmailNotificationsEnabled}
+            orderEmailFeatureLoading={orderEmailFeatureLoading}
+            emailPrefsSaving={emailPrefsSaving}
           />
 
           {/* Security section */}
