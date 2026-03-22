@@ -104,7 +104,7 @@
     --chart-products: 221 83% 53%;
     --chart-carts: 142 76% 36%;
     --chart-wishlist: 38 92% 50%;
-    --chart-contacts: 0 84% 60%;
+    --chart-support-tickets: 0 84% 60%;
 
     /* Semantic aliases (reference HSL tokens above) */
     --bg-primary: hsl(var(--background));
@@ -149,7 +149,7 @@
     --chart-products: 221 83% 66%;
     --chart-carts: 142 76% 48%;
     --chart-wishlist: 38 92% 60%;
-    --chart-contacts: 0 84% 70%;
+    --chart-support-tickets: 0 84% 70%;
 
     --bg-primary: hsl(var(--background));
     --bg-secondary: hsl(var(--muted));

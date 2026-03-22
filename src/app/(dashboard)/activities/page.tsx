@@ -11,7 +11,7 @@ const ENTITY_OPTIONS = [
   { value: "category", label: "Category" },
   { value: "brand", label: "Brand" },
   { value: "notification", label: "Notification" },
-  { value: "contact", label: "Contact" },
+  { value: "support_ticket", label: "Support ticket" },
 ] as const;
 
 const ACTION_OPTIONS = [
@@ -69,7 +69,7 @@ export default function ActivitiesPage() {
             Activities {count > 0 ? `(${count})` : ""}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Admin actions across products, orders, contacts, notifications and more.
+            Admin actions across products, orders, support tickets, notifications and more.
           </p>
         </div>
       </div>

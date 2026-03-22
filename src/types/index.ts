@@ -171,13 +171,29 @@ export interface Notification {
   updated_at: string;
 }
 
-export interface ContactSubmission {
+export interface SupportTicketAttachment {
   public_id: string;
-  name: string;
-  phone: string;
-  email: string;
-  message: string;
+  file: string;
   created_at: string;
+}
+
+/** Admin API: support ticket (matches AdminSupportTicketSerializer). */
+export interface SupportTicket {
+  public_id: string;
+  store_public_id: string;
+  name: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+  order_number: string | null;
+  category: string;
+  priority: string;
+  status: string;
+  internal_notes: string;
+  attachments: SupportTicketAttachment[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DashboardStats {
@@ -195,7 +211,7 @@ export interface DashboardStats {
   };
   categories: number;
   subcategories: number;
-  contacts: number;
+  support_tickets: number;
   notifications: number;
   carts: number;
   wishlist: number;

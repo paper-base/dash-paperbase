@@ -17,7 +17,7 @@ type NotificationPrefs = {
   orders: boolean;
   carts: boolean;
   wishlist: boolean;
-  contacts: boolean;
+  supportTickets: boolean;
   emailMeOnOrderReceived: boolean;
   emailCustomerOnOrderConfirmed: boolean;
 };
@@ -26,7 +26,7 @@ const defaultPrefs: NotificationPrefs = {
   orders: true,
   carts: true,
   wishlist: true,
-  contacts: true,
+  supportTickets: true,
   emailMeOnOrderReceived: false,
   emailCustomerOnOrderConfirmed: false,
 };
@@ -72,7 +72,7 @@ export default function useSettingsPageController() {
         orders: parsed.orders ?? prev.orders,
         carts: parsed.carts ?? prev.carts,
         wishlist: parsed.wishlist ?? prev.wishlist,
-        contacts: parsed.contacts ?? prev.contacts,
+        supportTickets: parsed.supportTickets ?? prev.supportTickets,
       }));
     } catch {
       // ignore and keep defaults
@@ -137,7 +137,7 @@ export default function useSettingsPageController() {
             orders: next.orders,
             carts: next.carts,
             wishlist: next.wishlist,
-            contacts: next.contacts,
+            supportTickets: next.supportTickets,
           }),
         );
       }

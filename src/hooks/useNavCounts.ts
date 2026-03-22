@@ -52,7 +52,7 @@ export function useNavCounts() {
       wishlist: stats.wishlist,
       categories: stats.categories,
       brands: 0,
-      contacts: stats.contacts,
+      supportTickets: stats.support_tickets,
     },
     formatCount,
   };

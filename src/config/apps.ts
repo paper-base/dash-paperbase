@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   BarChart3,
   Truck,
+  Ticket,
 } from "lucide-react";
 
 export interface NavCounts {
@@ -25,7 +26,7 @@ export interface NavCounts {
   carts: number;
   wishlist: number;
   categories: number;
-  contacts: number;
+  supportTickets: number;
 }
 
 export interface AppConfig {
@@ -100,14 +101,14 @@ export const APP_CONFIG: Record<string, AppConfig> = {
     countKey: "categories",
     parentId: "catalog",
   },
-  contacts: {
-    id: "contacts",
-    label: "Contacts",
-    icon: Users,
-    description: "Contact form submissions and inquiries",
+  support_tickets: {
+    id: "support_tickets",
+    label: "Support tickets",
+    icon: Ticket,
+    description: "Customer support tickets and inquiries",
     essential: false,
-    href: "/contacts",
-    countKey: "contacts",
+    href: "/support-tickets",
+    countKey: "supportTickets",
     parentId: "more",
   },
   cta: {
@@ -218,7 +219,7 @@ export const OPTIONAL_APP_IDS = [
   "carts",
   "wishlist",
   "categories",
-  "contacts",
+  "support_tickets",
   "cta",
   "reviews",
   "coupons",
@@ -251,7 +252,7 @@ export const MAIN_NAV_APP_IDS = [
 ] as const;
 
 export const MORE_APP_IDS = [
-  "contacts",
+  "support_tickets",
   "activities",
   "reviews",
   "coupons",

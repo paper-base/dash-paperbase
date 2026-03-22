@@ -50,6 +50,7 @@ import {
   APP_CONFIG,
   CATALOG_SUB_APP_IDS,
   MORE_APP_IDS,
+  type NavCounts,
 } from "@/config/apps";
 import api from "@/lib/api";
 import { verifyTwoFactorChallenge } from "@/lib/auth";
@@ -81,16 +82,6 @@ const HOME_NAV = {
   icon: Birdhouse,
   countKey: null as keyof NavCounts | null,
 };
-
-export interface NavCounts {
-  orders: number;
-  products: number;
-  notifications: number;
-  carts: number;
-  wishlist: number;
-  categories: number;
-  contacts: number;
-}
 
 function SidebarContent({
   collapsed,

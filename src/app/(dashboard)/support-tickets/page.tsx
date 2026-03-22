@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Undo2 } from "lucide-react";
 import { ClickableText } from "@/components/ui/clickable-text";
 import api from "@/lib/api";
-import type { ContactSubmission, PaginatedResponse } from "@/types";
+import type { SupportTicket, PaginatedResponse } from "@/types";
 
 function formatDateTime(value: string): string {
   const d = new Date(value);
@@ -16,9 +16,9 @@ function formatDateTime(value: string): string {
   return `${datePart}, ${timePart}`;
 }
 
-export default function ContactsPage() {
+export default function SupportTicketsPage() {
   const router = useRouter();
-  const [contacts, setContacts] = useState<ContactSubmission[]>([]);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [count, setCount] = useState(0);
@@ -28,11 +28,11 @@ export default function ContactsPage() {
   useEffect(() => {
     setLoading(true);
     api
-      .get<PaginatedResponse<ContactSubmission>>("admin/contacts/", {
+      .get<PaginatedResponse<SupportTicket>>("admin/support-tickets/", {
         params: { page },
       })
       .then((res) => {
-        setContacts(res.data.results);
+        setTickets(res.data.results);
         setCount(res.data.count);
         setHasNext(!!res.data.next);
       })
@@ -41,10 +41,10 @@ export default function ContactsPage() {
   }, [page]);
 
   async function handleDelete(publicId: string) {
-    if (!confirm("Delete this contact submission?")) return;
+    if (!confirm("Delete this support ticket?")) return;
     try {
-      await api.delete(`admin/contacts/${publicId}/`);
-      setContacts((prev) => prev.filter((c) => c.public_id !== publicId));
+      await api.delete(`admin/support-tickets/${publicId}/`);
+      setTickets((prev) => prev.filter((t) => t.public_id !== publicId));
       setCount((c) => c - 1);
     } catch (err) {
       console.error(err);
@@ -65,7 +65,7 @@ export default function ContactsPage() {
           </button>
         </div>
         <h1 className="text-2xl font-medium text-foreground">
-          Contact Submissions ({count})
+          Support tickets ({count})
         </h1>
       </div>
 
@@ -76,43 +76,46 @@ export default function ContactsPage() {
       ) : (
         <>
           <div className="space-y-3">
-            {contacts.map((contact) => (
+            {tickets.map((ticket) => (
               <div
-                key={contact.public_id}
+                key={ticket.public_id}
                 className="rounded-xl border border-dashed border-card-border bg-card p-4"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-medium text-foreground">{contact.name}</p>
+                    <p className="font-medium text-foreground">{ticket.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {contact.phone}
-                      {contact.email && ` · ${contact.email}`}
+                      {ticket.phone}
+                      {ticket.email && ` · ${ticket.email}`}
                     </p>
+                    {ticket.subject ? (
+                      <p className="mt-1 text-sm text-foreground">{ticket.subject}</p>
+                    ) : null}
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {formatDateTime(contact.created_at)}
+                      {formatDateTime(ticket.created_at)}
                     </p>
                   </div>
                   <div className="flex gap-2">
                     <ClickableText
                       onClick={() =>
-                        setExpanded(expanded === contact.public_id ? null : contact.public_id)
+                        setExpanded(expanded === ticket.public_id ? null : ticket.public_id)
                       }
                       className="text-sm"
                     >
-                      {expanded === contact.public_id ? "Hide" : "View"}
+                      {expanded === ticket.public_id ? "Hide" : "View"}
                     </ClickableText>
                     <ClickableText
                       variant="destructive"
-                      onClick={() => handleDelete(contact.public_id)}
+                      onClick={() => handleDelete(ticket.public_id)}
                       className="text-sm"
                     >
                       Delete
                     </ClickableText>
                   </div>
                 </div>
-                {expanded === contact.public_id && (
+                {expanded === ticket.public_id && (
                   <div className="mt-3 rounded-lg bg-muted p-3 text-sm text-foreground whitespace-pre-wrap">
-                    {contact.message}
+                    {ticket.message}
                   </div>
                 )}
               </div>

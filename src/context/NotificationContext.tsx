@@ -35,7 +35,7 @@ type NotificationPrefs = {
   orders: boolean;
   carts: boolean;
   wishlist: boolean;
-  contacts: boolean;
+  supportTickets: boolean;
 };
 
 function loadReadIds(): Set<string> {
@@ -85,7 +85,7 @@ function loadPrefs(): NotificationPrefs {
     orders: true,
     carts: true,
     wishlist: true,
-    contacts: true,
+    supportTickets: true,
   };
   if (typeof window === "undefined") return defaults;
   try {
@@ -111,8 +111,8 @@ function filterByPrefs(list: DashboardNotification[]): DashboardNotification[] {
           return prefs.carts;
         case "added_to_wishlist":
           return prefs.wishlist;
-        case "contact_submission":
-          return prefs.contacts;
+        case "support_ticket":
+          return prefs.supportTickets;
         default:
           return true;
       }

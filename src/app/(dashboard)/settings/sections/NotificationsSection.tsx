@@ -6,7 +6,7 @@ type NotificationPrefs = {
   orders: boolean;
   carts: boolean;
   wishlist: boolean;
-  contacts: boolean;
+  supportTickets: boolean;
   emailMeOnOrderReceived: boolean;
   emailCustomerOnOrderConfirmed: boolean;
 };
@@ -71,12 +71,12 @@ export default function NotificationsSection({
           </label>
 
           <label className="flex items-center justify-between gap-4 text-sm">
-            <span className="text-foreground">Contact form submissions</span>
+            <span className="text-foreground">Support tickets</span>
             <input
               type="checkbox"
               className="form-checkbox"
-              checked={notificationPrefs.contacts}
-              onChange={(e) => onUpdatePref("contacts", e.target.checked)}
+              checked={notificationPrefs.supportTickets}
+              onChange={(e) => onUpdatePref("supportTickets", e.target.checked)}
             />
           </label>
         </div>

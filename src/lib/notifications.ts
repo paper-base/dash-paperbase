@@ -3,7 +3,7 @@ import type {
   Order,
   Cart,
   WishlistItem,
-  ContactSubmission,
+  SupportTicket,
   PaginatedResponse,
 } from "@/types";
 
@@ -11,7 +11,7 @@ export type NotificationType =
   | "new_order"
   | "added_to_cart"
   | "added_to_wishlist"
-  | "contact_submission";
+  | "support_ticket";
 
 export interface DashboardNotification {
   /** Unique identifier for this specific notification row */
@@ -33,8 +33,8 @@ export function getNotificationLink(notification: DashboardNotification): string
       return "/carts";
     case "added_to_wishlist":
       return "/wishlist";
-    case "contact_submission":
-      return "/contacts";
+    case "support_ticket":
+      return "/support-tickets";
     default:
       return "/";
   }
@@ -44,14 +44,14 @@ export async function fetchNotifications(): Promise<DashboardNotification[]> {
   let ordersRes: { data: unknown };
   let cartRes: { data: unknown };
   let wishlistRes: { data: unknown };
-  let contactsRes: { data: unknown };
+  let supportTicketsRes: { data: unknown };
 
   try {
-    [ordersRes, cartRes, wishlistRes, contactsRes] = await Promise.all([
+    [ordersRes, cartRes, wishlistRes, supportTicketsRes] = await Promise.all([
       api.get<PaginatedResponse<Order>>("admin/orders/"),
       api.get<Cart | PaginatedResponse<Cart>>("admin/carts/"),
       api.get<PaginatedResponse<WishlistItem>>("admin/wishlist/"),
-      api.get<PaginatedResponse<ContactSubmission>>("admin/contacts/"),
+      api.get<PaginatedResponse<SupportTicket>>("admin/support-tickets/"),
     ]);
   } catch {
     // 401/403 when unauthenticated or non-staff; return empty array
@@ -106,15 +106,15 @@ export async function fetchNotifications(): Promise<DashboardNotification[]> {
     });
   }
 
-  const contacts = (contactsRes.data as PaginatedResponse<ContactSubmission>).results ?? [];
-  for (const contact of contacts) {
+  const tickets = (supportTicketsRes.data as PaginatedResponse<SupportTicket>).results ?? [];
+  for (const ticket of tickets) {
     notifications.push({
-      id: `contact-${contact.public_id}`,
-      resourceId: contact.public_id,
-      type: "contact_submission",
-      title: "New contact submission",
-      message: `${contact.name} (${contact.phone || contact.email})`,
-      createdAt: contact.created_at,
+      id: `support-ticket-${ticket.public_id}`,
+      resourceId: ticket.public_id,
+      type: "support_ticket",
+      title: "New support ticket",
+      message: `${ticket.name} (${ticket.phone || ticket.email})`,
+      createdAt: ticket.created_at,
       isRead: false,
     });
   }
@@ -129,4 +129,3 @@ export function markAllAsReadOnClient(
 ): DashboardNotification[] {
   return notifications.map((n) => ({ ...n, isRead: true }));
 }
-

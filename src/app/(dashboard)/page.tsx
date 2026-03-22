@@ -66,8 +66,8 @@ export default function DashboardPage() {
             Dashboard overview
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            High-level snapshot of orders, products, carts, wishlist and contact
-            activity. On mobile, see your most recent admin activities.
+            High-level snapshot of orders, products, carts, wishlist and support
+            ticket activity. On mobile, see your most recent admin activities.
           </p>
         </div>
         <div className="hidden items-center gap-2 sm:flex">
@@ -174,8 +174,8 @@ export default function DashboardPage() {
           subtitle="Wishlist activity"
         />
         <StatsCard
-          title="Contact submissions"
-          value={loading || !summary ? "--" : summary.totalContacts}
+          title="Support tickets"
+          value={loading || !summary ? "--" : summary.totalSupportTickets}
           accent="red"
           subtitle="Support & inquiries"
         />

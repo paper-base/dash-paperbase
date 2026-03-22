@@ -10,7 +10,7 @@ export interface DashboardAnalyticsSummary {
   totalProducts: number;
   totalCartItems: number;
   totalWishlistItems: number;
-  totalContacts: number;
+  totalSupportTickets: number;
 }
 
 export interface DashboardAnalyticsPoint {
@@ -19,7 +19,7 @@ export interface DashboardAnalyticsPoint {
   products: number;
   cartItems: number;
   wishlistItems: number;
-  contacts: number;
+  supportTickets: number;
 }
 
 export interface DashboardAnalyticsResponse {
