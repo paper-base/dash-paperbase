@@ -1,20 +1,28 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useLocale } from "next-intl";
 import api from "@/lib/api";
 import type { DashboardStats } from "@/types";
+import { formatCountLocalized } from "@/lib/locale-digits";
 
 const REFETCH_MS = 30_000; // 30 seconds
 
-function formatCount(n: number): string {
+function formatCountBase(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
 }
 
 export function useNavCounts() {
+  const locale = useLocale();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const formatCount = useCallback(
+    (n: number) => formatCountLocalized(n, locale, formatCountBase),
+    [locale]
+  );
 
   const fetchCounts = useCallback(() => {
     api
@@ -57,3 +65,4 @@ export function useNavCounts() {
     formatCount,
   };
 }
+

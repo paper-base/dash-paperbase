@@ -1,17 +1,13 @@
+import createMiddleware from "next-intl/middleware";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { routing } from "./i18n/routing";
 
 /**
- * Next.js 16 Proxy (previously Middleware) — route-level authentication guard.
- *
- * Checks for the presence of the `auth_session` cookie (set on login/register,
- * cleared on logout) and redirects unauthenticated users away from dashboard routes.
- *
- * NOTE: This cookie is NOT HttpOnly — it is a routing hint, not a security token.
- * The actual JWT is verified by the Django backend on every API call.  Migrating
- * tokens to HttpOnly cookies (served via a /api/auth proxy route) would enable
- * real cryptographic verification at the edge.
+ * Locale negotiation (next-intl) runs first, then the existing auth_session gate.
  */
+
+const intlMiddleware = createMiddleware(routing);
 
 const PUBLIC_PATHS = [
   "/login",
@@ -24,19 +20,31 @@ const PUBLIC_PATHS = [
   "/billing",
 ];
 
-function isPublicPath(pathname: string): boolean {
-  if (pathname === "/auth" || pathname.startsWith("/auth/")) {
+function stripLocalePath(pathname: string): string {
+  const match = pathname.match(/^\/(en|bn)(?=\/|$)/);
+  if (!match) return pathname;
+  const rest = pathname.slice(match[0].length);
+  if (rest === "" || rest === "/") return "/";
+  return rest.startsWith("/") ? rest : `/${rest}`;
+}
+
+function localeFromPath(pathname: string): string {
+  const m = pathname.match(/^\/(en|bn)(?=\/|$)/);
+  return m ? m[1]! : routing.defaultLocale;
+}
+
+function isPublicPath(strippedPathname: string): boolean {
+  if (strippedPathname === "/auth" || strippedPathname.startsWith("/auth/")) {
     return true;
   }
   return PUBLIC_PATHS.filter((p) => p !== "/auth").some(
-    (p) => pathname === p || pathname.startsWith(p + "/")
+    (p) => strippedPathname === p || strippedPathname.startsWith(p + "/")
   );
 }
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Always allow Next.js internals and static assets.
   if (
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/api/") ||
@@ -45,23 +53,29 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const intlResponse = intlMiddleware(request);
+  if (intlResponse.status >= 300 && intlResponse.status < 400) {
+    return intlResponse;
+  }
+
+  const stripped = stripLocalePath(pathname);
   const authSession = request.cookies.get("auth_session");
   const isAuthed = !!authSession?.value;
+  const locale = localeFromPath(pathname);
 
-  if (!isPublicPath(pathname) && !isAuthed) {
-    const loginUrl = new URL("/login", request.url);
+  if (!isPublicPath(stripped) && !isAuthed) {
+    const loginUrl = new URL(`/${locale}/login`, request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect authenticated users away from login/signup to the dashboard.
-  if (isAuthed && (pathname === "/login" || pathname === "/signup")) {
-    return NextResponse.redirect(new URL("/", request.url));
+  if (isAuthed && (stripped === "/login" || stripped === "/signup")) {
+    return NextResponse.redirect(new URL(`/${locale}/`, request.url));
   }
 
-  return NextResponse.next();
+  return intlResponse;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next|_next/static|_next/image|_vercel|.*\\..*).*)"],
 };

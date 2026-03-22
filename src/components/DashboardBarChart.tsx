@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Bar,
   BarChart,
@@ -13,6 +14,7 @@ import {
 } from "recharts";
 
 import type { DashboardAnalyticsPoint } from "@/hooks/useDashboardAnalytics";
+import { toLocaleDigits } from "@/lib/locale-digits";
 import { Card, CardContent } from "./ui/card";
 
 interface DashboardBarChartProps {
@@ -20,48 +22,54 @@ interface DashboardBarChartProps {
 }
 
 export default function DashboardBarChart({ data }: DashboardBarChartProps) {
+  const t = useTranslations("dashboard");
+  const locale = useLocale();
+
   const metrics = useMemo(
     () =>
       [
         {
           key: "orders",
-          label: "Orders",
+          label: t("chartOrders"),
           color: "hsl(var(--chart-orders))",
         },
         {
           key: "products",
-          label: "Products",
+          label: t("chartProducts"),
           color: "hsl(var(--chart-products))",
         },
         {
           key: "cartItems",
-          label: "Cart items",
+          label: t("chartCartItems"),
           color: "hsl(var(--chart-carts))",
         },
         {
           key: "wishlistItems",
-          label: "Wishlist",
+          label: t("chartWishlist"),
           color: "hsl(var(--chart-wishlist))",
         },
         {
           key: "supportTickets",
-          label: "Support tickets",
+          label: t("chartSupportTickets"),
           color: "hsl(var(--chart-support-tickets))",
         },
       ] as const,
-    [],
+    [t]
   );
 
   type MetricKey = (typeof metrics)[number]["key"];
 
   const [activeMetric, setActiveMetric] = useState<MetricKey | "all">("all");
 
+  const formatTick = (v: string | number) =>
+    toLocaleDigits(String(v), locale);
+
   return (
     <Card className="h-[360px] border border-card-border bg-card">
       <CardContent className="h-full pb-2 pt-4">
         {data.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            No activity for the selected period.
+          <div className="flex h-full items-center justify-center px-2 text-center text-sm leading-relaxed text-muted-foreground">
+            {t("chartNoActivity")}
           </div>
         ) : (
           <ResponsiveContainer
@@ -87,6 +95,7 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
                 tickMargin={8}
                 minTickGap={24}
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                tickFormatter={formatTick}
               />
               <YAxis
                 tickLine={false}
@@ -94,6 +103,7 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
                 tickMargin={8}
                 allowDecimals={false}
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                tickFormatter={formatTick}
               />
               <Tooltip
                 labelClassName="text-xs font-medium"
@@ -109,6 +119,18 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
                   backgroundColor: "hsl(var(--card))",
                   color: "hsl(var(--foreground))",
                 }}
+                formatter={(value) =>
+                  toLocaleDigits(
+                    value === undefined || value === null ? "" : String(value),
+                    locale
+                  )
+                }
+                labelFormatter={(label) =>
+                  toLocaleDigits(
+                    label === undefined || label === null ? "" : String(label),
+                    locale
+                  )
+                }
               />
               <Legend
                 verticalAlign="top"
@@ -121,13 +143,13 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
                       type="button"
                       onClick={() => setActiveMetric("all")}
                       className={[
-                        "rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                        "min-w-0 max-w-full break-words rounded-md border px-2 py-1 text-[11px] font-medium leading-relaxed transition-colors",
                         activeMetric === "all"
                           ? "border-primary/30 bg-primary/10 text-foreground"
                           : "border-border bg-background text-muted-foreground hover:text-foreground",
                       ].join(" ")}
                     >
-                      All
+                      {t("chartAll")}
                     </button>
                     {metrics.map((m) => {
                       const active = activeMetric === m.key;
@@ -137,21 +159,21 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
                           type="button"
                           onClick={() => setActiveMetric(m.key)}
                           className={[
-                            "inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                            "inline-flex min-w-0 max-w-full items-center gap-1.5 break-words rounded-md border px-2 py-1 text-[11px] font-medium leading-relaxed transition-colors",
                             active
                               ? "border-primary/30 bg-primary/10 text-foreground"
                               : "border-border bg-background text-muted-foreground hover:text-foreground",
                           ].join(" ")}
                         >
                           <span
-                            className="size-2 rounded-full"
+                            className="size-2 shrink-0 rounded-full"
                             style={{
                               backgroundColor: m.color,
                               opacity: active ? 1 : 0.35,
                             }}
                             aria-hidden="true"
                           />
-                          <span>{m.label}</span>
+                          <span className="min-w-0">{m.label}</span>
                         </button>
                       );
                     })}
@@ -177,4 +199,3 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
     </Card>
   );
 }
-

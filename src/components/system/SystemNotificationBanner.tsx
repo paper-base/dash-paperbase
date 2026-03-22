@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 import { X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 
 import { Button } from "@/components/ui/button";
 import { useSystemNotification } from "@/hooks/useSystemNotification";
@@ -45,6 +46,7 @@ export default function SystemNotificationBanner({
   onPresenceChange,
 }: SystemNotificationBannerProps) {
   const router = useRouter();
+  const t = useTranslations("systemBanner");
   const { notification, isLoading, isError } = useSystemNotification();
 
   useEffect(() => {
@@ -101,7 +103,7 @@ export default function SystemNotificationBanner({
         variant="ghost"
         size="icon-xs"
         onClick={onDismiss}
-        aria-label="Dismiss announcement"
+        aria-label={t("dismissAria")}
         className="absolute right-3 top-1/2 shrink-0 -translate-y-1/2 text-muted-foreground hover:text-foreground sm:right-4"
       >
         <X className="size-4" />

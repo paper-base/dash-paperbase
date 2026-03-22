@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import {
   Birdhouse,
   ListTodo,
@@ -56,6 +56,7 @@ import api from "@/lib/api";
 import { verifyTwoFactorChallenge } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import LanguageToggle from "@/components/LanguageToggle";
 
 /** Top-level nav order; `__catalog__` is the Products / catalog group. */
 const MAIN_NAV_SEQUENCE = [
@@ -78,7 +79,6 @@ function logoUrl(url: string | null): string | null {
 
 const HOME_NAV = {
   href: "/",
-  label: "Home",
   icon: Birdhouse,
   countKey: null as keyof NavCounts | null,
 };
@@ -92,6 +92,9 @@ function SidebarContent({
   onNavigate?: () => void;
   onToggle?: () => void;
 }) {
+  const tNav = useTranslations("nav");
+  const tSidebar = useTranslations("sidebar");
+  const tCommon = useTranslations("common");
   const pathname = usePathname();
   const router = useRouter();
   const { logout, isAuthenticated } = useAuth();
@@ -275,7 +278,7 @@ function SidebarContent({
         challenge_public_id?: string;
       }>("auth/switch-store/", { store_id: storeId });
       if ("2fa_required" in data && data["2fa_required"] && data.challenge_public_id) {
-        const otpCode = window.prompt("Enter your 2FA code to switch stores:");
+        const otpCode = window.prompt(tSidebar("twoFaSwitchPrompt"));
         if (!otpCode) {
           return;
         }
@@ -327,7 +330,7 @@ function SidebarContent({
               size="icon"
               onClick={onToggle}
               className="flex shrink-0 text-muted-foreground hover:text-foreground md:flex"
-              aria-label="Expand sidebar"
+              aria-label={tSidebar("expandSidebar")}
             >
               <PanelRightClose className="size-5" />
             </Button>
@@ -365,7 +368,7 @@ function SidebarContent({
             size="icon-xs"
             onClick={onToggle}
             className="hidden shrink-0 text-muted-foreground hover:text-foreground md:flex"
-            aria-label="Collapse sidebar"
+            aria-label={tSidebar("collapseSidebar")}
           >
             <PanelRightOpen className="size-4" />
           </Button>
@@ -380,10 +383,12 @@ function SidebarContent({
             type="button"
             onClick={() => setSearchOpen(true)}
             className="relative hidden h-10 w-full items-center gap-2 overflow-hidden rounded-lg border-2 border-border bg-muted/50 pl-9 pr-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring md:flex"
-            aria-label="Open search"
+            aria-label={tSidebar("openSearch")}
           >
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 shrink-0 text-muted-foreground pointer-events-none" />
-            <span className="min-w-0 flex-1 truncate pr-0">Search apps and more</span>
+            <span className="min-w-0 flex-1 truncate pr-0">
+              {tSidebar("searchPlaceholder")}
+            </span>
             <TooltipProvider delayDuration={300}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -391,7 +396,9 @@ function SidebarContent({
                     Ctrl+K
                   </kbd>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">Search shortcut</TooltipContent>
+                <TooltipContent side="bottom">
+                  {tSidebar("searchShortcut")}
+                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </button>
@@ -407,7 +414,7 @@ function SidebarContent({
       >
         {!collapsed && (
           <p className="mb-2 px-1 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Navigation
+            {tNav("navigation")}
           </p>
         )}
         <Link
@@ -420,10 +427,12 @@ function SidebarContent({
               : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
             collapsed && "justify-center px-2"
           )}
-          title={collapsed ? HOME_NAV.label : undefined}
+          title={collapsed ? tNav("home") : undefined}
         >
           <HOME_NAV.icon className="size-5 shrink-0" />
-          {!collapsed && <span className="flex-1 truncate">{HOME_NAV.label}</span>}
+          {!collapsed && (
+            <span className="flex-1 truncate">{tNav("home")}</span>
+          )}
         </Link>
 
         {MAIN_NAV_SEQUENCE.map((token) => {
@@ -453,7 +462,9 @@ function SidebarContent({
                   <LayoutGrid className="size-5 shrink-0" />
                   {!collapsed && (
                     <>
-                      <span className="flex-1 truncate text-left">Catalog</span>
+                      <span className="flex-1 min-w-0 truncate text-left leading-relaxed">
+                        {tNav("catalog")}
+                      </span>
                       <ChevronRight
                         className={cn(
                           "size-4 shrink-0 transition-transform",
@@ -482,7 +493,9 @@ function SidebarContent({
                                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                             )}
                           >
-                            <span>{app.label}</span>
+                            <span className="min-w-0 break-words leading-relaxed">
+                              {tNav(app.id)}
+                            </span>
                             {app.countKey &&
                               counts != null &&
                               counts[app.countKey] > 0 && (
@@ -515,12 +528,14 @@ function SidebarContent({
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 collapsed && "justify-center px-2"
               )}
-              title={collapsed ? app.label : undefined}
+              title={collapsed ? tNav(app.id) : undefined}
             >
               <Icon className="size-5 shrink-0" />
               {!collapsed && (
                 <>
-                  <span className="flex-1 truncate">{app.label}</span>
+                  <span className="flex-1 min-w-0 truncate leading-relaxed">
+                    {tNav(app.id)}
+                  </span>
                   {app.countKey &&
                     counts != null &&
                     counts[app.countKey] > 0 && (
@@ -554,7 +569,9 @@ function SidebarContent({
             <ListTodo className="size-5 shrink-0" />
             {!collapsed && (
               <>
-                <span className="flex-1 truncate text-left">More</span>
+                <span className="flex-1 min-w-0 truncate text-left leading-relaxed">
+                  {tNav("more")}
+                </span>
                 {counts != null && moreLinks.some((id) => APP_CONFIG[id]?.countKey && counts[APP_CONFIG[id].countKey!] > 0) && (
                   <span className="relative mr-1 inline-flex h-2 w-2 shrink-0 rounded-full bg-red-500">
                     <span className="absolute inset-0 animate-ping rounded-full bg-red-400/80" />
@@ -579,7 +596,9 @@ function SidebarContent({
                       onClick={handleLinkClick}
                       className="flex items-center justify-between rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                     >
-                      <span>{app.label}</span>
+                      <span className="min-w-0 break-words leading-relaxed">
+                        {tNav(app.id)}
+                      </span>
                       {app.countKey &&
                         counts != null &&
                         counts[app.countKey] > 0 && (
@@ -606,7 +625,7 @@ function SidebarContent({
                 "flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent",
                 collapsed && "justify-center"
               )}
-              aria-label="User menu"
+              aria-label={tSidebar("userMenu")}
             >
               <UserAvatar publicId={userPublicId} name={ownerName} plan={userPlan} />
               {!collapsed && (
@@ -616,7 +635,7 @@ function SidebarContent({
                       {ownerName}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {ownerEmail || "Set in Settings"}
+                      {ownerEmail || tSidebar("setInSettings")}
                     </p>
                   </div>
                   <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
@@ -632,7 +651,7 @@ function SidebarContent({
               }}
             >
               <Store className="size-4" />
-              <span className="flex-1">Stores</span>
+              <span className="flex-1 min-w-0">{tSidebar("stores")}</span>
               <ChevronRight
                 className={cn(
                   "size-4 text-muted-foreground transition-transform",
@@ -644,12 +663,14 @@ function SidebarContent({
               <>
                 <DropdownMenuItem disabled>
                   <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Available stores
+                    {tSidebar("availableStores")}
                   </span>
                 </DropdownMenuItem>
                 {storesLoading ? (
                   <DropdownMenuItem disabled>
-                    <span className="text-muted-foreground">Loading stores...</span>
+                    <span className="text-muted-foreground">
+                      {tSidebar("loadingStores")}
+                    </span>
                   </DropdownMenuItem>
                 ) : availableStores.length > 0 ? (
                   availableStores.map((store) => {
@@ -675,7 +696,9 @@ function SidebarContent({
                             {store.name}
                           </span>
                           {isSwitching ? (
-                            <span className="text-xs text-muted-foreground">Switching...</span>
+                            <span className="text-xs text-muted-foreground">
+                              {tSidebar("switching")}
+                            </span>
                           ) : null}
                         </span>
                         <DropdownMenu>
@@ -683,7 +706,7 @@ function SidebarContent({
                             <button
                               type="button"
                               className="ml-2 inline-flex size-6 shrink-0 items-center justify-center rounded hover:bg-muted"
-                              aria-label="Store actions"
+                              aria-label={tSidebar("storeActions")}
                               onClick={(event) => {
                                 event.preventDefault();
                                 event.stopPropagation();
@@ -703,8 +726,8 @@ function SidebarContent({
                               <Copy className="size-3.5" />
                               <span>
                                 {copiedStoreId === store.public_id
-                                  ? "Store id copied"
-                                  : "Copy store id"}
+                                  ? tSidebar("storeIdCopied")
+                                  : tSidebar("copyStoreId")}
                               </span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -714,7 +737,9 @@ function SidebarContent({
                   })
                 ) : (
                   <DropdownMenuItem disabled>
-                    <span className="text-muted-foreground">No stores available</span>
+                    <span className="text-muted-foreground">
+                      {tSidebar("noStoresAvailable")}
+                    </span>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
@@ -723,7 +748,7 @@ function SidebarContent({
                     <DropdownMenuItem disabled>
                       <span className="flex items-center gap-2 text-muted-foreground">
                         <Plus className="size-3.5" />
-                        <span>Add another store</span>
+                        <span>{tSidebar("addAnotherStore")}</span>
                       </span>
                     </DropdownMenuItem>
                   ) : (
@@ -734,7 +759,7 @@ function SidebarContent({
                         className="flex cursor-pointer items-center gap-2 text-muted-foreground hover:text-foreground"
                       >
                         <Plus className="size-3.5" />
-                        <span>Add another store</span>
+                        <span>{tSidebar("addAnotherStore")}</span>
                       </Link>
                     </DropdownMenuItem>
                   )
@@ -749,47 +774,50 @@ function SidebarContent({
                 className="flex cursor-pointer items-center gap-2"
               >
                 <Settings className="size-4" />
-                Settings
+                {tCommon("settings")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <div className="px-2 py-1 md:hidden">
+              <LanguageToggle variant="compact" className="w-full justify-center" />
+            </div>
             <div className="px-2 pb-1">
               <div className="flex items-center justify-between gap-1">
                 <button
                   type="button"
                   onClick={() => handleThemeChange("light")}
                   className={cn(
-                    "flex-1 rounded-md px-2 py-1 text-xs font-medium",
+                    "min-w-0 flex-1 break-words rounded-md px-2 py-1 text-xs font-medium leading-relaxed",
                     theme === "light"
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-muted"
                   )}
                 >
-                  Light
+                  {tSidebar("light")}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleThemeChange("dark")}
                   className={cn(
-                    "flex-1 rounded-md px-2 py-1 text-xs font-medium",
+                    "min-w-0 flex-1 break-words rounded-md px-2 py-1 text-xs font-medium leading-relaxed",
                     theme === "dark"
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-muted"
                   )}
                 >
-                  Dark
+                  {tSidebar("dark")}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleThemeChange("system")}
                   className={cn(
-                    "flex-1 rounded-md px-2 py-1 text-xs font-medium",
+                    "min-w-0 flex-1 break-words rounded-md px-2 py-1 text-xs font-medium leading-relaxed",
                     theme === "system"
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-muted"
                   )}
                 >
-                  System
+                  {tSidebar("system")}
                 </button>
               </div>
             </div>
@@ -800,7 +828,7 @@ function SidebarContent({
               className="cursor-pointer"
             >
               <LogOut className="size-4" />
-              Log out
+              {tSidebar("logOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

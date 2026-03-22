@@ -3,6 +3,8 @@ interface StatsCardProps {
   value: string | number;
   subtitle?: string;
   accent?: "blue" | "green" | "yellow" | "red";
+  /** Bengali numerals pair better with the primary sans stack than tabular mono. */
+  numberFont?: "mono" | "sans";
 }
 
 const ACCENT_CLASSES = {
@@ -17,17 +19,22 @@ export default function StatsCard({
   value,
   subtitle,
   accent = "blue",
+  numberFont = "mono",
 }: StatsCardProps) {
   return (
     <div className="rounded-xl border border-dashed border-card-border bg-card p-5">
-      <p className="text-sm font-medium text-muted-foreground">{title}</p>
+      <p className="text-sm font-medium leading-relaxed text-muted-foreground">
+        {title}
+      </p>
       <p
-        className={`mt-2 text-3xl font-bold font-mono tabular-nums ${ACCENT_CLASSES[accent]}`}
+        className={`mt-2 text-3xl font-bold tabular-nums ${numberFont === "sans" ? "font-sans" : "font-mono"} ${ACCENT_CLASSES[accent]}`}
       >
         {value}
       </p>
       {subtitle && (
-        <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          {subtitle}
+        </p>
       )}
     </div>
   );

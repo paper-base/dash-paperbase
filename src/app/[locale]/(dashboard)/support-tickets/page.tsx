@@ -1,0 +1,146 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "@/i18n/navigation";
+import { Undo2 } from "lucide-react";
+import { ClickableText } from "@/components/ui/clickable-text";
+import api from "@/lib/api";
+import type { SupportTicket, PaginatedResponse } from "@/types";
+
+function formatDateTime(value: string): string {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  const datePart = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const timePart = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  return `${datePart}, ${timePart}`;
+}
+
+export default function SupportTicketsPage() {
+  const router = useRouter();
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [count, setCount] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    api
+      .get<PaginatedResponse<SupportTicket>>("admin/support-tickets/", {
+        params: { page },
+      })
+      .then((res) => {
+        setTickets(res.data.results);
+        setCount(res.data.count);
+        setHasNext(!!res.data.next);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [page]);
+
+  async function handleDelete(publicId: string) {
+    if (!confirm("Delete this support ticket?")) return;
+    try {
+      await api.delete(`admin/support-tickets/${publicId}/`);
+      setTickets((prev) => prev.filter((t) => t.public_id !== publicId));
+      setCount((c) => c - 1);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="rounded-lg bg-muted/80 px-1 py-1">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            aria-label="Go back"
+            className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
+          >
+            <Undo2 className="h-4 w-4" />
+          </button>
+        </div>
+        <h1 className="text-2xl font-medium text-foreground">
+          Support tickets ({count})
+        </h1>
+      </div>
+
+      {loading ? (
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      ) : (
+        <>
+          <div className="space-y-3">
+            {tickets.map((ticket) => (
+              <div
+                key={ticket.public_id}
+                className="rounded-xl border border-dashed border-card-border bg-card p-4"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">{ticket.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {ticket.phone}
+                      {ticket.email && ` · ${ticket.email}`}
+                    </p>
+                    {ticket.subject ? (
+                      <p className="mt-1 text-sm text-foreground">{ticket.subject}</p>
+                    ) : null}
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatDateTime(ticket.created_at)}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <ClickableText
+                      onClick={() =>
+                        setExpanded(expanded === ticket.public_id ? null : ticket.public_id)
+                      }
+                      className="text-sm"
+                    >
+                      {expanded === ticket.public_id ? "Hide" : "View"}
+                    </ClickableText>
+                    <ClickableText
+                      variant="destructive"
+                      onClick={() => handleDelete(ticket.public_id)}
+                      className="text-sm"
+                    >
+                      Delete
+                    </ClickableText>
+                  </div>
+                </div>
+                {expanded === ticket.public_id && (
+                  <div className="mt-3 rounded-lg bg-muted p-3 text-sm text-foreground whitespace-pre-wrap">
+                    {ticket.message}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="btn-page"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-muted-foreground">Page {page}</span>
+            <button
+              disabled={!hasNext}
+              onClick={() => setPage((p) => p + 1)}
+              className="btn-page"
+            >
+              Next
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

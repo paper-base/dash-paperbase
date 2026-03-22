@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Menu, Search } from "lucide-react";
 import { useSearchModal } from "@/context/SearchModalContext";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ interface MobileNavBarProps {
 
 export default function MobileNavBar({ onMenuClick, bannerVisible = false }: MobileNavBarProps) {
   const { setOpen: setSearchOpen } = useSearchModal();
+  const tMobile = useTranslations("mobileNav");
 
   return (
     <div
@@ -26,7 +27,7 @@ export default function MobileNavBar({ onMenuClick, bannerVisible = false }: Mob
       <Button
         variant="ghost"
         size="icon"
-        aria-label="Open menu"
+        aria-label={tMobile("openMenu")}
         onClick={onMenuClick}
         className="-ml-2 px-0"
       >
@@ -36,7 +37,7 @@ export default function MobileNavBar({ onMenuClick, bannerVisible = false }: Mob
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Search"
+          aria-label={tMobile("searchAria")}
           onClick={() => setSearchOpen(true)}
           className="shrink-0 text-muted-foreground hover:text-foreground"
         >
