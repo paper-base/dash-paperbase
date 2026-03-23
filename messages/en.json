@@ -77,6 +77,8 @@
     "storeIdCopied": "Store id copied",
     "noStoresAvailable": "No stores available",
     "addAnotherStore": "Add another store",
+    "theme": "Theme",
+    "language": "Language",
     "light": "Light",
     "dark": "Dark",
     "system": "System",

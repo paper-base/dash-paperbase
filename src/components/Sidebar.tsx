@@ -17,6 +17,9 @@ import {
   LayoutGrid,
   Ellipsis,
   Copy,
+  Sun,
+  Moon,
+  Laptop,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +59,12 @@ import api from "@/lib/api";
 import { verifyTwoFactorChallenge } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import LanguageToggle from "@/components/LanguageToggle";
+import { useLocale } from "next-intl";
+import {
+  CORE_LOCALE_STORAGE_KEY,
+  setLocalePreferenceCookie,
+} from "@/lib/locale-storage";
+import { routing, type AppLocale } from "@/i18n/routing";
 
 /** Top-level nav order; `__catalog__` is the Products / catalog group. */
 const MAIN_NAV_SEQUENCE = [
@@ -95,6 +103,8 @@ function SidebarContent({
   const tNav = useTranslations("nav");
   const tSidebar = useTranslations("sidebar");
   const tCommon = useTranslations("common");
+  const tLang = useTranslations("language");
+  const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
   const { logout, isAuthenticated } = useAuth();
@@ -136,6 +146,17 @@ function SidebarContent({
   >([]);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
   const [theme, setTheme] = useState<"light" | "dark" | "system">("light");
+  /** Mobile sheet: center menu and size below nav panel width (desktop-style inset). */
+  const [mobileUserMenuLayout, setMobileUserMenuLayout] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 767.98px)");
+    const sync = () => setMobileUserMenuLayout(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -169,6 +190,15 @@ function SidebarContent({
           : "light"
         : next;
     root.setAttribute("data-theme", applied);
+  };
+
+  const switchUserMenuLocale = (next: AppLocale) => {
+    if (next === locale) return;
+    if (typeof window !== "undefined") {
+      localStorage.setItem(CORE_LOCALE_STORAGE_KEY, next);
+      setLocalePreferenceCookie(next);
+    }
+    router.replace(pathname, { locale: next });
   };
 
   const adminName = branding?.admin_name ?? defaultBranding.admin_name;
@@ -643,193 +673,255 @@ function SidebarContent({
               )}
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56" side="top">
-            <DropdownMenuItem
-              onSelect={(event) => {
-                event.preventDefault();
-                setStoresOpen((prev) => !prev);
-              }}
-            >
-              <Store className="size-4" />
-              <span className="flex-1 min-w-0">{tSidebar("stores")}</span>
-              <ChevronRight
-                className={cn(
-                  "size-4 text-muted-foreground transition-transform",
-                  storesOpen && "rotate-90"
-                )}
-              />
-            </DropdownMenuItem>
-            {storesOpen && (
-              <>
-                <DropdownMenuItem disabled>
-                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    {tSidebar("availableStores")}
-                  </span>
-                </DropdownMenuItem>
-                {storesLoading ? (
-                  <DropdownMenuItem disabled>
-                    <span className="text-muted-foreground">
-                      {tSidebar("loadingStores")}
-                    </span>
-                  </DropdownMenuItem>
-                ) : availableStores.length > 0 ? (
-                  availableStores.map((store) => {
-                    const isCurrent = activeStoreId === store.public_id;
-                    const isSwitching = storeSwitchingId === store.public_id;
-                    return (
-                      <DropdownMenuItem
-                        key={store.public_id}
-                        onSelect={(event) => {
-                          event.preventDefault();
-                          void handleSwitchStore(store.public_id);
-                        }}
-                        disabled={!!storeSwitchingId}
-                      >
-                        <span className="flex min-w-0 flex-1 items-center gap-2">
-                          <span
-                            className={cn(
-                              "h-2.5 w-2.5 shrink-0 rounded-full",
-                              isCurrent ? "bg-emerald-400" : "bg-muted-foreground/40"
-                            )}
-                          />
-                          <span className={cn("flex-1 truncate", isCurrent && "text-foreground")}>
-                            {store.name}
-                          </span>
-                          {isSwitching ? (
-                            <span className="text-xs text-muted-foreground">
-                              {tSidebar("switching")}
-                            </span>
-                          ) : null}
-                        </span>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              className="ml-2 inline-flex size-6 shrink-0 items-center justify-center rounded hover:bg-muted"
-                              aria-label={tSidebar("storeActions")}
-                              onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                              }}
-                            >
-                              <Ellipsis className="size-3.5" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" side="right">
-                            <DropdownMenuItem
-                              onSelect={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                void handleCopyStoreId(store.public_id);
-                              }}
-                            >
-                              <Copy className="size-3.5" />
-                              <span>
-                                {copiedStoreId === store.public_id
-                                  ? tSidebar("storeIdCopied")
-                                  : tSidebar("copyStoreId")}
-                              </span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </DropdownMenuItem>
-                    );
-                  })
-                ) : (
-                  <DropdownMenuItem disabled>
-                    <span className="text-muted-foreground">
-                      {tSidebar("noStoresAvailable")}
-                    </span>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                {canRenderAddStoreOption ? (
-                  addStoreOptionDisabled ? (
-                    <DropdownMenuItem disabled>
-                      <span className="flex items-center gap-2 text-muted-foreground">
-                        <Plus className="size-3.5" />
-                        <span>{tSidebar("addAnotherStore")}</span>
-                      </span>
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/onboarding?add=1"
-                        onClick={handleLinkClick}
-                        className="flex cursor-pointer items-center gap-2 text-muted-foreground hover:text-foreground"
-                      >
-                        <Plus className="size-3.5" />
-                        <span>{tSidebar("addAnotherStore")}</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  )
-                ) : null}
-              </>
+          <DropdownMenuContent
+            align="center"
+            side="top"
+            className={cn(
+              "overflow-hidden rounded-xl border border-border/80 p-0 shadow-lg",
+              mobileUserMenuLayout
+                ? // Match profile row width (w-64 sheet minus p-4); ! beats popover defaults
+                  "!w-[var(--radix-dropdown-menu-trigger-width)] min-w-[12.5rem] max-w-[min(100vw-1.5rem,14rem)]"
+                : // Desktop: centered under user row; cap to trigger width (expanded) but keep usable min when collapsed
+                  "w-[max(11rem,min(100vw-2rem,16.5rem,var(--radix-dropdown-menu-trigger-width)))]"
             )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link
-                href="/settings"
-                onClick={handleLinkClick}
-                className="flex cursor-pointer items-center gap-2"
+          >
+            <div className="p-3 pb-2">
+              <p className="mb-2 px-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {tSidebar("theme")}
+              </p>
+              <div
+                className="flex gap-1 rounded-lg bg-muted/60 p-1 dark:bg-muted/25"
+                role="group"
+                aria-label={tSidebar("theme")}
               >
-                <Settings className="size-4" />
-                {tCommon("settings")}
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <div className="px-2 py-1 md:hidden">
-              <LanguageToggle variant="compact" className="w-full justify-center" />
-            </div>
-            <div className="px-2 pb-1">
-              <div className="flex items-center justify-between gap-1">
-                <button
-                  type="button"
-                  onClick={() => handleThemeChange("light")}
-                  className={cn(
-                    "min-w-0 flex-1 break-words rounded-md px-2 py-1 text-xs font-medium leading-relaxed",
-                    theme === "light"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted"
-                  )}
-                >
-                  {tSidebar("light")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleThemeChange("dark")}
-                  className={cn(
-                    "min-w-0 flex-1 break-words rounded-md px-2 py-1 text-xs font-medium leading-relaxed",
-                    theme === "dark"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted"
-                  )}
-                >
-                  {tSidebar("dark")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleThemeChange("system")}
-                  className={cn(
-                    "min-w-0 flex-1 break-words rounded-md px-2 py-1 text-xs font-medium leading-relaxed",
-                    theme === "system"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted"
-                  )}
-                >
-                  {tSidebar("system")}
-                </button>
+                {(
+                  [
+                    { key: "light" as const, icon: Sun, label: tSidebar("light") },
+                    { key: "dark" as const, icon: Moon, label: tSidebar("dark") },
+                    { key: "system" as const, icon: Laptop, label: tSidebar("system") },
+                  ] as const
+                ).map(({ key, icon: Icon, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleThemeChange(key)}
+                    className={cn(
+                      "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-md py-2 text-xs font-medium transition-colors",
+                      theme === key
+                        ? "bg-background text-primary shadow-sm ring-1 ring-primary/25 dark:bg-popover"
+                        : "text-muted-foreground hover:bg-background/80 hover:text-foreground"
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "size-4 shrink-0",
+                        theme === key ? "text-primary" : "text-muted-foreground"
+                      )}
+                    />
+                    <span className="truncate">{label}</span>
+                  </button>
+                ))}
               </div>
             </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={logout}
-              className="cursor-pointer"
-            >
-              <LogOut className="size-4" />
-              {tSidebar("logOut")}
-            </DropdownMenuItem>
+
+            <DropdownMenuSeparator className="my-0" />
+
+            <div className="p-1.5">
+              <p className="mb-1 px-2 pt-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {tSidebar("language")}
+              </p>
+              {routing.locales.map((loc) => {
+                const isActive = locale === loc;
+                const label = loc === "en" ? tLang("switchToEnglish") : tLang("switchToBengali");
+                const code = loc.toUpperCase();
+                const flag = loc === "en" ? "🇺🇸" : "🇧🇩";
+                return (
+                  <DropdownMenuItem
+                    key={loc}
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      switchUserMenuLocale(loc);
+                    }}
+                    className={cn(
+                      "cursor-pointer rounded-md px-2 py-2",
+                      isActive && "bg-accent/80 text-primary focus:bg-accent focus:text-primary"
+                    )}
+                  >
+                    <span className="flex min-w-0 flex-1 items-center gap-2.5">
+                      <span className="text-lg leading-none" aria-hidden>
+                        {flag}
+                      </span>
+                      <span className="truncate font-medium">{label}</span>
+                    </span>
+                    <span
+                      className={cn(
+                        "shrink-0 text-xs tabular-nums text-muted-foreground",
+                        isActive && "text-primary"
+                      )}
+                    >
+                      {code}
+                    </span>
+                  </DropdownMenuItem>
+                );
+              })}
+            </div>
+
+            <DropdownMenuSeparator className="my-0" />
+
+            <div className="p-1">
+              <DropdownMenuItem
+                onSelect={(event) => {
+                  event.preventDefault();
+                  setStoresOpen((prev) => !prev);
+                }}
+                className="text-[15px] font-medium"
+              >
+                <Store className="size-[1.125rem]" />
+                <span className="min-w-0 flex-1">{tSidebar("stores")}</span>
+                <ChevronRight
+                  className={cn(
+                    "size-4 shrink-0 text-muted-foreground transition-transform",
+                    storesOpen && "rotate-90"
+                  )}
+                />
+              </DropdownMenuItem>
+              {storesOpen && (
+                <>
+                  <DropdownMenuItem disabled className="opacity-100">
+                    <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      {tSidebar("availableStores")}
+                    </span>
+                  </DropdownMenuItem>
+                  {storesLoading ? (
+                    <DropdownMenuItem disabled>
+                      <span className="text-muted-foreground">
+                        {tSidebar("loadingStores")}
+                      </span>
+                    </DropdownMenuItem>
+                  ) : availableStores.length > 0 ? (
+                    availableStores.map((store) => {
+                      const isCurrent = activeStoreId === store.public_id;
+                      const isSwitching = storeSwitchingId === store.public_id;
+                      return (
+                        <DropdownMenuItem
+                          key={store.public_id}
+                          onSelect={(event) => {
+                            event.preventDefault();
+                            void handleSwitchStore(store.public_id);
+                          }}
+                          disabled={!!storeSwitchingId}
+                        >
+                          <span className="flex min-w-0 flex-1 items-center gap-2">
+                            <span
+                              className={cn(
+                                "h-2.5 w-2.5 shrink-0 rounded-full",
+                                isCurrent ? "bg-emerald-400" : "bg-muted-foreground/40"
+                              )}
+                            />
+                            <span className={cn("flex-1 truncate", isCurrent && "text-foreground")}>
+                              {store.name}
+                            </span>
+                            {isSwitching ? (
+                              <span className="text-xs text-muted-foreground">
+                                {tSidebar("switching")}
+                              </span>
+                            ) : null}
+                          </span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="ml-2 inline-flex size-6 shrink-0 items-center justify-center rounded hover:bg-muted"
+                                aria-label={tSidebar("storeActions")}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                }}
+                              >
+                                <Ellipsis className="size-3.5" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" side="right">
+                              <DropdownMenuItem
+                                onSelect={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  void handleCopyStoreId(store.public_id);
+                                }}
+                              >
+                                <Copy className="size-3.5" />
+                                <span>
+                                  {copiedStoreId === store.public_id
+                                    ? tSidebar("storeIdCopied")
+                                    : tSidebar("copyStoreId")}
+                                </span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </DropdownMenuItem>
+                      );
+                    })
+                  ) : (
+                    <DropdownMenuItem disabled>
+                      <span className="text-muted-foreground">
+                        {tSidebar("noStoresAvailable")}
+                      </span>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator className="my-1" />
+                  {canRenderAddStoreOption ? (
+                    addStoreOptionDisabled ? (
+                      <DropdownMenuItem disabled>
+                        <span className="flex items-center gap-2 text-muted-foreground">
+                          <Plus className="size-3.5" />
+                          <span>{tSidebar("addAnotherStore")}</span>
+                        </span>
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/onboarding?add=1"
+                          onClick={handleLinkClick}
+                          className="flex cursor-pointer items-center gap-2 text-muted-foreground hover:text-foreground"
+                        >
+                          <Plus className="size-3.5" />
+                          <span>{tSidebar("addAnotherStore")}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )
+                  ) : null}
+                </>
+              )}
+              <DropdownMenuItem asChild className="text-[15px] font-medium">
+                <Link
+                  href="/settings"
+                  onClick={handleLinkClick}
+                  className="flex cursor-pointer items-center gap-2"
+                >
+                  <Settings className="size-[1.125rem]" />
+                  {tCommon("settings")}
+                </Link>
+              </DropdownMenuItem>
+            </div>
+
+            <DropdownMenuSeparator className="my-0" />
+
+            <div className="p-2">
+              <DropdownMenuItem
+                onSelect={() => {
+                  logout();
+                }}
+                className={cn(
+                  "cursor-pointer justify-between gap-3 text-[15px] font-medium",
+                  "text-red-600 hover:bg-red-500/10 hover:text-red-700 focus:bg-red-500/10 focus:text-red-700",
+                  "dark:text-red-400 dark:hover:bg-red-500/15 dark:hover:text-red-300 dark:focus:bg-red-500/15 dark:focus:text-red-300",
+                  "[&_svg]:text-red-600 dark:[&_svg]:text-red-400"
+                )}
+              >
+                <span>{tSidebar("logOut")}</span>
+                <LogOut className="size-[1.125rem] shrink-0" />
+              </DropdownMenuItem>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
