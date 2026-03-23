@@ -5,6 +5,11 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { toLocaleDigits } from "@/lib/locale-digits";
 import { Undo2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { FilterDropdown } from "@/components/filters/FilterDropdown";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useFilters } from "@/hooks/useFilters";
 import api from "@/lib/api";
 import type { Customer, PaginatedResponse } from "@/types";
 
@@ -19,17 +24,31 @@ export default function CustomersPage() {
   const locale = useLocale();
   const tNav = useTranslations("nav");
   const tPages = useTranslations("pages");
+  const { page, filters, setFilter, setPage, clearFilters } = useFilters([
+    "joined_date",
+    "search",
+  ]);
+  const [searchInput, setSearchInput] = useState(filters.search || "");
+  const debouncedSearch = useDebouncedValue(searchInput);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
   const [count, setCount] = useState(0);
   const [hasNext, setHasNext] = useState(false);
 
+  useEffect(() => {
+    const next = debouncedSearch.trim();
+    if (next === (filters.search || "")) return;
+    setFilter("search", next);
+  }, [debouncedSearch, filters.search, setFilter]);
+
   function fetchData() {
     setLoading(true);
+    const params: Record<string, string | number> = { page };
+    if (filters.joined_date) params.joined_date = filters.joined_date;
+    if (filters.search) params.search = filters.search;
     api
       .get<PaginatedResponse<Customer>>("admin/customers/", {
-        params: { page },
+        params,
       })
       .then((res) => {
         setCustomers(res.data.results);
@@ -42,7 +61,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchData();
-  }, [page]);
+  }, [filters.joined_date, filters.search, page]);
 
   return (
     <div className="space-y-6">
@@ -79,85 +98,117 @@ export default function CustomersPage() {
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
-      ) : customers.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-card-border bg-card py-12 text-center text-sm text-muted-foreground">
-          {tPages("customersEmpty")}
-        </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-xl border border-dashed border-card-border bg-card">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/40">
-                  <th className="th">Email</th>
-                  <th className="th">Username</th>
-                  <th className="th">Phone</th>
-                  <th className="th">Marketing</th>
-                  <th className="th">Total Orders</th>
-                  <th className="th">Joined</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {customers.map((c) => (
-                  <tr
-                    key={c.public_id}
-                    className="cursor-pointer hover:bg-muted/40 focus-within:bg-muted/40"
-                    role="link"
-                    tabIndex={0}
-                    onClick={() => router.push(`/customers/${c.public_id}`)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        router.push(`/customers/${c.public_id}`);
-                      }
-                    }}
-                  >
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      {c.email || c.user_email || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      <span className="whitespace-nowrap">{c.name || c.user_username || "—"}</span>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {c.phone || "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {c.marketing_opt_in ? "Yes" : "No"}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {c.total_orders ?? 0}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      <span className="whitespace-nowrap">
-                        {c.created_at
-                          ? formatMdy(c.created_at)
-                          : "—"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {(count > 10 || hasNext) && (
-            <div className="flex items-center justify-between">
-              <button
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="btn-page"
-              >
-                Previous
-              </button>
-              <span className="text-sm text-muted-foreground">Page {page}</span>
-              <button
-                disabled={!hasNext}
-                onClick={() => setPage((p) => p + 1)}
-                className="btn-page"
-              >
-                Next
-              </button>
+          <FilterBar>
+            <FilterDropdown
+              value={filters.joined_date}
+              onChange={(value) => setFilter("joined_date", value)}
+              placeholder={tPages("filtersJoinedDate")}
+              options={[
+                { value: "today", label: tPages("filtersToday") },
+                { value: "last_7_days", label: tPages("filtersLast7Days") },
+                { value: "last_30_days", label: tPages("filtersLast30Days") },
+              ]}
+            />
+            <Input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder={tPages("filtersSearchCustomers")}
+              className="w-full md:w-72"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setSearchInput("");
+                clearFilters();
+              }}
+              className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
+            >
+              {tPages("filtersClear")}
+            </button>
+          </FilterBar>
+          {customers.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-card-border bg-card py-12 text-center text-sm text-muted-foreground">
+              {tPages("customersEmpty")}
             </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto rounded-xl border border-dashed border-card-border bg-card">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/40">
+                      <th className="th">Email</th>
+                      <th className="th">Username</th>
+                      <th className="th">Phone</th>
+                      <th className="th">Marketing</th>
+                      <th className="th">Total Orders</th>
+                      <th className="th">Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {customers.map((c) => (
+                      <tr
+                        key={c.public_id}
+                        className="cursor-pointer hover:bg-muted/40 focus-within:bg-muted/40"
+                        role="link"
+                        tabIndex={0}
+                        onClick={() => router.push(`/customers/${c.public_id}`)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            router.push(`/customers/${c.public_id}`);
+                          }
+                        }}
+                      >
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {c.email || c.user_email || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          <span className="whitespace-nowrap">{c.name || c.user_username || "—"}</span>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {c.phone || "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          {c.marketing_opt_in ? "Yes" : "No"}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {c.total_orders ?? 0}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          <span className="whitespace-nowrap">
+                            {c.created_at
+                              ? formatMdy(c.created_at)
+                              : "—"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {(count > 10 || hasNext) && (
+                <div className="flex items-center justify-between">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => setPage(page - 1)}
+                    className="btn-page"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-muted-foreground">Page {page}</span>
+                  <button
+                    disabled={!hasNext}
+                    onClick={() => setPage(page + 1)}
+                    className="btn-page"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

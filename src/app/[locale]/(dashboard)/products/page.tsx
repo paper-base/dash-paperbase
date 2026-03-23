@@ -17,6 +17,12 @@ import {
 } from "@/components/ui/combobox";
 import { ClickableText } from "@/components/ui/clickable-text";
 import { Input } from "@/components/ui/input";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { FilterDropdown } from "@/components/filters/FilterDropdown";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useFilters } from "@/hooks/useFilters";
+
+type CategoryOption = { value: string; label: string };
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -24,20 +30,84 @@ export default function ProductsPage() {
   const tNav = useTranslations("nav");
   const tPages = useTranslations("pages");
   const { currencySymbol } = useBranding();
+  const { page, filters, setFilter, setPage, clearFilters } = useFilters([
+    "status",
+    "stock",
+    "category",
+    "price_min",
+    "price_max",
+    "search",
+  ]);
+  const [searchInput, setSearchInput] = useState(filters.search || "");
+  const [priceMinInput, setPriceMinInput] = useState(filters.price_min || "");
+  const [priceMaxInput, setPriceMaxInput] = useState(filters.price_max || "");
+  const debouncedSearch = useDebouncedValue(searchInput);
+  const debouncedPriceMin = useDebouncedValue(priceMinInput);
+  const debouncedPriceMax = useDebouncedValue(priceMaxInput);
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
   const [count, setCount] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  useEffect(() => {
+    const next = debouncedSearch.trim();
+    if (next === (filters.search || "")) return;
+    setFilter("search", next);
+  }, [debouncedSearch, filters.search, setFilter]);
+
+  useEffect(() => {
+    const next = debouncedPriceMin.trim();
+    if (next === (filters.price_min || "")) return;
+    setFilter("price_min", next);
+  }, [debouncedPriceMin, filters.price_min, setFilter]);
+
+  useEffect(() => {
+    const next = debouncedPriceMax.trim();
+    if (next === (filters.price_max || "")) return;
+    setFilter("price_max", next);
+  }, [debouncedPriceMax, filters.price_max, setFilter]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      api.get<{ results: Array<{ public_id: string; name: string }> }>("admin/parent-categories/"),
+      api.get<{ results: Array<{ public_id: string; name: string }> }>("admin/categories/"),
+    ])
+      .then(([parents, children]) => {
+        if (!active) return;
+        const entries = [...parents.data.results, ...children.data.results];
+        const seen = new Set<string>();
+        const options = entries
+          .filter((item) => {
+            if (!item.public_id || seen.has(item.public_id)) return false;
+            seen.add(item.public_id);
+            return true;
+          })
+          .map((item) => ({ value: item.public_id, label: item.name }));
+        setCategoryOptions(options);
+      })
+      .catch(console.error);
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const fetchProducts = useCallback(() => {
     setLoading(true);
+    const params: Record<string, string | number> = { page };
+    if (filters.status) params.status = filters.status;
+    if (filters.stock) params.stock = filters.stock;
+    if (filters.category) params.category = filters.category;
+    if (filters.price_min) params.price_min = filters.price_min;
+    if (filters.price_max) params.price_max = filters.price_max;
+    if (filters.search) params.search = filters.search;
     api
       .get<PaginatedResponse<Product>>("admin/products/", {
-        params: { page },
+        params,
       })
       .then((res) => {
         setProducts(res.data.results);
@@ -46,7 +116,15 @@ export default function ProductsPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [page]);
+  }, [
+    filters.category,
+    filters.price_max,
+    filters.price_min,
+    filters.search,
+    filters.status,
+    filters.stock,
+    page,
+  ]);
 
   useEffect(() => {
     fetchProducts();
@@ -165,6 +243,68 @@ export default function ProductsPage() {
         </div>
       ) : (
         <>
+          <FilterBar>
+            <FilterDropdown
+              value={filters.status}
+              onChange={(value) => setFilter("status", value)}
+              placeholder={tPages("filtersStatus")}
+              options={[
+                { value: "active", label: "Active" },
+                { value: "inactive", label: "Inactive" },
+              ]}
+            />
+            <FilterDropdown
+              value={filters.stock}
+              onChange={(value) => setFilter("stock", value)}
+              placeholder={tPages("filtersStock")}
+              options={[
+                { value: "in_stock", label: "In stock" },
+                { value: "low_stock", label: "Low stock" },
+                { value: "out_of_stock", label: "Out of stock" },
+              ]}
+            />
+            <FilterDropdown
+              value={filters.category}
+              onChange={(value) => setFilter("category", value)}
+              placeholder={tPages("filtersCategory")}
+              options={categoryOptions}
+              className="min-w-[180px]"
+            />
+            <Input
+              value={priceMinInput}
+              onChange={(e) => setPriceMinInput(e.target.value)}
+              type="number"
+              min={0}
+              placeholder={tPages("filtersMinPrice")}
+              className="w-full md:w-28"
+            />
+            <Input
+              value={priceMaxInput}
+              onChange={(e) => setPriceMaxInput(e.target.value)}
+              type="number"
+              min={0}
+              placeholder={tPages("filtersMaxPrice")}
+              className="w-full md:w-28"
+            />
+            <Input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder={tPages("filtersSearchProducts")}
+              className="w-full md:w-64"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setSearchInput("");
+                setPriceMinInput("");
+                setPriceMaxInput("");
+                clearFilters();
+              }}
+              className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
+            >
+              {tPages("filtersClear")}
+            </button>
+          </FilterBar>
           <div className="overflow-x-auto rounded-xl border border-dashed border-card-border bg-card">
             <table className="w-full text-left text-sm">
               <thead>
@@ -319,7 +459,7 @@ export default function ProductsPage() {
           <div className="flex items-center justify-between">
             <button
               disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
+              onClick={() => setPage(page - 1)}
               className="btn-page"
             >
               Previous
@@ -327,7 +467,7 @@ export default function ProductsPage() {
             <span className="text-sm text-muted-foreground">Page {page}</span>
             <button
               disabled={!hasNext}
-              onClick={() => setPage((p) => p + 1)}
+              onClick={() => setPage(page + 1)}
               className="btn-page"
             >
               Next

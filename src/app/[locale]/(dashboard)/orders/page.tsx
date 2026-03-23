@@ -6,6 +6,11 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { toLocaleDigits } from "@/lib/locale-digits";
 import { Undo2 } from "lucide-react";
 import { ClickableText } from "@/components/ui/clickable-text";
+import { Input } from "@/components/ui/input";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { FilterDropdown } from "@/components/filters/FilterDropdown";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useFilters } from "@/hooks/useFilters";
 import api from "@/lib/api";
 import { useBranding } from "@/context/BrandingContext";
 import type { Order, PaginatedResponse } from "@/types";
@@ -32,19 +37,35 @@ export default function OrdersPage() {
   const tNav = useTranslations("nav");
   const tPages = useTranslations("pages");
   const { currencySymbol } = useBranding();
+  const { page, filters, setFilter, setPage, clearFilters } = useFilters([
+    "status",
+    "date_range",
+    "search",
+  ]);
+  const [searchInput, setSearchInput] = useState(filters.search || "");
+  const debouncedSearch = useDebouncedValue(searchInput);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
   const [count, setCount] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
 
+  useEffect(() => {
+    const next = debouncedSearch.trim();
+    if (next === (filters.search || "")) return;
+    setFilter("search", next);
+  }, [debouncedSearch, filters.search, setFilter]);
+
   const fetchOrders = useCallback(() => {
     setLoading(true);
+    const params: Record<string, string | number> = { page };
+    if (filters.status) params.status = filters.status;
+    if (filters.date_range) params.date_range = filters.date_range;
+    if (filters.search) params.search = filters.search;
     api
       .get<PaginatedResponse<Order>>("admin/orders/", {
-        params: { page },
+        params,
       })
       .then((res) => {
         setOrders(res.data.results);
@@ -53,7 +74,7 @@ export default function OrdersPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [page]);
+  }, [filters.date_range, filters.search, filters.status, page]);
 
   useEffect(() => {
     fetchOrders();
@@ -150,6 +171,48 @@ export default function OrdersPage() {
         </div>
       ) : (
         <>
+          <FilterBar>
+            <FilterDropdown
+              value={filters.status}
+              onChange={(value) => setFilter("status", value)}
+              placeholder={tPages("filtersStatus")}
+              options={[
+                { value: "pending", label: "Pending" },
+                { value: "confirmed", label: "Confirmed" },
+                { value: "processing", label: "Processing" },
+                { value: "shipped", label: "Shipped" },
+                { value: "delivered", label: "Delivered" },
+                { value: "cancelled", label: "Cancelled" },
+                { value: "returned", label: "Returned" },
+              ]}
+            />
+            <FilterDropdown
+              value={filters.date_range}
+              onChange={(value) => setFilter("date_range", value)}
+              placeholder={tPages("filtersDateRange")}
+              options={[
+                { value: "today", label: tPages("filtersToday") },
+                { value: "last_7_days", label: tPages("filtersLast7Days") },
+                { value: "last_30_days", label: tPages("filtersLast30Days") },
+              ]}
+            />
+            <Input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder={tPages("filtersSearchOrders")}
+              className="w-full md:w-72"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setSearchInput("");
+                clearFilters();
+              }}
+              className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
+            >
+              {tPages("filtersClear")}
+            </button>
+          </FilterBar>
           <div className="overflow-x-auto rounded-xl border border-dashed border-card-border bg-card">
             <table className="w-full text-left text-sm">
               <thead>
@@ -227,7 +290,7 @@ export default function OrdersPage() {
           <div className="flex items-center justify-between">
             <button
               disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
+              onClick={() => setPage(page - 1)}
               className="btn-page"
             >
               Previous
@@ -235,7 +298,7 @@ export default function OrdersPage() {
             <span className="text-sm text-muted-foreground">Page {page}</span>
             <button
               disabled={!hasNext}
-              onClick={() => setPage((p) => p + 1)}
+              onClick={() => setPage(page + 1)}
               className="btn-page"
             >
               Next

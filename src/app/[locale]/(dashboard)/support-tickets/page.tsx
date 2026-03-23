@@ -5,6 +5,11 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Undo2 } from "lucide-react";
 import { ClickableText } from "@/components/ui/clickable-text";
+import { Input } from "@/components/ui/input";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { FilterDropdown } from "@/components/filters/FilterDropdown";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useFilters } from "@/hooks/useFilters";
 import {
   Combobox,
   ComboboxContent,
@@ -18,7 +23,7 @@ import type { SupportTicket, PaginatedResponse } from "@/types";
 type EditableField = "status" | "priority" | "category";
 
 const STATUS_OPTIONS = [
-  { value: "open", label: "Open" },
+  { value: "new", label: "New" },
   { value: "in_progress", label: "In progress" },
   { value: "resolved", label: "Resolved" },
   { value: "closed", label: "Closed" },
@@ -94,19 +99,35 @@ function formatDateTime(value: string): string {
 export default function SupportTicketsPage() {
   const tPages = useTranslations("pages");
   const router = useRouter();
+  const { page, filters, setFilter, setPage, clearFilters } = useFilters([
+    "status",
+    "priority",
+    "search",
+  ]);
+  const [searchInput, setSearchInput] = useState(filters.search || "");
+  const debouncedSearch = useDebouncedValue(searchInput);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
   const [count, setCount] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [saving, setSaving] = useState<Record<string, Partial<Record<EditableField, boolean>>>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    const next = debouncedSearch.trim();
+    if (next === (filters.search || "")) return;
+    setFilter("search", next);
+  }, [debouncedSearch, filters.search, setFilter]);
+
+  useEffect(() => {
     setLoading(true);
+    const params: Record<string, string | number> = { page };
+    if (filters.status) params.status = filters.status;
+    if (filters.priority) params.priority = filters.priority;
+    if (filters.search) params.search = filters.search;
     api
       .get<PaginatedResponse<SupportTicket>>("admin/support-tickets/", {
-        params: { page },
+        params,
       })
       .then((res) => {
         setTickets(res.data.results);
@@ -115,7 +136,7 @@ export default function SupportTicketsPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [page]);
+  }, [filters.priority, filters.search, filters.status, page]);
 
   async function handleDelete(publicId: string) {
     if (!confirm(tPages("supportTicketsConfirmDeleteOne"))) return;
@@ -198,6 +219,42 @@ export default function SupportTicketsPage() {
         </div>
       ) : (
         <>
+          <FilterBar>
+            <FilterDropdown
+              value={filters.status}
+              onChange={(value) => setFilter("status", value)}
+              placeholder={tPages("filtersStatus")}
+              options={STATUS_OPTIONS.map((option) => ({
+                value: option.value,
+                label: option.label,
+              }))}
+            />
+            <FilterDropdown
+              value={filters.priority}
+              onChange={(value) => setFilter("priority", value)}
+              placeholder={tPages("supportTicketsPriority")}
+              options={PRIORITY_OPTIONS.map((option) => ({
+                value: option.value,
+                label: option.label,
+              }))}
+            />
+            <Input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder={tPages("filtersSearchTickets")}
+              className="w-full md:w-72"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setSearchInput("");
+                clearFilters();
+              }}
+              className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
+            >
+              {tPages("filtersClear")}
+            </button>
+          </FilterBar>
           <div className="overflow-x-auto rounded-xl border border-dashed border-card-border bg-card">
             <table className="w-full text-left text-sm">
               <thead>
@@ -299,7 +356,7 @@ export default function SupportTicketsPage() {
           <div className="flex items-center justify-between">
             <button
               disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
+              onClick={() => setPage(page - 1)}
               className="btn-page"
             >
               {tPages("supportTicketsPrevious")}
@@ -309,7 +366,7 @@ export default function SupportTicketsPage() {
             </span>
             <button
               disabled={!hasNext}
-              onClick={() => setPage((p) => p + 1)}
+              onClick={() => setPage(page + 1)}
               className="btn-page"
             >
               {tPages("supportTicketsNext")}
