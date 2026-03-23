@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 
 import { Button } from "@/components/ui/button";
 import { useSystemNotification } from "@/hooks/useSystemNotification";
+import { dismissSystemNotification } from "@/lib/api/systemNotification";
 import { cn } from "@/lib/utils";
 
 interface SystemNotificationBannerProps {
   className?: string;
-  onDismiss: () => void;
   sidebarCollapsed?: boolean;
   /** When the banner should affect layout offset (has content and should show chrome). */
   onPresenceChange?: (visible: boolean) => void;
@@ -41,23 +41,27 @@ function parseCtaTarget(raw: string): CtaTarget | null {
 
 export default function SystemNotificationBanner({
   className,
-  onDismiss,
   sidebarCollapsed = false,
   onPresenceChange,
 }: SystemNotificationBannerProps) {
   const router = useRouter();
   const t = useTranslations("systemBanner");
   const { notification, isLoading, isError } = useSystemNotification();
+  const [hiddenPublicId, setHiddenPublicId] = useState<string | null>(null);
+  const [isDismissing, setIsDismissing] = useState(false);
+
+  const isOptimisticallyHidden =
+    !!notification && hiddenPublicId === notification.public_id;
 
   useEffect(() => {
-    if (isLoading || isError) {
+    if (isLoading || isError || isOptimisticallyHidden) {
       onPresenceChange?.(false);
       return;
     }
     onPresenceChange?.(!!notification);
-  }, [isLoading, isError, notification, onPresenceChange]);
+  }, [isLoading, isError, isOptimisticallyHidden, notification, onPresenceChange]);
 
-  if (isLoading || isError || !notification) {
+  if (isLoading || isError || !notification || isOptimisticallyHidden) {
     return null;
   }
 
@@ -102,7 +106,19 @@ export default function SystemNotificationBanner({
       <Button
         variant="ghost"
         size="icon-xs"
-        onClick={onDismiss}
+        onClick={async () => {
+          if (isDismissing) return;
+          setIsDismissing(true);
+          setHiddenPublicId(notification.public_id);
+          try {
+            await dismissSystemNotification(notification.public_id);
+          } catch {
+            setHiddenPublicId(null);
+          } finally {
+            setIsDismissing(false);
+          }
+        }}
+        disabled={isDismissing}
         aria-label={t("dismissAria")}
         className="absolute right-3 top-1/2 shrink-0 -translate-y-1/2 text-muted-foreground hover:text-foreground sm:right-4"
       >
