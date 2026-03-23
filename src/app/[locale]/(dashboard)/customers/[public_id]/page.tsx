@@ -14,10 +14,15 @@ function asCurrency(value: string) {
   return number.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
-function formatMdy(dateValue: string) {
+function formatMdyHm(dateValue: string) {
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) return "—";
-  return `${date.getMonth() + 1}-${date.getDate()}-${date.getFullYear()}`;
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${month}-${day}-${year} ${hours}:${minutes}`;
 }
 
 export default function CustomerDetailPage() {
@@ -36,9 +41,9 @@ export default function CustomerDetailPage() {
     api
       .get<CustomerDetailsResponse>(`admin/customers/${publicId}/details/`)
       .then((res) => setData(res.data))
-      .catch(() => setError("Failed to load customer details."))
+      .catch(() => setError(tPages("customerDetailsLoadError")))
       .finally(() => setLoading(false));
-  }, [publicId]);
+  }, [publicId, tPages]);
 
   return (
     <div className="space-y-6">
@@ -53,7 +58,9 @@ export default function CustomerDetailPage() {
             <Undo2 className="h-4 w-4" />
           </button>
         </div>
-        <h1 className="text-2xl font-medium leading-relaxed text-foreground">Customer Details</h1>
+        <h1 className="text-2xl font-medium leading-relaxed text-foreground">
+          {tPages("customerDetailsTitle")}
+        </h1>
       </div>
 
       {loading ? (
@@ -67,13 +74,13 @@ export default function CustomerDetailPage() {
       ) : data ? (
         <>
           <section className="rounded-xl border border-dashed border-card-border bg-card p-6">
-            <h2 className="mb-4 text-lg font-medium">Basic Info</h2>
+            <h2 className="mb-4 text-lg font-medium">{tPages("customerDetailsBasicInfo")}</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              <p><span className="text-muted-foreground">Name:</span> {data.customer.name || "—"}</p>
-              <p><span className="text-muted-foreground">Email:</span> {data.customer.email ?? "—"}</p>
-              <p><span className="text-muted-foreground">Phone:</span> {data.customer.phone || "—"}</p>
-              <p><span className="text-muted-foreground">Address:</span> {data.customer.address ?? "—"}</p>
-              <p><span className="text-muted-foreground">District:</span> {data.customer.district ?? "—"}</p>
+              <p><span className="text-muted-foreground">{tPages("customerDetailsName")}:</span> {data.customer.name || "—"}</p>
+              <p><span className="text-muted-foreground">{tPages("customerDetailsEmail")}:</span> {data.customer.email ?? "—"}</p>
+              <p><span className="text-muted-foreground">{tPages("customerDetailsPhone")}:</span> {data.customer.phone || "—"}</p>
+              <p><span className="text-muted-foreground">{tPages("customerDetailsAddress")}:</span> {data.customer.address ?? "—"}</p>
+              <p><span className="text-muted-foreground">{tPages("customerDetailsDistrict")}:</span> {data.customer.district ?? "—"}</p>
             </div>
           </section>
 
@@ -83,63 +90,67 @@ export default function CustomerDetailPage() {
               onClick={() => setShowOrderedProducts((prev) => !prev)}
               className="rounded-xl border border-dashed border-card-border bg-card p-4 text-left hover:bg-muted/40"
             >
-              <p className="text-sm text-muted-foreground">Total Orders</p>
+              <p className="text-sm text-muted-foreground">{tPages("customerDetailsTotalOrders")}</p>
               <p className="mt-1 text-2xl font-semibold">{data.analytics.total_orders}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {showOrderedProducts ? "Hide ordered products" : "Show ordered products"}
+                {showOrderedProducts
+                  ? tPages("customerDetailsHideOrderedProducts")
+                  : tPages("customerDetailsShowOrderedProducts")}
               </p>
             </button>
             <div className="rounded-xl border border-dashed border-card-border bg-card p-4">
-              <p className="text-sm text-muted-foreground">Total Spent</p>
+              <p className="text-sm text-muted-foreground">{tPages("customerDetailsTotalSpent")}</p>
               <p className="mt-1 text-2xl font-semibold">{asCurrency(data.analytics.total_spent)}</p>
             </div>
             <div className="rounded-xl border border-dashed border-card-border bg-card p-4">
-              <p className="text-sm text-muted-foreground">Loyalty Score</p>
+              <p className="text-sm text-muted-foreground">{tPages("customerDetailsLoyaltyScore")}</p>
               <p className="mt-1 text-2xl font-semibold">{asCurrency(data.analytics.loyalty_score)}</p>
             </div>
             <div className="rounded-xl border border-dashed border-card-border bg-card p-4">
-              <p className="text-sm text-muted-foreground">Average Order Value</p>
+              <p className="text-sm text-muted-foreground">{tPages("customerDetailsAverageOrderValue")}</p>
               <p className="mt-1 text-2xl font-semibold">{asCurrency(data.analytics.average_order_value)}</p>
             </div>
             <div className="rounded-xl border border-dashed border-card-border bg-card p-4">
-              <p className="text-sm text-muted-foreground">First Order Date</p>
+              <p className="text-sm text-muted-foreground">{tPages("customerDetailsFirstOrderDate")}</p>
               <p className="mt-1 text-base font-medium">
                 {data.analytics.first_order_date
-                  ? formatMdy(data.analytics.first_order_date)
+                  ? formatMdyHm(data.analytics.first_order_date)
                   : "—"}
               </p>
             </div>
             <div className="rounded-xl border border-dashed border-card-border bg-card p-4">
-              <p className="text-sm text-muted-foreground">Last Order Date</p>
+              <p className="text-sm text-muted-foreground">{tPages("customerDetailsLastOrderDate")}</p>
               <p className="mt-1 text-base font-medium">
                 {data.analytics.last_order_date
-                  ? formatMdy(data.analytics.last_order_date)
+                  ? formatMdyHm(data.analytics.last_order_date)
                   : "—"}
               </p>
             </div>
           </section>
           {showOrderedProducts && (
             <section className="rounded-xl border border-dashed border-card-border bg-card p-6">
-              <h2 className="mb-4 text-lg font-medium">Ordered Products (Last Order First)</h2>
+              <h2 className="mb-4 text-lg font-medium">
+                {tPages("customerDetailsOrderedProductsTitle")}
+              </h2>
               {data.ordered_products.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No ordered products found.</p>
+                <p className="text-sm text-muted-foreground">{tPages("customerDetailsNoOrderedProducts")}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
                       <tr className="border-b border-border bg-muted/40">
-                        <th className="px-3 py-2">Order</th>
-                        <th className="px-3 py-2">Date</th>
-                        <th className="px-3 py-2">Product</th>
-                        <th className="px-3 py-2">Qty</th>
-                        <th className="px-3 py-2">Price</th>
+                        <th className="px-3 py-2">{tPages("customerDetailsOrder")}</th>
+                        <th className="px-3 py-2">{tPages("customerDetailsDate")}</th>
+                        <th className="px-3 py-2">{tPages("customerDetailsProduct")}</th>
+                        <th className="px-3 py-2">{tPages("customerDetailsQty")}</th>
+                        <th className="px-3 py-2">{tPages("customerDetailsPrice")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/60">
                       {data.ordered_products.map((item, idx) => (
                         <tr key={`${item.order_public_id}-${item.product_public_id}-${idx}`}>
                           <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{item.order_number}</td>
-                          <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{formatMdy(item.ordered_at)}</td>
+                          <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{formatMdyHm(item.ordered_at)}</td>
                           <td className="whitespace-nowrap px-3 py-2 font-medium text-foreground">{item.product_name}</td>
                           <td className="px-3 py-2 text-muted-foreground">{item.quantity}</td>
                           <td className="px-3 py-2 text-muted-foreground">{asCurrency(item.price)}</td>
