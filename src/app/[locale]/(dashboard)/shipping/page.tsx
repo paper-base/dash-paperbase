@@ -21,8 +21,6 @@ const multiSelectClass =
 
 type ZoneForm = {
   name: string;
-  delivery_areas: string;
-  districts: string;
   is_active: boolean;
 };
 
@@ -46,8 +44,6 @@ type RateForm = {
 
 const emptyZone: ZoneForm = {
   name: "",
-  delivery_areas: "",
-  districts: "",
   is_active: true,
 };
 
@@ -148,8 +144,6 @@ export default function ShippingPage() {
     setEditingZone(z.public_id);
     setZoneForm({
       name: z.name,
-      delivery_areas: z.delivery_areas || "",
-      districts: z.districts || "",
       is_active: z.is_active,
     });
   }
@@ -192,8 +186,6 @@ export default function ShippingPage() {
     setError("");
     const payload = {
       name: zoneForm.name.trim(),
-      delivery_areas: zoneForm.delivery_areas.trim(),
-      districts: zoneForm.districts.trim(),
       is_active: zoneForm.is_active,
     };
     try {
@@ -357,20 +349,6 @@ export default function ShippingPage() {
                 placeholder="Zone name (e.g. Dhaka / Inside)"
                 required
               />
-              <Input
-                value={zoneForm.delivery_areas}
-                onChange={(e) =>
-                  setZoneForm((f) => ({ ...f, delivery_areas: e.target.value }))
-                }
-                className="text-sm"
-                placeholder="delivery_areas (e.g. inside,outside) optional"
-              />
-              <Input
-                value={zoneForm.districts}
-                onChange={(e) => setZoneForm((f) => ({ ...f, districts: e.target.value }))}
-                className="text-sm"
-                placeholder="districts (e.g. Dhaka) optional"
-              />
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -416,8 +394,7 @@ export default function ShippingPage() {
                       </span>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      areas: {z.delivery_areas || "any"} · districts:{" "}
-                      {z.districts || "any"}
+                      {z.public_id}
                     </div>
                   </div>
                   <div className="shrink-0 text-right text-sm">

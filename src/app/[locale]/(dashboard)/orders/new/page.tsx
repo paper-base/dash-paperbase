@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { cn } from "@/lib/utils";
-import { useNewOrder, DELIVERY_OPTIONS } from "./useNewOrder";
+import { useNewOrder } from "./useNewOrder";
 
 function firstLineItemError(fieldErrors: Record<string, string>): string | undefined {
   if (fieldErrors.items) return fieldErrors.items;
@@ -129,14 +129,15 @@ export default function NewOrderPage() {
                   </Select>
                 </FormField>
 
-                <FormField label="Shipping zone">
+                <FormField label="Shipping zone" required error={fieldErrors.shipping_zone}>
                   <Select
                     value={form.shipping_zone}
                     onChange={(e) => updateForm({ shipping_zone: e.target.value })}
                     aria-invalid={!!fieldErrors.shipping_zone}
                     className={cn(fieldErrors.shipping_zone && "border-destructive")}
+                    required
                   >
-                    <option value="">Auto (match by district/area)</option>
+                    <option value="">Select shipping zone</option>
                     {shippingZones.map((z) => (
                       <option key={z.public_id} value={z.public_id}>
                         {z.name}
@@ -218,23 +219,6 @@ export default function NewOrderPage() {
                   </FormField>
                 </div>
 
-                <FormField label="Delivery area" required error={fieldErrors.delivery_area}>
-                  <Select
-                    id="order-delivery-area"
-                    required
-                    value={form.delivery_area}
-                    onChange={(e) => updateForm({ delivery_area: e.target.value })}
-                    aria-invalid={!!fieldErrors.delivery_area}
-                    className={cn(fieldErrors.delivery_area && "border-destructive")}
-                  >
-                    {DELIVERY_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </Select>
-                </FormField>
-
                 <FormField label="Tracking number" error={fieldErrors.tracking_number}>
                   <Input
                     id="order-tracking"
@@ -295,6 +279,7 @@ export default function NewOrderPage() {
                         key={product.public_id}
                         type="button"
                         onClick={() => addProduct(product)}
+                        disabled={!product.public_id}
                         className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
                       >
                         {(product.image_url || product.image) && (
@@ -306,12 +291,12 @@ export default function NewOrderPage() {
                         )}
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium text-foreground">
-                            {product.name}
+                            {product.name || "Unavailable"}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {currencySymbol}
-                            {Number(product.price).toLocaleString()} · Stock:{" "}
-                            {product.stock}
+                            {Number(product.price || 0).toLocaleString()} · Stock:{" "}
+                            {product.stock ?? 0}
                           </p>
                         </div>
                       </button>

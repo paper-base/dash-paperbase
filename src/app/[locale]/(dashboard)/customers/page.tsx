@@ -94,47 +94,46 @@ export default function CustomersPage() {
         </Link>
       </div>
 
+      <FilterBar>
+        <FilterDropdown
+          value={filters.joined_date}
+          onChange={(value) => setFilter("joined_date", value)}
+          placeholder={tPages("filtersJoinedDate")}
+          options={[
+            { value: "today", label: tPages("filtersToday") },
+            { value: "last_7_days", label: tPages("filtersLast7Days") },
+            { value: "last_30_days", label: tPages("filtersLast30Days") },
+          ]}
+        />
+        <Input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder={tPages("filtersSearchCustomers")}
+          className="w-full md:w-72"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            setSearchInput("");
+            clearFilters();
+          }}
+          className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
+        >
+          {tPages("filtersClear")}
+        </button>
+      </FilterBar>
+
       {loading ? (
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
+      ) : customers.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-card-border bg-card py-12 text-center text-sm text-muted-foreground">
+          {tPages("customersEmpty")}
+        </div>
       ) : (
         <>
-          <FilterBar>
-            <FilterDropdown
-              value={filters.joined_date}
-              onChange={(value) => setFilter("joined_date", value)}
-              placeholder={tPages("filtersJoinedDate")}
-              options={[
-                { value: "today", label: tPages("filtersToday") },
-                { value: "last_7_days", label: tPages("filtersLast7Days") },
-                { value: "last_30_days", label: tPages("filtersLast30Days") },
-              ]}
-            />
-            <Input
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={tPages("filtersSearchCustomers")}
-              className="w-full md:w-72"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                setSearchInput("");
-                clearFilters();
-              }}
-              className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
-            >
-              {tPages("filtersClear")}
-            </button>
-          </FilterBar>
-          {customers.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-card-border bg-card py-12 text-center text-sm text-muted-foreground">
-              {tPages("customersEmpty")}
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto rounded-xl border border-dashed border-card-border bg-card">
+          <div className="overflow-x-auto rounded-xl border border-dashed border-card-border bg-card">
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/40">
@@ -189,26 +188,24 @@ export default function CustomersPage() {
                 </table>
               </div>
 
-              {(count > 10 || hasNext) && (
-                <div className="flex items-center justify-between">
-                  <button
-                    disabled={page <= 1}
-                    onClick={() => setPage(page - 1)}
-                    className="btn-page"
-                  >
-                    Previous
-                  </button>
-                  <span className="text-sm text-muted-foreground">Page {page}</span>
-                  <button
-                    disabled={!hasNext}
-                    onClick={() => setPage(page + 1)}
-                    className="btn-page"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
-            </>
+          {(count > 10 || hasNext) && (
+            <div className="flex items-center justify-between">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
+                className="btn-page"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-muted-foreground">Page {page}</span>
+              <button
+                disabled={!hasNext}
+                onClick={() => setPage(page + 1)}
+                className="btn-page"
+              >
+                Next
+              </button>
+            </div>
           )}
         </>
       )}

@@ -41,16 +41,10 @@ export interface OrderForm {
   email: string;
   shipping_address: string;
   district: string;
-  delivery_area: string;
   tracking_number: string;
   shipping_zone: string;
   shipping_method: string;
 }
-
-export const DELIVERY_OPTIONS = [
-  { value: "inside", label: "Inside Dhaka City" },
-  { value: "outside", label: "Outside Dhaka City" },
-] as const;
 
 export function useNewOrder() {
   const router = useRouter();
@@ -64,7 +58,6 @@ export function useNewOrder() {
     email: "",
     shipping_address: "",
     district: "",
-    delivery_area: "inside",
     tracking_number: "",
     shipping_zone: "",
     shipping_method: "",
@@ -139,7 +132,7 @@ export function useNewOrder() {
       setSearching(true);
       try {
         const { data } = await api.get<PaginatedResponse<Product>>("admin/products/", {
-          params: { search: value.trim() },
+          params: { search: value.trim(), status: "active" },
         });
         setResults(data.results);
         setShowResults(true);
@@ -152,6 +145,7 @@ export function useNewOrder() {
   }
 
   async function ensureVariantsLoaded(productId: string) {
+    if (!productId) return;
     if (variantsByProductId[productId]) return;
     setVariantsLoadingByProductId((p) => ({ ...p, [productId]: true }));
     try {
@@ -169,6 +163,7 @@ export function useNewOrder() {
   }
 
   function addProduct(product: Product) {
+    if (!product?.public_id) return;
     setFieldErrors({});
     ensureVariantsLoaded(product.public_id);
     setItems((prev) => [
@@ -176,7 +171,7 @@ export function useNewOrder() {
       {
         key: nextKey.current++,
         product_id: product.public_id,
-        product_name: product.name,
+        product_name: product.name || "Unavailable",
         product_image: product.image_url ?? product.image,
         variant_public_id: null,
         quantity: 1,
@@ -245,7 +240,6 @@ export function useNewOrder() {
     try {
       const payload = {
         ...form,
-        shipping_zone: form.shipping_zone || null,
         shipping_method: form.shipping_method || null,
         items: items.map((item) => ({
           product: item.product_id,

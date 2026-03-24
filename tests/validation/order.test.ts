@@ -9,9 +9,8 @@ describe("order schema", () => {
       email: "john@example.com",
       shipping_address: "Dhaka",
       district: "Dhaka",
-      delivery_area: "inside",
       tracking_number: "",
-      shipping_zone: "",
+      shipping_zone: "szn_abc123",
       shipping_method: "",
       items: [
         {
@@ -32,11 +31,32 @@ describe("order schema", () => {
       email: "john@example.com",
       shipping_address: "Dhaka",
       district: "Dhaka",
-      delivery_area: "inside",
+      tracking_number: "",
+      shipping_zone: "szn_abc123",
+      shipping_method: "",
+      items: [],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects order without shipping zone", () => {
+    const result = orderCreateSchema.safeParse({
+      shipping_name: "John",
+      phone: "01712345678",
+      email: "john@example.com",
+      shipping_address: "Dhaka",
+      district: "Dhaka",
       tracking_number: "",
       shipping_zone: "",
       shipping_method: "",
-      items: [],
+      items: [
+        {
+          product_id: "1",
+          variant_public_id: null,
+          quantity: 1,
+          price: "100",
+        },
+      ],
     });
     expect(result.success).toBe(false);
   });

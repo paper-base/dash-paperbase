@@ -213,48 +213,49 @@ export default function SupportTicketsPage() {
         </h1>
       </div>
 
+      <FilterBar>
+        <FilterDropdown
+          value={filters.status}
+          onChange={(value) => setFilter("status", value)}
+          placeholder={tPages("filtersStatus")}
+          options={STATUS_OPTIONS.map((option) => ({
+            value: option.value,
+            label: option.label,
+          }))}
+        />
+        <FilterDropdown
+          value={filters.priority}
+          onChange={(value) => setFilter("priority", value)}
+          placeholder={tPages("supportTicketsPriority")}
+          options={PRIORITY_OPTIONS.map((option) => ({
+            value: option.value,
+            label: option.label,
+          }))}
+        />
+        <Input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder={tPages("filtersSearchTickets")}
+          className="w-full md:w-72"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            setSearchInput("");
+            clearFilters();
+          }}
+          className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
+        >
+          {tPages("filtersClear")}
+        </button>
+      </FilterBar>
+
       {loading ? (
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       ) : (
         <>
-          <FilterBar>
-            <FilterDropdown
-              value={filters.status}
-              onChange={(value) => setFilter("status", value)}
-              placeholder={tPages("filtersStatus")}
-              options={STATUS_OPTIONS.map((option) => ({
-                value: option.value,
-                label: option.label,
-              }))}
-            />
-            <FilterDropdown
-              value={filters.priority}
-              onChange={(value) => setFilter("priority", value)}
-              placeholder={tPages("supportTicketsPriority")}
-              options={PRIORITY_OPTIONS.map((option) => ({
-                value: option.value,
-                label: option.label,
-              }))}
-            />
-            <Input
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={tPages("filtersSearchTickets")}
-              className="w-full md:w-72"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                setSearchInput("");
-                clearFilters();
-              }}
-              className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
-            >
-              {tPages("filtersClear")}
-            </button>
-          </FilterBar>
           <div className="overflow-x-auto rounded-xl border border-dashed border-card-border bg-card">
             <table className="w-full text-left text-sm">
               <thead>

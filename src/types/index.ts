@@ -23,8 +23,9 @@ export interface Branding {
 
 export interface OrderItem {
   public_id: string;
-  product: string;
+  product: string | null;
   product_name: string;
+  status?: "active" | "deleted";
   product_brand?: string;
   product_image: string | null;
   variant_public_id?: string | null;
@@ -51,8 +52,6 @@ export interface Order {
   shipping_name: string;
   shipping_address: string;
   phone: string;
-  delivery_area: string;
-  delivery_area_label: string;
   district: string;
   tracking_number: string;
   courier_provider?: string;
@@ -382,8 +381,6 @@ export interface CustomerDetailsResponse {
 export interface ShippingZone {
   public_id: string;
   name: string;
-  delivery_areas: string;
-  districts: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;

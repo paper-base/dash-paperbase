@@ -23,6 +23,7 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useFilters } from "@/hooks/useFilters";
 
 type CategoryOption = { value: string; label: string };
+type MeResponse = { is_superuser?: boolean };
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -52,6 +53,7 @@ export default function ProductsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [canDeleteProducts, setCanDeleteProducts] = useState(false);
 
   useEffect(() => {
     const next = debouncedSearch.trim();
@@ -91,6 +93,23 @@ export default function ProductsPage() {
         setCategoryOptions(options);
       })
       .catch(console.error);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    api
+      .get<MeResponse>("auth/me/")
+      .then(({ data }) => {
+        if (!active) return;
+        setCanDeleteProducts(Boolean(data.is_superuser));
+      })
+      .catch(() => {
+        if (!active) return;
+        setCanDeleteProducts(false);
+      });
     return () => {
       active = false;
     };
@@ -215,7 +234,7 @@ export default function ProductsPage() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          {someSelected && (
+          {canDeleteProducts && someSelected && (
             <button
               onClick={handleDeleteSelected}
               disabled={deleting}
@@ -237,86 +256,89 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      <FilterBar>
+        <FilterDropdown
+          value={filters.status}
+          onChange={(value) => setFilter("status", value)}
+          placeholder={tPages("filtersStatus")}
+          options={[
+            { value: "active", label: "Active" },
+            { value: "inactive", label: "Inactive" },
+          ]}
+        />
+        <FilterDropdown
+          value={filters.stock}
+          onChange={(value) => setFilter("stock", value)}
+          placeholder={tPages("filtersStock")}
+          options={[
+            { value: "in_stock", label: "In stock" },
+            { value: "low_stock", label: "Low stock" },
+            { value: "out_of_stock", label: "Out of stock" },
+          ]}
+        />
+        <FilterDropdown
+          value={filters.category}
+          onChange={(value) => setFilter("category", value)}
+          placeholder={tPages("filtersCategory")}
+          options={categoryOptions}
+          className="min-w-[180px]"
+        />
+        <Input
+          value={priceMinInput}
+          onChange={(e) => setPriceMinInput(e.target.value)}
+          type="number"
+          min={0}
+          placeholder={tPages("filtersMinPrice")}
+          className="w-full md:w-28"
+        />
+        <Input
+          value={priceMaxInput}
+          onChange={(e) => setPriceMaxInput(e.target.value)}
+          type="number"
+          min={0}
+          placeholder={tPages("filtersMaxPrice")}
+          className="w-full md:w-28"
+        />
+        <Input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder={tPages("filtersSearchProducts")}
+          className="w-full md:w-64"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            setSearchInput("");
+            setPriceMinInput("");
+            setPriceMaxInput("");
+            clearFilters();
+          }}
+          className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
+        >
+          {tPages("filtersClear")}
+        </button>
+      </FilterBar>
+
       {loading ? (
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
         </div>
       ) : (
         <>
-          <FilterBar>
-            <FilterDropdown
-              value={filters.status}
-              onChange={(value) => setFilter("status", value)}
-              placeholder={tPages("filtersStatus")}
-              options={[
-                { value: "active", label: "Active" },
-                { value: "inactive", label: "Inactive" },
-              ]}
-            />
-            <FilterDropdown
-              value={filters.stock}
-              onChange={(value) => setFilter("stock", value)}
-              placeholder={tPages("filtersStock")}
-              options={[
-                { value: "in_stock", label: "In stock" },
-                { value: "low_stock", label: "Low stock" },
-                { value: "out_of_stock", label: "Out of stock" },
-              ]}
-            />
-            <FilterDropdown
-              value={filters.category}
-              onChange={(value) => setFilter("category", value)}
-              placeholder={tPages("filtersCategory")}
-              options={categoryOptions}
-              className="min-w-[180px]"
-            />
-            <Input
-              value={priceMinInput}
-              onChange={(e) => setPriceMinInput(e.target.value)}
-              type="number"
-              min={0}
-              placeholder={tPages("filtersMinPrice")}
-              className="w-full md:w-28"
-            />
-            <Input
-              value={priceMaxInput}
-              onChange={(e) => setPriceMaxInput(e.target.value)}
-              type="number"
-              min={0}
-              placeholder={tPages("filtersMaxPrice")}
-              className="w-full md:w-28"
-            />
-            <Input
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={tPages("filtersSearchProducts")}
-              className="w-full md:w-64"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                setSearchInput("");
-                setPriceMinInput("");
-                setPriceMaxInput("");
-                clearFilters();
-              }}
-              className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
-            >
-              {tPages("filtersClear")}
-            </button>
-          </FilterBar>
           <div className="overflow-x-auto rounded-xl border border-dashed border-card-border bg-card">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/40">
                   <th className="w-10 px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={toggleSelectAll}
-                      className="form-checkbox"
-                      aria-label="Select all products on this page"
-                    />
+                    {canDeleteProducts && (
+                      <input
+                        type="checkbox"
+                        checked={allSelected}
+                        onChange={toggleSelectAll}
+                        className="form-checkbox"
+                        aria-label="Select all products on this page"
+                      />
+                    )}
                   </th>
                   <th className="th">Product</th>
                   <th className="th">Brand</th>
@@ -330,14 +352,16 @@ export default function ProductsPage() {
                 {products.map((product) => (
                   <tr key={product.public_id} className="hover:bg-muted/40">
                     <td className="w-10 px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(product.public_id)}
-                        onChange={() => toggleSelect(product.public_id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="form-checkbox"
-                        aria-label={`Select ${product.name}`}
-                      />
+                      {canDeleteProducts && (
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(product.public_id)}
+                          onChange={() => toggleSelect(product.public_id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="form-checkbox"
+                          aria-label={`Select ${product.name}`}
+                        />
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <ClickableText

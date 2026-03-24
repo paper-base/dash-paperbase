@@ -165,54 +165,55 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      <FilterBar>
+        <FilterDropdown
+          value={filters.status}
+          onChange={(value) => setFilter("status", value)}
+          placeholder={tPages("filtersStatus")}
+          options={[
+            { value: "pending", label: "Pending" },
+            { value: "confirmed", label: "Confirmed" },
+            { value: "processing", label: "Processing" },
+            { value: "shipped", label: "Shipped" },
+            { value: "delivered", label: "Delivered" },
+            { value: "cancelled", label: "Cancelled" },
+            { value: "returned", label: "Returned" },
+          ]}
+        />
+        <FilterDropdown
+          value={filters.date_range}
+          onChange={(value) => setFilter("date_range", value)}
+          placeholder={tPages("filtersDateRange")}
+          options={[
+            { value: "today", label: tPages("filtersToday") },
+            { value: "last_7_days", label: tPages("filtersLast7Days") },
+            { value: "last_30_days", label: tPages("filtersLast30Days") },
+          ]}
+        />
+        <Input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder={tPages("filtersSearchOrders")}
+          className="w-full md:w-72"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            setSearchInput("");
+            clearFilters();
+          }}
+          className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
+        >
+          {tPages("filtersClear")}
+        </button>
+      </FilterBar>
+
       {loading ? (
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
         </div>
       ) : (
         <>
-          <FilterBar>
-            <FilterDropdown
-              value={filters.status}
-              onChange={(value) => setFilter("status", value)}
-              placeholder={tPages("filtersStatus")}
-              options={[
-                { value: "pending", label: "Pending" },
-                { value: "confirmed", label: "Confirmed" },
-                { value: "processing", label: "Processing" },
-                { value: "shipped", label: "Shipped" },
-                { value: "delivered", label: "Delivered" },
-                { value: "cancelled", label: "Cancelled" },
-                { value: "returned", label: "Returned" },
-              ]}
-            />
-            <FilterDropdown
-              value={filters.date_range}
-              onChange={(value) => setFilter("date_range", value)}
-              placeholder={tPages("filtersDateRange")}
-              options={[
-                { value: "today", label: tPages("filtersToday") },
-                { value: "last_7_days", label: tPages("filtersLast7Days") },
-                { value: "last_30_days", label: tPages("filtersLast30Days") },
-              ]}
-            />
-            <Input
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={tPages("filtersSearchOrders")}
-              className="w-full md:w-72"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                setSearchInput("");
-                clearFilters();
-              }}
-              className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
-            >
-              {tPages("filtersClear")}
-            </button>
-          </FilterBar>
           <div className="overflow-x-auto rounded-xl border border-dashed border-card-border bg-card">
             <table className="w-full text-left text-sm">
               <thead>
@@ -231,7 +232,7 @@ export default function OrdersPage() {
                   <th className="th">Phone</th>
                   <th className="th">Status</th>
                   <th className="th">Total</th>
-                  <th className="th">Delivery</th>
+                  <th className="th">Shipping zone</th>
                   <th className="th">Extra</th>
                   <th className="th">Date</th>
                 </tr>
@@ -271,7 +272,7 @@ export default function OrdersPage() {
                       {currencySymbol}{Number(order.total).toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                      {order.delivery_area_label}
+                      {order.shipping_zone_public_id || "—"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {order.extra_data && typeof order.extra_data === "object"

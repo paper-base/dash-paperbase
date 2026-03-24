@@ -21,9 +21,9 @@ import { validateRequiredExtraFields } from "@/lib/validation";
 import type { ExtraFieldValues } from "@/types/extra-fields";
 import type {
   Order,
-  OrderItem,
   PaginatedResponse,
   ProductVariant,
+  Product,
   ShippingMethod,
   ShippingZone,
 } from "@/types";
@@ -40,21 +40,33 @@ import {
   CardContent,
 } from "@/components/ui/card";
 
-const DELIVERY_OPTIONS = [
-  { value: "inside", label: "Inside Dhaka City" },
-  { value: "outside", label: "Outside Dhaka City" },
-];
-
 type EditForm = {
   shipping_name: string;
   phone: string;
   email: string;
   shipping_address: string;
   district: string;
-  delivery_area: string;
   tracking_number: string;
   shipping_zone: string;
   shipping_method: string;
+};
+
+type EditableOrderItem = {
+  key: string;
+  public_id: string | null;
+  product: string | null;
+  product_name: string;
+  product_brand?: string;
+  product_image: string | null;
+  status?: "active" | "deleted";
+  variant_public_id: string | null;
+  quantity: number;
+  price: string;
+  original_price?: string | null;
+  variant_option_labels?: string[];
+  variant_sku?: string | null;
+  variant_stock_quantity?: number | null;
+  isNew: boolean;
 };
 
 function formatOrderStatus(status: string): string {
@@ -135,7 +147,6 @@ export default function OrderDetailPage() {
     email: "",
     shipping_address: "",
     district: "",
-    delivery_area: "inside",
     tracking_number: "",
     shipping_zone: "",
     shipping_method: "",
@@ -145,8 +156,14 @@ export default function OrderDetailPage() {
   const { schema: extraFieldsSchema } = useExtraFieldsSchema("order");
   const [saving, setSaving] = useState(false);
   const [itemEdits, setItemEdits] = useState<Record<string, { variant_public_id: string | null; quantity: number; price: string }>>({});
+  const [editableItems, setEditableItems] = useState<EditableOrderItem[]>([]);
   const [variantsByProductId, setVariantsByProductId] = useState<Record<string, ProductVariant[]>>({});
   const [variantsLoadingByProductId, setVariantsLoadingByProductId] = useState<Record<string, boolean>>({});
+  const [productQuery, setProductQuery] = useState("");
+  const [productResults, setProductResults] = useState<Product[]>([]);
+  const [searchingProducts, setSearchingProducts] = useState(false);
+  const [showProductResults, setShowProductResults] = useState(false);
+  const [editError, setEditError] = useState("");
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [sendingToCourier, setSendingToCourier] = useState(false);
@@ -204,13 +221,13 @@ export default function OrderDetailPage() {
 
   function startEditing() {
     if (!order) return;
+    setEditError("");
     setForm({
       shipping_name: order.shipping_name,
       phone: order.phone,
       email: order.email,
       shipping_address: order.shipping_address,
       district: order.district,
-      delivery_area: order.delivery_area,
       tracking_number: order.tracking_number,
       shipping_zone: order.shipping_zone_public_id ?? "",
       shipping_method: order.shipping_method_public_id ?? "",
@@ -229,12 +246,36 @@ export default function OrderDetailPage() {
       };
     }
     setItemEdits(nextEdits);
+    setEditableItems(
+      (order.items ?? []).map((item) => ({
+        key: item.public_id,
+        public_id: item.public_id,
+        product: item.product,
+        product_name: item.product_name,
+        product_brand: item.product_brand,
+        product_image: item.product_image,
+        status: item.status,
+        variant_public_id: item.variant_public_id ?? null,
+        quantity: item.quantity,
+        price: String(item.price),
+        original_price: item.original_price,
+        variant_option_labels: item.variant_option_labels,
+        variant_sku: item.variant_sku,
+        variant_stock_quantity: item.variant_stock_quantity,
+        isNew: false,
+      }))
+    );
+    setProductQuery("");
+    setProductResults([]);
+    setShowProductResults(false);
     setEditing(true);
   }
 
   const orderItems = useMemo(() => order?.items ?? [], [order]);
+  const displayItems = useMemo(() => (editing ? editableItems : orderItems), [editing, editableItems, orderItems]);
 
   async function ensureVariantsLoaded(productId: string) {
+    if (!productId) return;
     if (variantsByProductId[productId]) return;
     setVariantsLoadingByProductId((p) => ({ ...p, [productId]: true }));
     try {
@@ -251,6 +292,63 @@ export default function OrderDetailPage() {
     }
   }
 
+  function handleProductSearch(value: string) {
+    setProductQuery(value);
+    const query = value.trim();
+    if (query.length < 2) {
+      setProductResults([]);
+      setShowProductResults(false);
+      return;
+    }
+    setSearchingProducts(true);
+    api
+      .get<PaginatedResponse<Product>>("admin/products/", {
+        params: { search: query, status: "active" },
+      })
+      .then(({ data }) => {
+        setProductResults(data.results ?? []);
+        setShowProductResults(true);
+      })
+      .catch(() => {
+        setProductResults([]);
+      })
+      .finally(() => setSearchingProducts(false));
+  }
+
+  function addProductToEditableOrder(product: Product) {
+    if (!product.public_id) return;
+    setEditError("");
+    ensureVariantsLoaded(product.public_id);
+    setEditableItems((prev) => [
+      ...prev,
+      {
+        key: `new-${Date.now()}-${product.public_id}-${prev.length}`,
+        public_id: null,
+        product: product.public_id,
+        product_name: product.name || "Unavailable",
+        product_brand: product.brand,
+        product_image: product.image_url ?? product.image,
+        status: "active",
+        variant_public_id: null,
+        quantity: 1,
+        price: String(product.price ?? "0"),
+        original_price: product.original_price,
+        variant_option_labels: [],
+        variant_sku: null,
+        variant_stock_quantity: null,
+        isNew: true,
+      },
+    ]);
+    setProductQuery("");
+    setProductResults([]);
+    setShowProductResults(false);
+  }
+
+  function removeEditableItem(itemKey: string) {
+    setEditError("");
+    setEditableItems((prev) => prev.filter((item) => item.key !== itemKey));
+  }
+
   async function handleSave(e: FormEvent) {
     e.preventDefault();
     const schemaWithNames = extraFieldsSchema.filter((f) => f.name.trim());
@@ -261,30 +359,45 @@ export default function OrderDetailPage() {
     }
     setExtraFieldsErrors({});
     setSaving(true);
+    setEditError("");
     try {
+      const removedExistingIds = orderItems
+        .filter((existingItem) => !editableItems.some((item) => item.public_id === existingItem.public_id))
+        .map((item) => item.public_id);
       const payload = {
         shipping_name: form.shipping_name,
         phone: form.phone,
         email: form.email,
         shipping_address: form.shipping_address,
         district: form.district,
-        delivery_area: form.delivery_area,
         tracking_number: form.tracking_number,
-        shipping_zone: form.shipping_zone || null,
+        shipping_zone: form.shipping_zone,
         shipping_method: form.shipping_method || null,
-        items: orderItems.map((it) => ({
-          public_id: it.public_id,
-          variant_public_id: itemEdits[it.public_id]?.variant_public_id ?? null,
-          quantity: itemEdits[it.public_id]?.quantity ?? it.quantity,
-          price: itemEdits[it.public_id]?.price ?? String(it.price),
-        })),
+        items: [
+          ...editableItems.map((it) =>
+            it.public_id
+              ? {
+                  public_id: it.public_id,
+                  variant_public_id: itemEdits[it.public_id]?.variant_public_id ?? it.variant_public_id ?? null,
+                  quantity: itemEdits[it.public_id]?.quantity ?? it.quantity,
+                  price: itemEdits[it.public_id]?.price ?? String(it.price),
+                }
+              : {
+                  product: it.product,
+                  variant_public_id: it.variant_public_id ?? null,
+                  quantity: it.quantity,
+                  price: String(it.price),
+                }
+          ),
+          ...removedExistingIds.map((publicId) => ({ public_id: publicId, remove: true })),
+        ],
         ...(Object.keys(extraFields).length > 0 && { extra_data: extraFields }),
       };
       const { data } = await api.patch<Order>(`admin/orders/${id}/`, payload);
       setOrder(data);
       setEditing(false);
-    } catch (err) {
-      console.error(err);
+    } catch (err: unknown) {
+      setEditError(extractApiDetail(err, "Failed to save order changes."));
     } finally {
       setSaving(false);
     }
@@ -459,7 +572,7 @@ export default function OrderDetailPage() {
           </CardHeader>
           <CardContent className="min-h-0 flex-1 overflow-auto px-4 pt-6 sm:px-6 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-none [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent">
             <div className="overflow-x-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-none [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent">
-            <table className="w-full min-w-[600px] text-left text-sm">
+            <table className="w-full min-w-[760px] text-left text-sm">
               <thead>
                 <tr className="border-b border-border">
                   <th className="pb-3 pr-4 font-medium text-muted-foreground">
@@ -474,10 +587,16 @@ export default function OrderDetailPage() {
                   <th className="pb-3 font-medium text-muted-foreground text-right">
                     Discount
                   </th>
+                  {editing && (
+                    <th className="pb-3 pl-4 font-medium text-muted-foreground text-right">
+                      Action
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
-                {(order.items ?? []).map((item: OrderItem) => {
+                {displayItems.map((item, index) => {
+                  const isUnavailable = item.status === "deleted" || !item.product;
                   const itemDiscount =
                     item.original_price != null &&
                     item.original_price !== "" &&
@@ -485,15 +604,16 @@ export default function OrderDetailPage() {
                       ? (Number(item.original_price) - Number(item.price)) * item.quantity
                       : 0;
                   const imageUrl = resolveImageUrl(item.product_image);
-                  const edit = itemEdits[item.public_id];
-                  const variants = variantsByProductId[item.product] ?? [];
-                  const variantsLoading = variantsLoadingByProductId[item.product] ?? false;
+                  const itemEditKey = item.public_id ?? item.key;
+                  const edit = itemEdits[itemEditKey];
+                  const variants = item.product ? (variantsByProductId[item.product] ?? []) : [];
+                  const variantsLoading = item.product ? (variantsLoadingByProductId[item.product] ?? false) : false;
                   const selectedVariant =
                     edit?.variant_public_id != null
                       ? variants.find((v) => v.public_id === edit.variant_public_id) ?? null
                       : null;
                   return (
-                    <tr key={item.public_id} className="border-b border-border/50">
+                    <tr key={item.key ?? item.public_id ?? `order-item-${index}`} className="border-b border-border/50">
                       <td className="py-3 pr-4">
                         <div className="flex items-center gap-3">
                           {imageUrl ? (
@@ -509,13 +629,17 @@ export default function OrderDetailPage() {
                           )}
                           <div>
                             <p className="font-medium text-foreground">
-                              <ClickableText
-                                href={`/products/${item.product}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {item.product_name}
-                              </ClickableText>
+                              {isUnavailable ? (
+                                "Unavailable"
+                              ) : (
+                                <ClickableText
+                                  href={`/products/${item.product}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {item.product_name}
+                                </ClickableText>
+                              )}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {[
@@ -544,10 +668,10 @@ export default function OrderDetailPage() {
                             onChange={(e) =>
                               setItemEdits((prev) => ({
                                 ...prev,
-                                [item.public_id]: {
-                                  variant_public_id: prev[item.public_id]?.variant_public_id ?? (item.variant_public_id ?? null),
+                                [itemEditKey]: {
+                                  variant_public_id: prev[itemEditKey]?.variant_public_id ?? (item.variant_public_id ?? null),
                                   quantity: Math.max(1, parseInt(e.target.value) || 1),
-                                  price: prev[item.public_id]?.price ?? String(item.price),
+                                  price: prev[itemEditKey]?.price ?? String(item.price),
                                 },
                               }))
                             }
@@ -569,9 +693,9 @@ export default function OrderDetailPage() {
                               onChange={(e) =>
                                 setItemEdits((prev) => ({
                                   ...prev,
-                                  [item.public_id]: {
-                                    variant_public_id: prev[item.public_id]?.variant_public_id ?? (item.variant_public_id ?? null),
-                                    quantity: prev[item.public_id]?.quantity ?? item.quantity,
+                                  [itemEditKey]: {
+                                    variant_public_id: prev[itemEditKey]?.variant_public_id ?? (item.variant_public_id ?? null),
+                                    quantity: prev[itemEditKey]?.quantity ?? item.quantity,
                                     price: e.target.value,
                                   },
                                 }))
@@ -584,19 +708,19 @@ export default function OrderDetailPage() {
                                 className="h-8 w-[220px] py-1"
                                 size="sm"
                                 value={edit?.variant_public_id ?? ""}
-                                onFocus={() => ensureVariantsLoaded(item.product)}
+                                onFocus={() => item.product && ensureVariantsLoaded(item.product)}
                                 onChange={(e) => {
                                   const raw = e.target.value;
                                   setItemEdits((prev) => ({
                                     ...prev,
-                                    [item.public_id]: {
+                                    [itemEditKey]: {
                                       variant_public_id: raw || null,
-                                      quantity: prev[item.public_id]?.quantity ?? item.quantity,
-                                      price: prev[item.public_id]?.price ?? String(item.price),
+                                      quantity: prev[itemEditKey]?.quantity ?? item.quantity,
+                                      price: prev[itemEditKey]?.price ?? String(item.price),
                                     },
                                   }));
                                 }}
-                                disabled={variantsLoading}
+                                disabled={variantsLoading || isUnavailable}
                               >
                                 <option value="">
                                   {variantsLoading ? "Loading…" : "Default"}
@@ -629,12 +753,63 @@ export default function OrderDetailPage() {
                           "—"
                         )}
                       </td>
+                      {editing && (
+                        <td className="py-3 pl-4 text-right">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-destructive text-destructive hover:bg-destructive/10"
+                            onClick={() => removeEditableItem(item.key)}
+                          >
+                            Remove
+                          </Button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
               </tbody>
             </table>
             </div>
+            {editing && (
+              <div className="mt-4 space-y-2">
+                <label className="block text-xs font-medium text-muted-foreground">
+                  Add product
+                </label>
+                <Input
+                  value={productQuery}
+                  onChange={(e) => handleProductSearch(e.target.value)}
+                  placeholder="Search active products..."
+                />
+                {searchingProducts && (
+                  <p className="text-xs text-muted-foreground">Searching products...</p>
+                )}
+                {showProductResults && productResults.length > 0 && (
+                  <div className="max-h-44 overflow-auto rounded-md border border-border bg-background">
+                    {productResults.map((product) => (
+                      <button
+                        key={product.public_id}
+                        type="button"
+                        className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-muted/50"
+                        onClick={() => addProductToEditableOrder(product)}
+                      >
+                        <span className="text-sm text-foreground">{product.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {currencySymbol}
+                          {Number(product.price).toLocaleString()}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {editing && editError && (
+              <div className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {editError}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -739,8 +914,9 @@ export default function OrderDetailPage() {
                     <Select
                       value={form.shipping_zone}
                       onChange={(e) => setForm({ ...form, shipping_zone: e.target.value })}
+                      required
                     >
-                      <option value="">Auto (match by district/area)</option>
+                      <option value="">Select shipping zone</option>
                       {shippingZones.map((z) => (
                         <option key={z.public_id} value={z.public_id}>
                           {z.name}
@@ -809,23 +985,6 @@ export default function OrderDetailPage() {
                   />
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Delivery Area
-                    </label>
-                    <Select
-                      value={form.delivery_area}
-                      onChange={(e) =>
-                        setForm({ ...form, delivery_area: e.target.value })
-                      }
-                    >
-                      {DELIVERY_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
                       Tracking Number
@@ -908,8 +1067,7 @@ export default function OrderDetailPage() {
                       {order.shipping_address || "—"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {order.district && `${order.district}, `}
-                      {order.delivery_area_label}
+                      {order.district || "—"}
                     </p>
                     {order.phone && (
                       <p className="text-sm text-muted-foreground">
