@@ -433,6 +433,7 @@ export function DynamicFieldsPanel({
           <Button
             type="button"
             variant="outline"
+            size="default"
             className="gap-2"
             onClick={handleAddField}
           >
@@ -442,6 +443,8 @@ export function DynamicFieldsPanel({
           {schema.length > 0 && (
             <Button
               type="button"
+              variant="outline"
+              size="default"
               className="gap-2"
               onClick={async () => {
                 const result = await save();

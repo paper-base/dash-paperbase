@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, useMemo } from "react";
+import { useEffect, useState, type FormEvent, useMemo } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useParams } from "next/navigation";
-import { Undo2, FileText, Check, Plus, X } from "lucide-react";
+import { Undo2, Check, Plus, X } from "lucide-react";
 import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,9 +35,6 @@ const MAX_IMAGES = MAX_PRODUCT_IMAGES;
 export default function EditProductPage() {
   const { id: product_public_id } = useParams<{ locale: string; id: string }>();
   const router = useRouter();
-  const formRef = useRef<HTMLFormElement>(null);
-  const submitAsDraftRef = useRef(false);
-
   const [product, setProduct] = useState<Product | null>(null);
   const [parentCategories, setParentCategories] = useState<ParentCategory[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -178,7 +175,7 @@ export default function EditProductPage() {
     (c) => String(c.parent) === form.category
   );
 
-  async function handleSubmit(e: FormEvent, asDraft: boolean) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!product) return;
 
@@ -216,7 +213,7 @@ export default function EditProductPage() {
     formData.append("stock", form.stock);
     if (form.badge) formData.append("badge", form.badge);
     formData.append("is_featured", String(form.is_featured));
-    formData.append("is_active", asDraft ? "false" : "true");
+    formData.append("is_active", String(form.is_active));
     const mainImage = imageFiles[0];
     if (mainImage) formData.append("image", mainImage);
     if (Object.keys(extraFields).length > 0) {
@@ -244,17 +241,6 @@ export default function EditProductPage() {
     } finally {
       setSaving(false);
     }
-  }
-
-  function onSaveDraft() {
-    submitAsDraftRef.current = true;
-    formRef.current?.requestSubmit();
-  }
-
-  function onSubmit(e: FormEvent) {
-    const asDraft = submitAsDraftRef.current;
-    submitAsDraftRef.current = false;
-    handleSubmit(e, asDraft);
   }
 
   const fieldControlClass = "w-full rounded-lg bg-muted/50";
@@ -297,25 +283,7 @@ export default function EditProductPage() {
           </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onSaveDraft}
-            disabled={saving}
-            className="gap-2"
-          >
-            <FileText className="size-4" />
-            Save Draft
-          </Button>
-          <Button
-            type="submit"
-            form="product-form"
-            disabled={saving}
-            onClick={() => {
-              submitAsDraftRef.current = false;
-            }}
-            className="gap-2"
-          >
+          <Button type="submit" form="product-form" disabled={saving} className="gap-2">
             <Check className="size-4" />
             {saving ? "Saving..." : "Save Changes"}
           </Button>
@@ -333,8 +301,7 @@ export default function EditProductPage() {
 
       <form
         id="product-form"
-        ref={formRef}
-        onSubmit={onSubmit}
+        onSubmit={handleSubmit}
         className="grid grid-cols-1 gap-6 lg:grid-cols-3"
       >
         {/* Left column */}
