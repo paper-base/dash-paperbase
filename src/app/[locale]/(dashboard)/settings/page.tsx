@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { Undo2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,28 @@ export default function SettingsPage() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<SettingsSection>("store");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [tabStripWidth, setTabStripWidth] = useState<number | null>(null);
+  const [isLg, setIsLg] = useState(false);
+  const desktopTabNavRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setIsLg(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!isLg) return;
+    const el = desktopTabNavRef.current;
+    if (!el) return;
+    const measure = () => setTabStripWidth(el.scrollWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isLg, activeSection]);
 
   const controller = useSettingsPageController();
   const {
@@ -67,14 +89,17 @@ export default function SettingsPage() {
     emailPrefsSaving,
     handleAccountSubmit,
     handleStoreSubmit,
-    deleteEmailInput,
-    setDeleteEmailInput,
-    deleteStoreNameInput,
-    setDeleteStoreNameInput,
+    deleteConfirmPhrase,
+    setDeleteConfirmPhrase,
+    deleteConfirmStoreName,
+    setDeleteConfirmStoreName,
     deleteConfirmOpen,
     setDeleteConfirmOpen,
     deletionInProgress,
-    deleteInputsMatch,
+    deleteConfirmMatches,
+    deleteExpectedStoreName,
+    deleteStoreDisplayName,
+    deleteStoreReady,
     deleteRequestSubmitting,
     deleteSuccessDisplayed,
     deleteStatus,
@@ -87,6 +112,9 @@ export default function SettingsPage() {
   const activeSectionMeta = SECTIONS.find((s) => s.id === activeSection);
   const activeLabel = activeSectionMeta?.label ?? "Settings";
   const ActiveIcon = activeSectionMeta?.icon;
+
+  const settingsShellStyle: CSSProperties | undefined =
+    isLg && tabStripWidth != null ? { width: `min(${tabStripWidth}px, 100%)` } : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -114,7 +142,10 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <div className="flex flex-col gap-6">
+      <div
+        className="flex flex-col gap-6 lg:mx-auto lg:max-w-full lg:min-w-0"
+        style={settingsShellStyle}
+      >
         {/* Mobile: in-place expandable section picker */}
         <div className="lg:hidden">
           <Collapsible open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
@@ -145,11 +176,15 @@ export default function SettingsPage() {
 
         {/* Desktop: horizontal nav at top */}
         <div className="hidden lg:block" aria-label="Settings navigation">
-          <SettingsDesktopSectionNav activeSection={activeSection} onSelect={setActiveSection} />
+          <SettingsDesktopSectionNav
+            ref={desktopTabNavRef}
+            activeSection={activeSection}
+            onSelect={setActiveSection}
+          />
         </div>
 
         {/* Content area */}
-        <main className="min-w-0 flex-1">
+        <main className="min-w-0 w-full flex-1">
           {/* Account section */}
           <AccountSection
             hidden={activeSection !== "account"}
@@ -223,32 +258,36 @@ export default function SettingsPage() {
           {/* Data & Export section */}
           <DataExportSection
             hidden={activeSection !== "data"}
-            deleteEmailInput={deleteEmailInput}
-            deleteStoreNameInput={deleteStoreNameInput}
-            onDeleteEmailChange={setDeleteEmailInput}
-            onDeleteStoreNameChange={setDeleteStoreNameInput}
-            deletionInProgress={deletionInProgress}
-            deleteRequestSubmitting={deleteRequestSubmitting}
-            deleteInputsMatch={deleteInputsMatch}
-            deleteRequestError={deleteRequestError}
+            deleteStoreDisabled={
+              isLoading || !deleteStoreReady || deletionInProgress || deleteRequestSubmitting
+            }
             onOpenDeleteConfirm={setDeleteConfirmOpen}
+            storeDisplayName={deleteStoreDisplayName}
+            storeSubtitle={storeType.trim() ? storeType : "Current store"}
+            logoSrc={previewUrl}
           />
         </main>
-        <DeleteStoreFlow
-          deleteConfirmOpen={deleteConfirmOpen}
-          onDeleteConfirmOpenChange={setDeleteConfirmOpen}
-          handleDeleteConfirmed={handleDeleteConfirmed}
-          deleteInputsMatch={deleteInputsMatch}
-          deletionInProgress={deletionInProgress}
-          deleteRequestSubmitting={deleteRequestSubmitting}
-          deleteSuccessDisplayed={deleteSuccessDisplayed}
-          deleteStatus={deleteStatus}
-          deletionSteps={deletionSteps}
-          deleteRequestError={deleteRequestError}
-          onCloseDeletion={resetDeleteFlow}
-        />
-
       </div>
+
+      <DeleteStoreFlow
+        deleteConfirmOpen={deleteConfirmOpen}
+        onDeleteConfirmOpenChange={setDeleteConfirmOpen}
+        deleteConfirmStoreName={deleteConfirmStoreName}
+        onDeleteConfirmStoreNameChange={setDeleteConfirmStoreName}
+        deleteConfirmPhrase={deleteConfirmPhrase}
+        onDeleteConfirmPhraseChange={setDeleteConfirmPhrase}
+        handleDeleteConfirmed={handleDeleteConfirmed}
+        deleteConfirmMatches={deleteConfirmMatches}
+        deletionInProgress={deletionInProgress}
+        deleteRequestSubmitting={deleteRequestSubmitting}
+        deleteSuccessDisplayed={deleteSuccessDisplayed}
+        deleteStatus={deleteStatus}
+        deletionSteps={deletionSteps}
+        deleteRequestError={deleteRequestError}
+        expectedStoreName={deleteExpectedStoreName}
+        storeDisplayName={deleteStoreDisplayName}
+        onCloseDeletion={resetDeleteFlow}
+      />
     </div>
   );
 }

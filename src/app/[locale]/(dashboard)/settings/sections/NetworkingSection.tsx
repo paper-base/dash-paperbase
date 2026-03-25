@@ -5,6 +5,7 @@ import { Cloud, Copy, Loader2, Plus, ShieldCheck, Star, Trash2 } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import api from "@/lib/api";
+import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
 
 type DomainRow = {
   public_id: string;
@@ -121,26 +122,29 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
       role="tabpanel"
       aria-labelledby="tab-networking"
       hidden={hidden}
-      className="rounded-xl border border-border bg-background p-4 md:p-6"
+      className={settingsSectionSurfaceClassName}
     >
-      <h2 className="text-lg font-semibold text-foreground">Networking</h2>
-      <p className="mb-4 text-sm text-muted-foreground">
-        Your storefront and WebSockets resolve from verified domains. Each store has one generated
-        subdomain and up to one custom domain.
-      </p>
+      <SettingsSectionBody>
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold text-foreground">Networking</h2>
+          <p className="text-sm text-muted-foreground">
+            Your storefront and WebSockets resolve from verified domains. Each store has one generated subdomain and up
+            to one custom domain.
+          </p>
+        </div>
 
-      {error && (
-        <p className="mb-3 text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      )}
-      {message && (
-        <p className="mb-3 text-sm text-muted-foreground" role="status">
-          {message}
-        </p>
-      )}
+        {error && (
+          <p className="text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
+        {message && (
+          <p className="text-sm text-muted-foreground" role="status">
+            {message}
+          </p>
+        )}
 
-      {loading ? (
+        {loading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           Loading domains…
@@ -229,14 +233,14 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
         </div>
       )}
 
-      <p className="mt-6 text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
         Real-time (authenticated): connect WebSocket to{" "}
         <code className="rounded bg-muted px-1">/ws/v1/store/events/?token=&lt;access_jwt&gt;</code> on
         your store hostname; JWT <code className="rounded bg-muted px-1">active_store_public_id</code> must
         match the store resolved from the Host header.
       </p>
 
-      <div className="mt-6 space-y-2">
+        <div className="space-y-2">
         <p className="text-sm font-medium text-foreground">Add custom domain</p>
         <div className="flex max-w-xl flex-col gap-2 sm:flex-row sm:items-center">
           <Input
@@ -258,7 +262,8 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
             Add domain
           </Button>
         </div>
-      </div>
+        </div>
+      </SettingsSectionBody>
     </section>
   );
 }

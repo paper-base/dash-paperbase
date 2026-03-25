@@ -1,9 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "@/i18n/navigation";
 import api from "@/lib/api";
-import { validateDeleteStoreConfirmation } from "@/lib/validation";
+import {
+  DELETE_STORE_CONFIRM_PHRASE,
+  isDeleteStoreModalPhraseConfirmed,
+  isDeleteStoreModalStoreNameConfirmed,
+} from "@/lib/validation";
+
+const DELETE_REQUEST_MIN_MS = 2500;
 
 export type DeleteStatus = {
   status: string;
@@ -14,8 +20,8 @@ export type DeleteStatus = {
 export function useDeleteStore(ownerEmail: string, storeName: string) {
   const router = useRouter();
 
-  const [emailInput, setEmailInput] = useState("");
-  const [storeNameInput, setStoreNameInput] = useState("");
+  const [confirmPhrase, setConfirmPhrase] = useState("");
+  const [confirmStoreName, setConfirmStoreName] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const [jobId, setJobId] = useState<string | null>(null);
@@ -25,13 +31,11 @@ export function useDeleteStore(ownerEmail: string, storeName: string) {
   const [submitting, setSubmitting] = useState(false);
   const [successDisplayed, setSuccessDisplayed] = useState(false);
 
-  const inputsMatch =
-    validateDeleteStoreConfirmation({
-      emailInput,
-      storeNameInput,
-      ownerEmail,
-      storeName,
-    }).success;
+  const deleteInFlight = useRef(false);
+
+  const phraseMatches = isDeleteStoreModalPhraseConfirmed(confirmPhrase);
+  const storeNameMatches = isDeleteStoreModalStoreNameConfirmed(confirmStoreName, storeName);
+  const confirmMatches = phraseMatches && storeNameMatches;
   const inProgress = jobId != null;
 
   const steps = [
@@ -41,6 +45,13 @@ export function useDeleteStore(ownerEmail: string, storeName: string) {
     "Deleting analytics...",
     "Finalizing...",
   ];
+
+  useEffect(() => {
+    if (!confirmOpen) return;
+    setConfirmPhrase("");
+    setConfirmStoreName("");
+    setRequestError(null);
+  }, [confirmOpen]);
 
   useEffect(() => {
     if (!jobId) return;
@@ -90,22 +101,33 @@ export function useDeleteStore(ownerEmail: string, storeName: string) {
   }, [jobId, redirectRoute, router]);
 
   async function handleDeleteConfirmed() {
-    const confirmation = validateDeleteStoreConfirmation({
-      emailInput,
-      storeNameInput,
-      ownerEmail,
-      storeName,
-    });
-    if (!confirmation.success || submitting || jobId) {
-      if (!confirmation.success) {
-        setRequestError(confirmation.error);
-      }
+    const email = ownerEmail.trim();
+    const name = storeName.trim();
+    if (!email || !name) {
+      setRequestError("Store information is still loading. Please wait and try again.");
       return;
     }
 
+    if (!isDeleteStoreModalStoreNameConfirmed(confirmStoreName, name)) {
+      setRequestError("Type your store name exactly as shown above to confirm.");
+      return;
+    }
+
+    if (!isDeleteStoreModalPhraseConfirmed(confirmPhrase)) {
+      setRequestError(`Type "${DELETE_STORE_CONFIRM_PHRASE}" exactly to confirm.`);
+      return;
+    }
+
+    if (deleteInFlight.current || submitting || jobId) {
+      return;
+    }
+
+    deleteInFlight.current = true;
     setRequestError(null);
     setSubmitting(true);
     setSuccessDisplayed(false);
+
+    const started = performance.now();
 
     try {
       const { data } = await api.post<{
@@ -114,9 +136,14 @@ export function useDeleteStore(ownerEmail: string, storeName: string) {
         refresh: string;
         redirect_route: string;
       }>("stores/settings/delete/", {
-        account_email: emailInput,
-        store_name: storeNameInput,
+        account_email: email,
+        store_name: name,
       });
+
+      const elapsed = performance.now() - started;
+      if (elapsed < DELETE_REQUEST_MIN_MS) {
+        await new Promise((r) => window.setTimeout(r, DELETE_REQUEST_MIN_MS - elapsed));
+      }
 
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
@@ -132,13 +159,11 @@ export function useDeleteStore(ownerEmail: string, storeName: string) {
     } catch (err: unknown) {
       const msg =
         err && typeof err === "object" && "response" in err
-          ? (err as { response?: { data?: { detail?: string } } }).response
-              ?.data?.detail ?? null
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? null
           : null;
       setRequestError(msg || "Failed to start store deletion.");
-      setConfirmOpen(false);
-      setJobId(null);
     } finally {
+      deleteInFlight.current = false;
       setSubmitting(false);
     }
   }
@@ -148,13 +173,16 @@ export function useDeleteStore(ownerEmail: string, storeName: string) {
     setStatus(null);
     setRequestError(null);
     setSuccessDisplayed(false);
+    setConfirmPhrase("");
+    setConfirmStoreName("");
+    deleteInFlight.current = false;
   }
 
   return {
-    emailInput,
-    setEmailInput,
-    storeNameInput,
-    setStoreNameInput,
+    confirmPhrase,
+    setConfirmPhrase,
+    confirmStoreName,
+    setConfirmStoreName,
     confirmOpen,
     setConfirmOpen,
     jobId,
@@ -163,7 +191,9 @@ export function useDeleteStore(ownerEmail: string, storeName: string) {
     submitting,
     successDisplayed,
     inProgress,
-    inputsMatch,
+    phraseMatches,
+    storeNameMatches,
+    confirmMatches,
     steps,
     handleDeleteConfirmed,
     resetFlow,

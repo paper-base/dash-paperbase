@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import api from "@/lib/api";
+import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
 
 interface MeSubscription {
   active: boolean;
@@ -51,14 +52,15 @@ export default function BillingSection({ hidden }: { hidden: boolean }) {
       role="tabpanel"
       aria-labelledby="tab-billing"
       hidden={hidden}
-      className="rounded-xl border border-dashed border-border bg-background p-4 md:p-6"
+      className={settingsSectionSurfaceClassName}
     >
-      <h2 className="text-lg font-medium text-foreground">Billing & Plan</h2>
-      <p className="mb-4 text-sm text-muted-foreground">
-        Current plan and subscription period from your account.
-      </p>
+      <SettingsSectionBody gap="compact">
+        <div className="space-y-1">
+          <h2 className="text-lg font-medium text-foreground">Billing & Plan</h2>
+          <p className="text-sm text-muted-foreground">Current plan and subscription period from your account.</p>
+        </div>
 
-      <div className="w-full max-w-6xl space-y-4">
+        <div className="space-y-4">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-foreground">Current Plan</label>
           <Input value={planLabel} readOnly className="bg-muted/50" />
@@ -73,7 +75,8 @@ export default function BillingSection({ hidden }: { hidden: boolean }) {
           <label className="text-sm font-medium text-foreground">Current period ends</label>
           <Input value={endLabel} readOnly className="bg-muted/50" />
         </div>
-      </div>
+        </div>
+      </SettingsSectionBody>
     </section>
   );
 }

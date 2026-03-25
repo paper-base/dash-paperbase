@@ -1,8 +1,19 @@
- "use client";
+"use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import { Dialog } from "radix-ui";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { DELETE_STORE_CONFIRM_PHRASE } from "@/lib/validation";
+import { cn } from "@/lib/utils";
 
 type DeleteStatus = {
   status: string;
@@ -13,68 +24,168 @@ type DeleteStatus = {
 export default function DeleteStoreFlow({
   deleteConfirmOpen,
   onDeleteConfirmOpenChange,
+  deleteConfirmStoreName,
+  onDeleteConfirmStoreNameChange,
+  deleteConfirmPhrase,
+  onDeleteConfirmPhraseChange,
   handleDeleteConfirmed,
-  deleteInputsMatch,
+  deleteConfirmMatches,
   deletionInProgress,
   deleteRequestSubmitting,
   deleteSuccessDisplayed,
   deleteStatus,
   deletionSteps,
   deleteRequestError,
+  expectedStoreName,
+  storeDisplayName,
   onCloseDeletion,
 }: {
   deleteConfirmOpen: boolean;
   onDeleteConfirmOpenChange: Dispatch<SetStateAction<boolean>> | ((open: boolean) => void);
+  deleteConfirmStoreName: string;
+  onDeleteConfirmStoreNameChange: Dispatch<SetStateAction<string>> | ((value: string) => void);
+  deleteConfirmPhrase: string;
+  onDeleteConfirmPhraseChange: Dispatch<SetStateAction<string>> | ((value: string) => void);
   handleDeleteConfirmed: () => void;
-  deleteInputsMatch: boolean;
+  deleteConfirmMatches: boolean;
   deletionInProgress: boolean;
   deleteRequestSubmitting: boolean;
   deleteSuccessDisplayed: boolean;
   deleteStatus: DeleteStatus;
   deletionSteps: string[];
   deleteRequestError: string | null;
+  /** Exact name the user must type (matches API `store_name`). */
+  expectedStoreName: string;
+  /** Shown in the warning line (same as expected when loaded). */
+  storeDisplayName: string;
   onCloseDeletion: () => void;
 }) {
+  function handleDialogOpenChange(next: boolean) {
+    if (!next) {
+      if (deleteRequestSubmitting) return;
+      onDeleteConfirmOpenChange(false);
+    } else {
+      onDeleteConfirmOpenChange(true);
+    }
+  }
+
   function stepDisplay(step: string) {
     return step;
   }
 
   return (
     <>
-      <Dialog.Root open={deleteConfirmOpen} onOpenChange={onDeleteConfirmOpenChange}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-          <Dialog.Content className="fixed left-1/2 top-[35%] z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-none border-0 bg-background p-0 shadow-none md:rounded-lg md:border md:shadow-lg">
-            <div className="p-6">
-              <Dialog.Title className="sr-only">Delete Store</Dialog.Title>
-              <h3 className="text-lg font-semibold text-destructive">Delete Store</h3>
-              <p className="mt-3 text-sm text-destructive">
-                This is a destructive action. Deleting your store will permanently remove all associated data
-                including products, orders, customers, and analytics. This action cannot be undone.
-              </p>
+      <Dialog open={deleteConfirmOpen} onOpenChange={handleDialogOpenChange}>
+        <DialogContent
+          showCloseButton={false}
+          className={cn(
+            "gap-0 p-0 sm:rounded-lg",
+            "max-sm:max-w-[min(20rem,calc(100vw-1.5rem))] max-sm:rounded-lg",
+          )}
+          onPointerDownOutside={(e) => {
+            if (deleteRequestSubmitting) e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            if (deleteRequestSubmitting) e.preventDefault();
+          }}
+        >
+          <DialogHeader className="gap-1 border-b border-border p-4 sm:gap-1.5 sm:p-6">
+            <DialogTitle className="text-sm font-semibold sm:text-base">Delete Store</DialogTitle>
+            <DialogDescription className="text-xs leading-snug text-muted-foreground sm:text-sm sm:leading-normal">
+              This will permanently delete the store and associated data including products, orders, customers,
+              and analytics.
+            </DialogDescription>
+          </DialogHeader>
 
-              <div className="mt-6 flex items-center justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onDeleteConfirmOpenChange(false)}
-                  disabled={deleteRequestSubmitting || deletionInProgress}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={handleDeleteConfirmed}
-                  disabled={!deleteInputsMatch || deleteRequestSubmitting || deletionInProgress}
-                >
-                  {deleteRequestSubmitting ? "Starting..." : "Confirm Delete Store"}
-                </Button>
-              </div>
+          <div className="space-y-3 p-4 sm:space-y-4 sm:p-6">
+            <div className="flex flex-col gap-1.5 sm:gap-2">
+              <label
+                htmlFor="delete-store-confirm-name"
+                className="text-xs leading-snug text-foreground sm:text-sm sm:leading-normal"
+              >
+                To confirm, type{" "}
+                <span className="break-words font-semibold text-foreground">
+                  {expectedStoreName || storeDisplayName}
+                </span>
+              </label>
+              <Input
+                id="delete-store-confirm-name"
+                autoComplete="off"
+                className="h-9 text-sm sm:h-10 sm:text-base"
+                value={deleteConfirmStoreName}
+                onChange={(e) => onDeleteConfirmStoreNameChange(e.target.value)}
+                disabled={deleteRequestSubmitting}
+                placeholder={expectedStoreName || storeDisplayName}
+              />
             </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+
+            <div className="flex flex-col gap-1.5 sm:gap-2">
+              <label
+                htmlFor="delete-store-confirm-phrase"
+                className="text-xs leading-snug text-foreground sm:text-sm sm:leading-normal"
+              >
+                To confirm, type{" "}
+                <span className="font-semibold text-foreground">{DELETE_STORE_CONFIRM_PHRASE}</span>
+              </label>
+              <Input
+                id="delete-store-confirm-phrase"
+                autoComplete="off"
+                className="h-9 text-sm sm:h-10 sm:text-base"
+                value={deleteConfirmPhrase}
+                onChange={(e) => onDeleteConfirmPhraseChange(e.target.value)}
+                disabled={deleteRequestSubmitting}
+                placeholder={DELETE_STORE_CONFIRM_PHRASE}
+              />
+            </div>
+
+            <div
+              className="flex gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive sm:gap-3 sm:rounded-lg sm:px-4 sm:py-3 sm:text-sm"
+              role="alert"
+            >
+              <AlertCircle className="size-4 shrink-0 sm:size-5" aria-hidden />
+              <p className="leading-snug">
+                Deleting <span className="font-semibold">{storeDisplayName}</span> cannot be undone.
+              </p>
+            </div>
+
+            {deleteRequestError && (
+              <p className="text-xs text-destructive sm:text-sm" role="alert">
+                {deleteRequestError}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter className="flex flex-row items-center justify-between gap-2 border-t border-border p-4 sm:justify-between sm:gap-3 sm:p-6">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="sm:h-10 sm:px-4 sm:text-sm"
+              onClick={() => onDeleteConfirmOpenChange(false)}
+              disabled={deleteRequestSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="sm:h-10 sm:px-4 sm:text-sm"
+              onClick={handleDeleteConfirmed}
+              disabled={!deleteConfirmMatches || deleteRequestSubmitting}
+            >
+              {deleteRequestSubmitting ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin sm:size-4" aria-hidden />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Store"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {deletionInProgress && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -102,24 +213,24 @@ export default function DeleteStoreFlow({
                     return (
                       <li
                         key={step}
-                        className={[
+                        className={cn(
                           "flex items-center gap-2 text-sm",
                           active
                             ? "text-destructive"
                             : done
                               ? "text-muted-foreground"
                               : "text-muted-foreground/70",
-                        ].join(" ")}
+                        )}
                       >
                         <span
-                          className={[
+                          className={cn(
                             "inline-flex h-6 w-6 items-center justify-center rounded-full border text-xs",
                             active
                               ? "border-destructive/40 text-destructive"
                               : done
                                 ? "border-border bg-muted text-muted-foreground"
                                 : "border-border text-muted-foreground/70",
-                          ].join(" ")}
+                          )}
                         >
                           {done ? "✓" : idx + 1}
                         </span>
@@ -147,4 +258,3 @@ export default function DeleteStoreFlow({
     </>
   );
 }
-

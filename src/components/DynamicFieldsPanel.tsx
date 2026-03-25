@@ -338,7 +338,7 @@ export function DynamicFieldsPanel({
   const fixedFields = FIXED_FIELDS_BY_ENTITY[activeEntity];
 
   return (
-    <div className="w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex flex-wrap gap-2 border-b border-border pb-4">
         {ENTITY_TABS.map((tab) => (
           <button

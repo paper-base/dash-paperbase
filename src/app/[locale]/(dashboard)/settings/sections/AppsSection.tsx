@@ -1,6 +1,7 @@
- "use client";
+"use client";
 
 import { APP_CONFIG, ESSENTIAL_APP_IDS, OPTIONAL_APP_IDS } from "@/config/apps";
+import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
 
 export default function AppsSection({
   hidden,
@@ -18,14 +19,17 @@ export default function AppsSection({
       role="tabpanel"
       aria-labelledby="tab-apps"
       hidden={hidden}
-      className="rounded-xl border border-dashed border-border bg-background p-4 md:p-6"
+      className={settingsSectionSurfaceClassName}
     >
-      <h2 className="text-lg font-medium text-foreground">Apps</h2>
-      <p className="mb-4 text-sm text-muted-foreground">
-        Control which data models and features are available in your store. Essential apps are always enabled.
-      </p>
+      <SettingsSectionBody>
+        <div className="space-y-1">
+          <h2 className="text-lg font-medium text-foreground">Apps</h2>
+          <p className="text-sm text-muted-foreground">
+            Control which data models and features are available in your store. Essential apps are always enabled.
+          </p>
+        </div>
 
-      <div className="space-y-6">
+        <div className="space-y-6">
         <div>
           <h3 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">Essential</h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -83,7 +87,8 @@ export default function AppsSection({
             })}
           </div>
         </div>
-      </div>
+        </div>
+      </SettingsSectionBody>
     </section>
   );
 }

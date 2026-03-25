@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   accountSettingsSchema,
+  DELETE_STORE_CONFIRM_PHRASE,
+  isDeleteStoreModalPhraseConfirmed,
+  isDeleteStoreModalStoreNameConfirmed,
   storeCreateSchema,
-  validateDeleteStoreConfirmation,
 } from "@/lib/validation/store";
 
 describe("store validation", () => {
@@ -20,29 +22,28 @@ describe("store validation", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects account settings with invalid email", () => {
+  it("rejects account settings with empty owner name", () => {
     const result = accountSettingsSchema.safeParse({
-      ownerName: "Mahi Hasan",
-      ownerEmail: "invalid-email",
+      ownerName: "",
     });
     expect(result.success).toBe(false);
   });
 
-  it("validates delete confirmation strict match", () => {
-    const ok = validateDeleteStoreConfirmation({
-      emailInput: "owner@example.com",
-      storeNameInput: "My Store",
-      ownerEmail: "owner@example.com",
-      storeName: "My Store",
-    });
-    expect(ok.success).toBe(true);
+  it("accepts delete modal phrase with trim", () => {
+    expect(isDeleteStoreModalPhraseConfirmed(`  ${DELETE_STORE_CONFIRM_PHRASE}  `)).toBe(true);
+  });
 
-    const fail = validateDeleteStoreConfirmation({
-      emailInput: "owner@example.com",
-      storeNameInput: "my store",
-      ownerEmail: "owner@example.com",
-      storeName: "My Store",
-    });
-    expect(fail.success).toBe(false);
+  it("rejects wrong delete modal phrase", () => {
+    expect(isDeleteStoreModalPhraseConfirmed("delete my project")).toBe(false);
+    expect(isDeleteStoreModalPhraseConfirmed("DELETE MY STORE")).toBe(false);
+  });
+
+  it("accepts delete modal store name with trim", () => {
+    expect(isDeleteStoreModalStoreNameConfirmed("  Pet Care  ", "Pet Care")).toBe(true);
+  });
+
+  it("rejects wrong delete modal store name", () => {
+    expect(isDeleteStoreModalStoreNameConfirmed("PetCare", "Pet Care")).toBe(false);
+    expect(isDeleteStoreModalStoreNameConfirmed("x", "")).toBe(false);
   });
 });

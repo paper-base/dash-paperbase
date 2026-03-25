@@ -1,9 +1,10 @@
- "use client";
+"use client";
 
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import type React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
 
 type SettingsMessage = { type: "success" | "error"; text: string } | null;
 
@@ -56,12 +57,15 @@ export default function StoreInfoSection({
       role="tabpanel"
       aria-labelledby="tab-store"
       hidden={hidden}
-      className="rounded-xl border border-dashed border-border bg-background p-4 md:p-6"
+      className={settingsSectionSurfaceClassName}
     >
-      <h2 className="text-lg font-medium text-foreground">Store Info</h2>
-      <p className="mb-4 text-sm text-muted-foreground">Your store identity. Powers frontend, invoices, and emails.</p>
+      <SettingsSectionBody>
+        <div className="space-y-1">
+          <h2 className="text-lg font-medium text-foreground">Store Info</h2>
+          <p className="text-sm text-muted-foreground">Your store identity. Powers frontend, invoices, and emails.</p>
+        </div>
 
-      <form onSubmit={onSubmit} className="w-full max-w-6xl space-y-6">
+        <form onSubmit={onSubmit} className="w-full space-y-6">
         <div className="space-y-2">
           <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             Logo
@@ -191,7 +195,8 @@ export default function StoreInfoSection({
         <Button type="submit" disabled={storeSaving}>
           {storeSaving ? "Saving…" : "Save store settings"}
         </Button>
-      </form>
+        </form>
+      </SettingsSectionBody>
     </section>
   );
 }

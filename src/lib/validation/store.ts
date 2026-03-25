@@ -41,36 +41,19 @@ export const accountSettingsSchema = z.object({
   ownerName: requiredString("Owner name"),
 });
 
-export const deleteStoreConfirmSchema = z.object({
-  accountEmail: z.string().trim().email(),
-  storeName: requiredString("Store name"),
-});
+/** Exact phrase required in the delete-store confirmation modal (trimmed before compare). */
+export const DELETE_STORE_CONFIRM_PHRASE = "delete my store";
 
-export function validateDeleteStoreConfirmation(input: {
-  emailInput: string;
-  storeNameInput: string;
-  ownerEmail: string;
-  storeName: string;
-}): { success: true } | { success: false; error: string } {
-  const parsed = deleteStoreConfirmSchema.safeParse({
-    accountEmail: input.emailInput,
-    storeName: input.storeNameInput,
-  });
-  if (!parsed.success) {
-    return { success: false, error: "Enter a valid email and store name to confirm." };
-  }
+export function isDeleteStoreModalPhraseConfirmed(value: string): boolean {
+  return value.trim() === DELETE_STORE_CONFIRM_PHRASE;
+}
 
-  const normalizedEmail = parsed.data.accountEmail.toLowerCase();
-  const ownerEmail = input.ownerEmail.trim().toLowerCase();
-  const normalizedStoreName = parsed.data.storeName;
-  const storeName = input.storeName.trim();
-
-  if (normalizedEmail !== ownerEmail || normalizedStoreName !== storeName) {
-    return {
-      success: false,
-      error: "Email and store name must exactly match before deletion.",
-    };
-  }
-
-  return { success: true };
+/** Must match the active store name exactly (same rules as backend `store.name` vs request body). */
+export function isDeleteStoreModalStoreNameConfirmed(
+  value: string,
+  expectedStoreName: string,
+): boolean {
+  const expected = expectedStoreName.trim();
+  if (!expected) return false;
+  return value.trim() === expected;
 }

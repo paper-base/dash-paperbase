@@ -1,6 +1,7 @@
- "use client";
+"use client";
 
 import { Lock } from "lucide-react";
+import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
 
 type NotificationPrefs = {
   orders: boolean;
@@ -34,12 +35,12 @@ export default function NotificationsSection({
       role="tabpanel"
       aria-labelledby="tab-notifications"
       hidden={hidden}
-      className="rounded-xl border border-dashed border-border bg-background p-4 md:p-6"
+      className={settingsSectionSurfaceClassName}
     >
-      <div className="w-full max-w-6xl space-y-6">
-        <div>
+      <SettingsSectionBody>
+        <div className="space-y-1">
           <h2 className="text-lg font-medium text-foreground">Notification preferences</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Choose which events should generate notifications in the top bar.
           </p>
         </div>
@@ -139,7 +140,7 @@ export default function NotificationsSection({
             </label>
           </div>
         </div>
-      </div>
+      </SettingsSectionBody>
     </section>
   );
 }

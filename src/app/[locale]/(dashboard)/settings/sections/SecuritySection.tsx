@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
 
 export default function SecuritySection({ hidden }: { hidden: boolean }) {
   const [isEnabled, setIsEnabled] = useState(false);
@@ -129,12 +130,15 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
       role="tabpanel"
       aria-labelledby="tab-security"
       hidden={hidden}
-      className="rounded-xl border border-dashed border-border bg-background p-4 md:p-6"
+      className={settingsSectionSurfaceClassName}
     >
-      <h2 className="text-lg font-medium text-foreground">Security</h2>
-      <p className="mb-4 text-sm text-muted-foreground">Manage your authenticator-based 2FA.</p>
+      <SettingsSectionBody gap="compact">
+        <div className="space-y-1">
+          <h2 className="text-lg font-medium text-foreground">Security</h2>
+          <p className="text-sm text-muted-foreground">Manage your authenticator-based 2FA.</p>
+        </div>
 
-      <div className="w-full max-w-6xl space-y-4">
+        <div className="space-y-4">
         <div className="text-sm">
           Status:{" "}
           <span className={isEnabled ? "text-emerald-500" : "text-muted-foreground"}>
@@ -223,7 +227,8 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
           </div>
         )}
         {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
-      </div>
+        </div>
+      </SettingsSectionBody>
     </section>
   );
 }

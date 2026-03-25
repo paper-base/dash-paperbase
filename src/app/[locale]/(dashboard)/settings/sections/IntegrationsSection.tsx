@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
 import CourierIntegration from "./CourierIntegration";
 import MarketingIntegration from "./MarketingIntegration";
 
@@ -14,18 +15,21 @@ export default function IntegrationsSection({
       role="tabpanel"
       aria-labelledby="tab-integrations"
       hidden={hidden}
-      className="rounded-xl border border-dashed border-border bg-background p-4 md:p-6"
+      className={settingsSectionSurfaceClassName}
     >
-      <h2 className="text-lg font-medium text-foreground">Integrations</h2>
-      <p className="mb-4 text-sm text-muted-foreground">
-        Connect marketing and delivery tools to your store. More integrations
-        are added over time.
-      </p>
+      <SettingsSectionBody>
+        <div className="space-y-1">
+          <h2 className="text-lg font-medium text-foreground">Integrations</h2>
+          <p className="text-sm text-muted-foreground">
+            Connect marketing and delivery tools to your store. More integrations are added over time.
+          </p>
+        </div>
 
-      <div className="w-full max-w-6xl space-y-6">
-        <MarketingIntegration />
-        <CourierIntegration />
-      </div>
+        <div className="space-y-6">
+          <MarketingIntegration />
+          <CourierIntegration />
+        </div>
+      </SettingsSectionBody>
     </section>
   );
 }

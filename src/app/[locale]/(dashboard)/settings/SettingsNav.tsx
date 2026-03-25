@@ -1,5 +1,6 @@
- "use client";
+"use client";
 
+import { forwardRef } from "react";
 import { SECTIONS, type SettingsSection } from "./settingsSections";
 import { cn } from "@/lib/utils";
 
@@ -59,17 +60,18 @@ export function SettingsSectionNav({
   );
 }
 
-export function SettingsDesktopSectionNav({
-  activeSection,
-  onSelect,
-}: {
-  activeSection: SettingsSection;
-  onSelect: (id: SettingsSection) => void;
-}) {
+export const SettingsDesktopSectionNav = forwardRef<
+  HTMLDivElement,
+  {
+    activeSection: SettingsSection;
+    onSelect: (id: SettingsSection) => void;
+  }
+>(function SettingsDesktopSectionNav({ activeSection, onSelect }, ref) {
   return (
-    <div className="overflow-x-auto scrollbar-hide scroll-smooth">
+    <div ref={ref} className="overflow-x-auto scrollbar-hide scroll-smooth">
       <SettingsSectionNav activeSection={activeSection} onSelect={onSelect} variant="horizontal" />
     </div>
   );
-}
+});
 
+SettingsDesktopSectionNav.displayName = "SettingsDesktopSectionNav";

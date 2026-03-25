@@ -40,7 +40,15 @@ export default function useSettingsPageController() {
   // ── Focused sub-hooks ──────────────────────────────────────────────────────
   const account = useAccountSettings({ onSaveSuccess: refetch });
   const store = useStoreSettings({ onSaveSuccess: refetch });
-  const deleteStore = useDeleteStore(account.ownerEmail, store.storeName);
+
+  const deletePayloadEmail =
+    branding?.owner_email?.trim() || account.ownerEmail.trim();
+  const deletePayloadStoreName =
+    branding?.admin_name?.trim() || store.storeName.trim();
+  const deleteStoreDisplayName = deletePayloadStoreName || "this store";
+  const deleteStoreReady = Boolean(deletePayloadEmail && deletePayloadStoreName);
+
+  const deleteStore = useDeleteStore(deletePayloadEmail, deletePayloadStoreName);
 
   // ── Sync branding into local state once loaded ─────────────────────────────
   useEffect(() => {
@@ -192,10 +200,10 @@ export default function useSettingsPageController() {
     emailPrefsSaving,
 
     // Delete store
-    deleteEmailInput: deleteStore.emailInput,
-    setDeleteEmailInput: deleteStore.setEmailInput,
-    deleteStoreNameInput: deleteStore.storeNameInput,
-    setDeleteStoreNameInput: deleteStore.setStoreNameInput,
+    deleteConfirmPhrase: deleteStore.confirmPhrase,
+    setDeleteConfirmPhrase: deleteStore.setConfirmPhrase,
+    deleteConfirmStoreName: deleteStore.confirmStoreName,
+    setDeleteConfirmStoreName: deleteStore.setConfirmStoreName,
     deleteConfirmOpen: deleteStore.confirmOpen,
     setDeleteConfirmOpen: deleteStore.setConfirmOpen,
     deletionInProgress: deleteStore.inProgress,
@@ -205,7 +213,11 @@ export default function useSettingsPageController() {
     deleteRequestSubmitting: deleteStore.submitting,
     deleteSuccessDisplayed: deleteStore.successDisplayed,
     deletionSteps: deleteStore.steps,
-    deleteInputsMatch: deleteStore.inputsMatch,
+    deleteConfirmMatches: deleteStore.confirmMatches,
+    /** Exact store name from branding (matches API `store_name` and modal typing field). */
+    deleteExpectedStoreName: deletePayloadStoreName,
+    deleteStoreDisplayName,
+    deleteStoreReady,
     handleDeleteConfirmed: deleteStore.handleDeleteConfirmed,
     resetDeleteFlow: deleteStore.resetFlow,
   };
