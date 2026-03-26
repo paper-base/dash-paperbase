@@ -194,7 +194,7 @@ export default function DataExportSection({
           <div className="p-5 md:p-6">
             <h3 className="text-base font-semibold text-foreground">Delete Store</h3>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              Permanently delete this store and all products, orders, customers, domains, integrations,
+              Permanently delete this store and all products, orders, customers, API keys, integrations,
               and settings. This action cannot be undone.
             </p>
           </div>

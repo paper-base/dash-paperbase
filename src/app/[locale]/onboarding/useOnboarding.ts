@@ -30,7 +30,7 @@ interface MeResponse {
   email?: string;
   first_name?: string;
   last_name?: string;
-  stores: { public_id: string; name: string; domain: string | null; role: string }[];
+  stores: { public_id: string; name: string; role: string }[];
 }
 
 export function useOnboarding() {

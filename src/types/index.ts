@@ -438,3 +438,11 @@ export interface MarketingIntegration {
   created_at: string;
   updated_at: string;
 }
+
+export interface StoreAPIKey {
+  public_id: string;
+  name: string;
+  key_prefix: string;
+  created_at: string;
+  revoked_at: string | null;
+}
