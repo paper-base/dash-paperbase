@@ -33,9 +33,13 @@ export default function PasswordResetConfirmContent() {
   const searchParams = useSearchParams();
   const uid = searchParams.get("uid") ?? "";
   const token = searchParams.get("token") ?? "";
+  const logoutAllDevicesParam = searchParams.get("logout_all_devices");
+  const defaultLogoutAllDevices =
+    logoutAllDevicesParam === "1" || logoutAllDevicesParam === "true";
 
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
+  const [logoutAllDevices, setLogoutAllDevices] = useState(defaultLogoutAllDevices);
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [error, setError] = useState("");
@@ -67,6 +71,7 @@ export default function PasswordResetConfirmContent() {
         token,
         new_password: validation.data.newPassword,
         new_password_confirm: validation.data.newPasswordConfirm,
+        logout_all_devices: logoutAllDevices,
       });
       router.push("/auth/password-reset/success");
     } catch (err: unknown) {
@@ -172,6 +177,15 @@ export default function PasswordResetConfirmContent() {
             </button>
           </div>
         </div>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={logoutAllDevices}
+            onChange={(e) => setLogoutAllDevices(e.target.checked)}
+            className="form-checkbox"
+          />
+          <span>Log out from all other devices</span>
+        </label>
         <Button type="submit" className="mt-2 w-full" disabled={loading}>
           {loading ? "Please wait…" : "Reset password"}
         </Button>

@@ -12,6 +12,7 @@ import { emailSchema } from "@/lib/validation";
 export default function PasswordResetRequestPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [logoutAllDevices, setLogoutAllDevices] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +26,7 @@ export default function PasswordResetRequestPage() {
     }
     setLoading(true);
     try {
-      await requestPasswordReset(parsed.data);
+      await requestPasswordReset(parsed.data, logoutAllDevices);
       router.push("/auth/password-reset/sent");
     } catch {
       setError("Could not send reset email. Please try again.");
@@ -65,6 +66,15 @@ export default function PasswordResetRequestPage() {
             placeholder="e.g. you@example.com"
           />
         </div>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={logoutAllDevices}
+            onChange={(e) => setLogoutAllDevices(e.target.checked)}
+            className="form-checkbox"
+          />
+          <span>Log out from all other devices</span>
+        </label>
         <Button type="submit" className="mt-2 w-full" disabled={loading}>
           {loading ? "Please wait…" : "Send reset link"}
         </Button>

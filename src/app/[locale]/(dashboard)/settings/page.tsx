@@ -112,17 +112,13 @@ export default function SettingsPage() {
   const activeSectionMeta = SECTIONS.find((s) => s.id === activeSection);
   const activeLabel = activeSectionMeta?.label ?? "Settings";
   const ActiveIcon = activeSectionMeta?.icon;
-
   const settingsShellStyle: CSSProperties | undefined =
-    isLg && tabStripWidth != null ? { width: `min(${tabStripWidth}px, 100%)` } : undefined;
+    isLg && tabStripWidth != null ? { width: `${tabStripWidth}px` } : undefined;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header + tabs + content share one column on lg so back button and title align with the tab strip and cards */}
-      <div
-        className="flex flex-col gap-6 lg:mx-auto lg:max-w-full lg:min-w-0"
-        style={settingsShellStyle}
-      >
+    <div className="w-full">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-6 lg:mx-auto" style={settingsShellStyle}>
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-muted/80 px-1 py-1">
@@ -270,6 +266,7 @@ export default function SettingsPage() {
           />
         </main>
         </div>
+      </div>
       </div>
 
       <DeleteStoreFlow

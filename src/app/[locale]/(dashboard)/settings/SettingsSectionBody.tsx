@@ -7,10 +7,8 @@ import { cn } from "@/lib/utils";
 export const settingsSectionSurfaceClassName =
   "rounded-xl border border-dashed border-border bg-background p-4 md:p-6";
 
-/**
- * Inner column: titles and content share the same left/right bounds and match the tab-strip-centered shell.
- */
-export const settingsSectionBodyClassName = "w-full max-w-6xl lg:mx-auto";
+/** Inner column follows the page-level settings container width. */
+export const settingsSectionBodyClassName = "w-full";
 
 type SettingsSectionBodyProps = {
   children: ReactNode;

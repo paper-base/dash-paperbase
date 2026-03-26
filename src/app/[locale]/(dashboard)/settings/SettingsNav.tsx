@@ -20,7 +20,7 @@ export function SettingsSectionNav({
   return (
     <nav
       className={cn(
-        variant === "vertical" ? "flex flex-col gap-0.5" : "flex flex-row gap-2 flex-nowrap",
+        variant === "vertical" ? "flex flex-col gap-0.5" : "flex flex-row flex-nowrap gap-2",
         className
       )}
       role="tablist"
@@ -68,7 +68,7 @@ export const SettingsDesktopSectionNav = forwardRef<
   }
 >(function SettingsDesktopSectionNav({ activeSection, onSelect }, ref) {
   return (
-    <div ref={ref} className="overflow-x-auto scrollbar-hide scroll-smooth">
+    <div ref={ref} className="overflow-visible">
       <SettingsSectionNav activeSection={activeSection} onSelect={onSelect} variant="horizontal" />
     </div>
   );

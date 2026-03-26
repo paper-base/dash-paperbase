@@ -30,9 +30,13 @@ export async function resendVerificationEmail(email: string) {
 /**
  * POST /auth/password/reset/ — step 1 (enumeration-safe; always 200 on success).
  */
-export async function requestPasswordReset(email: string) {
+export async function requestPasswordReset(
+  email: string,
+  logoutAllDevices = false
+) {
   const { data } = await axios.post(`${baseUrl()}/auth/password/reset/`, {
     email: email.trim().toLowerCase(),
+    logout_all_devices: logoutAllDevices,
   });
   return data as { detail?: string };
 }
@@ -45,6 +49,7 @@ export async function confirmPasswordReset(payload: {
   token: string;
   new_password: string;
   new_password_confirm: string;
+  logout_all_devices?: boolean;
 }) {
   const { data } = await axios.post(
     `${baseUrl()}/auth/password/reset/confirm/`,
