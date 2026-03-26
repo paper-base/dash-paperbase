@@ -48,7 +48,9 @@ export default function DashboardLayout({
   const [subCheckError, setSubCheckError] = useState(false);
 
   const normalizedPlan = (subscription?.plan ?? "").toLowerCase();
-  const isEligiblePlan = normalizedPlan === "basic" || normalizedPlan === "premium";
+  const isEligiblePlan =
+    normalizedPlan === "essential" ||
+    normalizedPlan === "premium";
   const shouldRedirectToOnboarding =
     subChecked &&
     pathname === "/" &&
