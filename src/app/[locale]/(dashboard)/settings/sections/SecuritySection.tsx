@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import { useRateLimitCooldown, extractRateLimitInfo } from "@/hooks/useRateLimitCooldown";
 import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
 
 export default function SecuritySection({ hidden }: { hidden: boolean }) {
@@ -27,6 +28,7 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const recoveryCooldown = useRateLimitCooldown();
 
   useEffect(() => {
     if (hidden) return;
@@ -80,8 +82,14 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
     try {
       await api.post("auth/2fa/recovery/request/");
       setRecoveryMessage("Recovery code sent to your email");
-    } catch {
-      setRecoveryMessage("Could not send recovery code. Try again later.");
+    } catch (err: unknown) {
+      const info = extractRateLimitInfo(err);
+      if (info) {
+        recoveryCooldown.startCooldown(info.retryAfter);
+        setRecoveryMessage("");
+      } else {
+        setRecoveryMessage("Could not send recovery code. Try again later.");
+      }
     } finally {
       setRecoveryRequestLoading(false);
     }
@@ -287,9 +295,13 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
                 type="button"
                 variant="outline"
                 onClick={requestRecoveryCode}
-                disabled={recoveryRequestLoading || recoveryVerifyLoading}
+                disabled={recoveryRequestLoading || recoveryVerifyLoading || recoveryCooldown.isLimited}
               >
-                {recoveryRequestLoading ? "Sending…" : "Send recovery code"}
+                {recoveryCooldown.isLimited
+                  ? `Retry in ${recoveryCooldown.remaining}s`
+                  : recoveryRequestLoading
+                    ? "Sending…"
+                    : "Send recovery code"}
               </Button>
               <div className="space-y-2">
                 <Input

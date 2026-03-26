@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { requestPasswordReset } from "@/lib/auth-email";
+import { useRateLimitCooldown, extractRateLimitInfo } from "@/hooks/useRateLimitCooldown";
 import { emailSchema } from "@/lib/validation";
 
 export default function PasswordResetRequestPage() {
@@ -15,6 +16,7 @@ export default function PasswordResetRequestPage() {
   const [logoutAllDevices, setLogoutAllDevices] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const cooldown = useRateLimitCooldown();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -28,8 +30,14 @@ export default function PasswordResetRequestPage() {
     try {
       await requestPasswordReset(parsed.data, logoutAllDevices);
       router.push("/auth/password-reset/sent");
-    } catch {
-      setError("Could not send reset email. Please try again.");
+    } catch (err: unknown) {
+      const info = extractRateLimitInfo(err);
+      if (info) {
+        cooldown.startCooldown(info.retryAfter);
+        setError("");
+      } else {
+        setError("Could not send reset email. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -75,8 +83,12 @@ export default function PasswordResetRequestPage() {
           />
           <span>Log out from all other devices</span>
         </label>
-        <Button type="submit" className="mt-2 w-full" disabled={loading}>
-          {loading ? "Please wait…" : "Send reset link"}
+        <Button type="submit" className="mt-2 w-full" disabled={loading || cooldown.isLimited}>
+          {cooldown.isLimited
+            ? `Retry in ${cooldown.remaining}s`
+            : loading
+              ? "Please wait…"
+              : "Send reset link"}
         </Button>
       </form>
 

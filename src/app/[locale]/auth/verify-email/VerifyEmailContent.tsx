@@ -9,6 +9,7 @@ import {
   resendVerificationEmail,
   verifyEmailFromLink,
 } from "@/lib/auth-email";
+import { useRateLimitCooldown, extractRateLimitInfo } from "@/hooks/useRateLimitCooldown";
 import {
   PENDING_VERIFICATION_EMAIL_KEY,
   clearPendingVerificationEmail,
@@ -63,6 +64,7 @@ export default function VerifyEmailContent() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendError, setResendError] = useState("");
+  const cooldown = useRateLimitCooldown();
 
   const isFromEmailLink = Boolean(uid && token);
   const effectiveEmail = pendingEmail || normalizeEmail(decodedEmail) || normalizeEmail(emailInput);
@@ -137,7 +139,13 @@ export default function VerifyEmailContent() {
       await resendVerificationEmail(resendEmail);
       setResendSuccess(true);
     } catch (err: unknown) {
-      setResendError(extractMessage(err));
+      const info = extractRateLimitInfo(err);
+      if (info) {
+        cooldown.startCooldown(info.retryAfter);
+        setResendError("");
+      } else {
+        setResendError(extractMessage(err));
+      }
     } finally {
       setResendLoading(false);
     }
@@ -242,10 +250,14 @@ export default function VerifyEmailContent() {
         <Button
           type="button"
           className="mt-2 w-full"
-          disabled={resendLoading}
+          disabled={resendLoading || cooldown.isLimited}
           onClick={handleResend}
         >
-          {resendLoading ? "Sending…" : "Resend email"}
+          {cooldown.isLimited
+            ? `Retry in ${cooldown.remaining}s`
+            : resendLoading
+              ? "Sending…"
+              : "Resend email"}
         </Button>
       </div>
 
