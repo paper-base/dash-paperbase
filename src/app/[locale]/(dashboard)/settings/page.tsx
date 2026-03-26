@@ -45,7 +45,7 @@ export default function SettingsPage() {
     if (!isLg) return;
     const el = desktopTabNavRef.current;
     if (!el) return;
-    const measure = () => setTabStripWidth(el.scrollWidth);
+    const measure = () => setTabStripWidth(Math.ceil(el.getBoundingClientRect().width));
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
