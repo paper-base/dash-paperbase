@@ -65,7 +65,7 @@ type EditableOrderItem = {
   original_price?: string | null;
   variant_option_labels?: string[];
   variant_sku?: string | null;
-  variant_stock_quantity?: number | null;
+  variant_inventory_quantity?: number | null;
   isNew: boolean;
 };
 
@@ -171,6 +171,9 @@ export default function OrderDetailPage() {
   const [courierSuccess, setCourierSuccess] = useState(false);
   const [tracking, setTracking] = useState(false);
   const [trackingDetails, setTrackingDetails] = useState<Record<string, unknown> | null>(null);
+  const [statusUpdateError, setStatusUpdateError] = useState("");
+  const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+  const [nextStatus, setNextStatus] = useState("");
   const rightColRef = useRef<HTMLDivElement>(null);
   const [rightColHeight, setRightColHeight] = useState<number | null>(null);
 
@@ -261,7 +264,7 @@ export default function OrderDetailPage() {
         original_price: item.original_price,
         variant_option_labels: item.variant_option_labels,
         variant_sku: item.variant_sku,
-        variant_stock_quantity: item.variant_stock_quantity,
+        variant_inventory_quantity: item.variant_inventory_quantity,
         isNew: false,
       }))
     );
@@ -335,7 +338,7 @@ export default function OrderDetailPage() {
         original_price: product.original_price,
         variant_option_labels: [],
         variant_sku: null,
-        variant_stock_quantity: null,
+        variant_inventory_quantity: null,
         isNew: true,
       },
     ]);
@@ -458,6 +461,24 @@ export default function OrderDetailPage() {
       console.error(err);
     } finally {
       setTracking(false);
+    }
+  }
+
+  async function handleStatusUpdate() {
+    if (!order || !nextStatus) return;
+    setStatusUpdateError("");
+    setStatusUpdateLoading(true);
+    try {
+      const { data } = await api.patch<{ order: Order; allowed_next_statuses: string[] }>(
+        `admin/orders/${order_public_id}/status/`,
+        { status: nextStatus },
+      );
+      setOrder(data.order);
+      setNextStatus("");
+    } catch (err: unknown) {
+      setStatusUpdateError(extractApiDetail(err, "Failed to update order status."));
+    } finally {
+      setStatusUpdateLoading(false);
     }
   }
 
@@ -657,8 +678,8 @@ export default function OrderDetailPage() {
                                   : item.variant_sku
                                     ? `SKU: ${item.variant_sku}`
                                     : null,
-                                item.variant_stock_quantity != null
-                                  ? `Stock: ${item.variant_stock_quantity}`
+                                item.variant_inventory_quantity != null
+                                  ? `Stock: ${item.variant_inventory_quantity}`
                                   : null,
                               ]
                                 .filter(Boolean)
@@ -678,7 +699,13 @@ export default function OrderDetailPage() {
                                 ...prev,
                                 [itemEditKey]: {
                                   variant_public_id: prev[itemEditKey]?.variant_public_id ?? (item.variant_public_id ?? null),
-                                  quantity: Math.max(1, parseInt(e.target.value) || 1),
+                                  quantity: Math.max(
+                                    1,
+                                    Math.min(
+                                      parseInt(e.target.value) || 1,
+                                      selectedVariant?.inventory_quantity ?? Number.MAX_SAFE_INTEGER,
+                                    ),
+                                  ),
                                   price: prev[itemEditKey]?.price ?? String(item.price),
                                 },
                               }))
@@ -741,7 +768,7 @@ export default function OrderDetailPage() {
                               </Select>
                               {selectedVariant && (
                                 <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                  Stock: {selectedVariant.stock_quantity}
+                                  Stock: {selectedVariant.inventory_quantity}
                                 </span>
                               )}
                             </div>
@@ -823,7 +850,7 @@ export default function OrderDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Right column: Payment + Customer stacked (height drives Product card on desktop) */}
+        {/* Right column: stacked cards (height drives Product card on desktop) */}
         <div ref={rightColRef} className="flex flex-col gap-6 lg:col-span-1">
         {/* Payment */}
         <Card className="overflow-hidden rounded-xl border border-dashed border-card-border bg-card shadow-sm">
@@ -866,6 +893,47 @@ export default function OrderDetailPage() {
             </dl>
           </CardContent>
         </Card>
+
+        {!editing && (
+          <Card className="overflow-hidden rounded-xl border border-dashed border-card-border bg-card shadow-sm">
+            <CardHeader className="border-b border-border/50 px-4 pb-4 sm:px-6">
+              <CardTitle>Order Status</CardTitle>
+              <CardDescription>Current status and next transition</CardDescription>
+            </CardHeader>
+            <CardContent className="px-4 py-4 sm:px-6">
+              <div className="space-y-2">
+                {(order.allowed_next_statuses?.length ?? 0) > 0 && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Select
+                      value={nextStatus}
+                      onChange={(e) => setNextStatus(e.target.value)}
+                      className="h-9 w-[180px]"
+                    >
+                      <option value="">Select next status</option>
+                      {order.allowed_next_statuses?.map((status) => (
+                        <option key={status} value={status}>
+                          {formatOrderStatus(status)}
+                        </option>
+                      ))}
+                    </Select>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleStatusUpdate}
+                      disabled={statusUpdateLoading || !nextStatus}
+                      className="h-9 px-4"
+                    >
+                      {statusUpdateLoading ? "Updating..." : "Update Status"}
+                    </Button>
+                  </div>
+                )}
+                {statusUpdateError && (
+                  <p className="text-xs text-destructive">{statusUpdateError}</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Customer */}
         <Card className="overflow-hidden rounded-xl border border-dashed border-card-border bg-card shadow-sm">
@@ -1048,11 +1116,6 @@ export default function OrderDetailPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       General Information
-                    </p>
-                    <p className="mb-1">
-                      <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize text-foreground">
-                        {formatOrderStatus(order.status)}
-                      </span>
                     </p>
                     <p className="font-medium text-foreground">
                       {order.shipping_name || "—"}

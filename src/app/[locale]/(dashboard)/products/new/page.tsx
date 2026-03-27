@@ -167,7 +167,6 @@ export default function NewProductPage() {
     if (form.original_price) formData.append("original_price", form.original_price);
     formData.append("category", form.sub_category || form.category);
     formData.append("description", form.description);
-    formData.append("stock", form.stock);
     if (form.badge) formData.append("badge", form.badge);
     formData.append("is_featured", String(form.is_featured));
     formData.append("is_active", String(form.is_active));
@@ -394,6 +393,8 @@ export default function NewProductPage() {
                       setForm({ ...form, stock: e.target.value })
                     }
                     className={`font-numbers ${fieldControlClass}`}
+                    disabled
+                    title="Initial stock must be set from Inventory after product creation."
                   />
                 </Field>
               </div>

@@ -210,7 +210,6 @@ export default function EditProductPage() {
     if (form.original_price) formData.append("original_price", form.original_price);
     formData.append("category", form.sub_category || form.category);
     formData.append("description", form.description);
-    formData.append("stock", form.stock);
     if (form.badge) formData.append("badge", form.badge);
     formData.append("is_featured", String(form.is_featured));
     formData.append("is_active", String(form.is_active));
@@ -462,21 +461,15 @@ export default function EditProductPage() {
                     className={`font-numbers ${fieldControlClass}`}
                   />
                 </Field>
-                <Field label={product.variant_count ? "Base product stock (legacy)" : "Stock"}>
+                <Field label="Stock (inventory-derived)">
                   <Input
                     type="number"
                     min={0}
                     value={form.stock}
-                    onChange={(e) =>
-                      setForm({ ...form, stock: e.target.value })
-                    }
+                    readOnly
                     className={`font-numbers ${fieldControlClass}`}
-                    disabled={Boolean(product.variant_count && product.variant_count > 0)}
-                    title={
-                      product.variant_count
-                        ? "When variants exist, edit stock per SKU under Catalog → Variants."
-                        : undefined
-                    }
+                    disabled
+                    title="Stock is managed from Inventory only."
                   />
                 </Field>
               </div>

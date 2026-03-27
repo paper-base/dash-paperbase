@@ -49,7 +49,6 @@ async function fetchAllAttributes(): Promise<ProductAttributeAdmin[]> {
 type VariantForm = {
   sku: string;
   price_override: string;
-  stock_quantity: string;
   is_active: boolean;
   /** one value public_id per attribute (or empty) */
   picks: Record<string, string>;
@@ -61,7 +60,6 @@ const emptyForm = (attrs: ProductAttributeAdmin[]): VariantForm => {
   return {
     sku: "",
     price_override: "",
-    stock_quantity: "0",
     is_active: true,
     picks,
   };
@@ -162,7 +160,6 @@ export default function VariantsPage() {
     setForm({
       sku: v.sku,
       price_override: v.price_override ?? "",
-      stock_quantity: String(v.stock_quantity),
       is_active: v.is_active,
       picks,
     });
@@ -185,7 +182,6 @@ export default function VariantsPage() {
     }
     const payload: Record<string, unknown> = {
       product: productId,
-      stock_quantity: parseInt(form.stock_quantity, 10) || 0,
       is_active: form.is_active,
       attribute_value_public_ids,
     };
@@ -341,16 +337,6 @@ export default function VariantsPage() {
                         placeholder="Leave empty to auto-generate"
                       />
                     </label>
-                    <label className="block space-y-1">
-                      <span className="text-xs font-medium text-muted-foreground">Stock</span>
-                      <Input
-                        type="number"
-                        min={0}
-                        className="w-full font-numbers text-sm"
-                        value={form.stock_quantity}
-                        onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })}
-                      />
-                    </label>
                     <label className="block space-y-1 sm:col-span-2">
                       <span className="text-xs font-medium text-muted-foreground">
                         Price override (optional)
@@ -460,7 +446,7 @@ export default function VariantsPage() {
                       <td className="px-4 py-3 font-numbers text-foreground">
                         {v.price_override ?? selectedProduct?.price ?? "—"}
                       </td>
-                      <td className="px-4 py-3 font-numbers">{v.stock_quantity}</td>
+                      <td className="px-4 py-3 font-numbers">{v.inventory_quantity}</td>
                       <td className="px-4 py-3">{v.is_active ? "Yes" : "No"}</td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1">

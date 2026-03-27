@@ -38,6 +38,7 @@ export default function ProductsPage() {
     "price_min",
     "price_max",
     "search",
+    "ordering",
   ]);
   const [searchInput, setSearchInput] = useState(filters.search || "");
   const [priceMinInput, setPriceMinInput] = useState(filters.price_min || "");
@@ -124,6 +125,7 @@ export default function ProductsPage() {
     if (filters.price_min) params.price_min = filters.price_min;
     if (filters.price_max) params.price_max = filters.price_max;
     if (filters.search) params.search = filters.search;
+    if (filters.ordering) params.ordering = filters.ordering;
     api
       .get<PaginatedResponse<Product>>("admin/products/", {
         params,
@@ -140,6 +142,7 @@ export default function ProductsPage() {
     filters.price_max,
     filters.price_min,
     filters.search,
+    filters.ordering,
     filters.status,
     filters.stock,
     page,
@@ -190,7 +193,7 @@ export default function ProductsPage() {
     }
   }
 
-  async function updateProduct(product: Product, payload: { stock?: number; is_active?: boolean }) {
+  async function updateProduct(product: Product, payload: { is_active?: boolean }) {
     setUpdatingId(product.public_id);
     try {
       await api.patch(`admin/products/${product.public_id}/`, payload);
@@ -305,6 +308,17 @@ export default function ProductsPage() {
           placeholder={tPages("filtersSearchProducts")}
           className="w-full md:w-64"
         />
+        <FilterDropdown
+          value={filters.ordering}
+          onChange={(value) => setFilter("ordering", value)}
+          placeholder="Sort"
+          options={[
+            { value: "newest", label: "Newest" },
+            { value: "price_asc", label: "Price: Low to High" },
+            { value: "price_desc", label: "Price: High to Low" },
+            { value: "popularity", label: "Popularity" },
+          ]}
+        />
         <button
           type="button"
           onClick={() => {
@@ -401,35 +415,14 @@ export default function ProductsPage() {
                           </ClickableText>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1">
-                          <Input
-                            type="number"
-                            min={0}
-                            value={product.stock}
-                            onChange={(e) => {
-                              const v = parseInt(e.target.value, 10);
-                              setProducts((prev) =>
-                                prev.map((p) =>
-                                  p.public_id === product.public_id
-                                    ? { ...p, stock: Number.isNaN(v) ? 0 : Math.max(0, v) }
-                                    : p
-                                )
-                              );
-                            }}
-                            onBlur={() => updateProduct(product, { stock: product.stock })}
-                            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-                            className={`w-16 text-sm ${
-                              product.stock === 0
-                                ? "border-destructive text-destructive"
-                                : ""
-                            }`}
-                            disabled={updatingId === product.public_id}
-                            size="sm"
-                          />
-                          {updatingId === product.public_id && (
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                          )}
-                        </div>
+                        <span
+                          className={`font-numbers text-sm font-medium ${
+                            product.stock === 0 ? "text-destructive" : "text-foreground"
+                          }`}
+                          title="Stock updates are managed from Inventory."
+                        >
+                          {product.stock}
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">

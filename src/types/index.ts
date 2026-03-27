@@ -30,7 +30,7 @@ export interface OrderItem {
   product_image: string | null;
   variant_public_id?: string | null;
   variant_sku?: string | null;
-  variant_stock_quantity?: number | null;
+  variant_inventory_quantity?: number | null;
   variant_option_labels?: string[];
   quantity: number;
   price: string;
@@ -60,6 +60,9 @@ export interface Order {
   courier_status?: string;
   sent_to_courier?: boolean;
   customer_confirmation_sent_at?: string | null;
+  coupon_code?: string;
+  discount_amount?: string;
+  allowed_next_statuses?: string[];
   items?: OrderItem[];
   items_count?: number;
   created_at: string;
@@ -106,7 +109,7 @@ export interface ProductVariant {
   product: string;
   sku: string;
   price_override: string | null;
-  stock_quantity: number;
+  inventory_quantity: number;
   is_active: boolean;
   attribute_value_public_ids: string[];
   option_labels: string[];
@@ -443,6 +446,7 @@ export interface StoreAPIKey {
   public_id: string;
   name: string;
   key_prefix: string;
+  key_type?: "public" | "secret";
   created_at: string;
   revoked_at: string | null;
 }

@@ -41,6 +41,11 @@ export default function NewOrderPage() {
     shippingZones,
     shippingMethods,
     total,
+    discountAmount,
+    totalAfterDiscount,
+    couponPreview,
+    couponError,
+    applyCouponPreview,
     handleSearch,
     addProduct,
     updateItem,
@@ -229,6 +234,28 @@ export default function NewOrderPage() {
                     className={cn(fieldErrors.tracking_number && "border-destructive")}
                   />
                 </FormField>
+                <div className="sm:col-span-2">
+                  <FormField label="Coupon code" error={couponError || fieldErrors.coupon_code}>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="order-coupon-code"
+                        type="text"
+                        value={form.coupon_code}
+                        onChange={(e) => updateForm({ coupon_code: e.target.value })}
+                        placeholder="Optional"
+                      />
+                      <Button type="button" variant="outline" onClick={applyCouponPreview}>
+                        Apply
+                      </Button>
+                    </div>
+                    {couponPreview && (
+                      <p className="mt-1 text-xs text-emerald-600">
+                        Applied {couponPreview.code} (discount {currencySymbol}
+                        {Number(couponPreview.discount_amount).toLocaleString()}).
+                      </p>
+                    )}
+                  </FormField>
+                </div>
               </div>
 
               {extraFieldsSchema.some((f) => f.name.trim()) && (
@@ -393,7 +420,7 @@ export default function NewOrderPage() {
 
                                 {selectedVariant && (
                                   <span className="whitespace-nowrap text-xs text-muted-foreground">
-                                    Stock: {selectedVariant.stock_quantity}
+                                    Stock: {selectedVariant.inventory_quantity}
                                   </span>
                                 )}
                               </div>
@@ -412,7 +439,13 @@ export default function NewOrderPage() {
                                   updateItem(
                                     item.key,
                                     "quantity",
-                                    Math.max(1, parseInt(e.target.value) || 1)
+                                    Math.max(
+                                      1,
+                                      Math.min(
+                                        parseInt(e.target.value) || 1,
+                                        selectedVariant?.inventory_quantity ?? Number.MAX_SAFE_INTEGER,
+                                      ),
+                                    )
                                   )
                                 }
                                 className={cn(
@@ -466,9 +499,15 @@ export default function NewOrderPage() {
                 <span className="text-sm text-muted-foreground">Total</span>
                 <span className="text-lg font-semibold text-foreground">
                   {currencySymbol}
-                  {total.toLocaleString()}
+                  {totalAfterDiscount.toLocaleString()}
                 </span>
               </div>
+              {discountAmount > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Discount applied: -{currencySymbol}
+                  {discountAmount.toLocaleString()}
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>

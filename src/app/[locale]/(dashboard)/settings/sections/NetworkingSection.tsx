@@ -38,10 +38,10 @@ function formatCreatedAt(value: string): string {
 }
 
 function extractRows(data: unknown): APIKeyRow[] {
-  if (Array.isArray(data)) return data as APIKeyRow[];
+  if (Array.isArray(data)) return (data as APIKeyRow[]).filter((row) => !row.revoked_at);
   if (data && typeof data === "object" && "results" in data) {
     const r = (data as { results?: APIKeyRow[] }).results;
-    return Array.isArray(r) ? r : [];
+    return Array.isArray(r) ? r.filter((row) => !row.revoked_at) : [];
   }
   return [];
 }
@@ -118,8 +118,9 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
     setMessage(null);
     try {
       await api.delete(`settings/network/api-keys/${publicId}/`);
+      // Remove immediately so deleted keys disappear from the screen.
+      setKeys((prev) => prev.filter((row) => row.public_id !== publicId));
       setMessage("API key revoked.");
-      await load();
     } catch {
       setMessage("Could not revoke API key.");
     } finally {

@@ -44,6 +44,7 @@ export interface OrderForm {
   tracking_number: string;
   shipping_zone: string;
   shipping_method: string;
+  coupon_code: string;
 }
 
 export function useNewOrder() {
@@ -61,6 +62,7 @@ export function useNewOrder() {
     tracking_number: "",
     shipping_zone: "",
     shipping_method: "",
+    coupon_code: "",
   });
 
   const [extraFields, setExtraFieldsState] = useState<ExtraFieldValues>({});
@@ -92,6 +94,12 @@ export function useNewOrder() {
   // Shipping data
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
+  const [couponPreview, setCouponPreview] = useState<{
+    code: string;
+    discount_amount: string;
+    subtotal_after_discount: string;
+  } | null>(null);
+  const [couponError, setCouponError] = useState("");
 
   useEffect(() => {
     Promise.all([
@@ -209,6 +217,30 @@ export function useNewOrder() {
     [items]
   );
 
+  const discountAmount = Number(couponPreview?.discount_amount || 0);
+  const totalAfterDiscount = Math.max(0, total - discountAmount);
+
+  async function applyCouponPreview() {
+    const code = form.coupon_code.trim();
+    if (!code) {
+      setCouponPreview(null);
+      setCouponError("");
+      return;
+    }
+    try {
+      const { data } = await api.post<{
+        code: string;
+        discount_amount: string;
+        subtotal_after_discount: string;
+      }>("admin/coupons/apply/", { code, subtotal: total.toFixed(2) });
+      setCouponPreview(data);
+      setCouponError("");
+    } catch {
+      setCouponPreview(null);
+      setCouponError("Invalid or unavailable coupon for current subtotal.");
+    }
+  }
+
   const schemaWithNames = useMemo(
     () => extraFieldsSchema.filter((f) => f.name.trim()),
     [extraFieldsSchema]
@@ -241,6 +273,7 @@ export function useNewOrder() {
       const payload = {
         ...form,
         shipping_method: form.shipping_method || null,
+        coupon_code: form.coupon_code || "",
         items: items.map((item) => ({
           product: item.product_id,
           variant_public_id: item.variant_public_id,
@@ -280,6 +313,11 @@ export function useNewOrder() {
     shippingZones,
     shippingMethods,
     total,
+    discountAmount,
+    totalAfterDiscount,
+    couponPreview,
+    couponError,
+    applyCouponPreview,
     handleSearch,
     addProduct,
     updateItem,
