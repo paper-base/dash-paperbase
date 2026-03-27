@@ -32,6 +32,26 @@ const BADGE_OPTIONS = [
 
 const MAX_IMAGES = MAX_PRODUCT_IMAGES;
 
+function formatApiValidationError(data: unknown): string {
+  if (data == null) return "Failed to update product.";
+  if (typeof data === "string") return data;
+  if (typeof data !== "object") return "Failed to update product.";
+  const o = data as Record<string, unknown>;
+  if (typeof o.detail === "string") return o.detail;
+  if (Array.isArray(o.detail) && o.detail.length > 0) {
+    const first = o.detail[0];
+    if (typeof first === "string") return first;
+  }
+  for (const [key, val] of Object.entries(o)) {
+    if (key === "detail") continue;
+    if (Array.isArray(val) && val.length > 0 && typeof val[0] === "string") {
+      return val[0];
+    }
+    if (typeof val === "string") return val;
+  }
+  return "Failed to update product.";
+}
+
 export default function EditProductPage() {
   const { id: product_public_id } = useParams<{ locale: string; id: string }>();
   const router = useRouter();
@@ -207,7 +227,7 @@ export default function EditProductPage() {
     formData.append("name", form.name);
     formData.append("brand", normalizedBrand);
     formData.append("price", form.price);
-    if (form.original_price) formData.append("original_price", form.original_price);
+    formData.append("original_price", form.original_price.trim());
     formData.append("category", form.sub_category || form.category);
     formData.append("description", form.description);
     if (form.badge) formData.append("badge", form.badge);
@@ -228,14 +248,15 @@ export default function EditProductPage() {
         err && typeof err === "object" && "response" in err
           ? (err as { response?: { data?: unknown } }).response?.data
           : null;
-      const text =
-        typeof message === "string"
-          ? message
-          : message && typeof message === "object" && "slug" in message
-            ? Array.isArray((message as { slug: unknown }).slug)
-              ? (message as { slug: string[] }).slug[0]
-              : String((message as { slug: unknown }).slug)
-            : "Failed to update product.";
+      let text = formatApiValidationError(message);
+      if (
+        message &&
+        typeof message === "object" &&
+        "slug" in message &&
+        Array.isArray((message as { slug: unknown }).slug)
+      ) {
+        text = (message as { slug: string[] }).slug[0] ?? text;
+      }
       setError(text || "Failed to update product.");
     } finally {
       setSaving(false);

@@ -100,6 +100,12 @@ export function useNewOrder() {
     subtotal_after_discount: string;
   } | null>(null);
   const [couponError, setCouponError] = useState("");
+  const [pricingPreview, setPricingPreview] = useState<{
+    base_subtotal: string;
+    bulk_discount_total: string;
+    coupon_discount: string;
+    final_total: string;
+  } | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -218,25 +224,41 @@ export function useNewOrder() {
   );
 
   const discountAmount = Number(couponPreview?.discount_amount || 0);
-  const totalAfterDiscount = Math.max(0, total - discountAmount);
+  const totalAfterDiscount = pricingPreview ? Number(pricingPreview.final_total || 0) : Math.max(0, total - discountAmount);
 
   async function applyCouponPreview() {
     const code = form.coupon_code.trim();
     if (!code) {
       setCouponPreview(null);
+      setPricingPreview(null);
       setCouponError("");
       return;
     }
     try {
       const { data } = await api.post<{
-        code: string;
-        discount_amount: string;
-        subtotal_after_discount: string;
-      }>("admin/coupons/apply/", { code, subtotal: total.toFixed(2) });
-      setCouponPreview(data);
+        base_subtotal: string;
+        bulk_discount_total: string;
+        coupon_discount: string;
+        final_total: string;
+      }>("admin/coupons/pricing-preview/", {
+        coupon_code: code,
+        shipping_zone_public_id: form.shipping_zone,
+        shipping_method_public_id: form.shipping_method || null,
+        items: items.map((item) => ({
+          product_public_id: item.product_id,
+          quantity: item.quantity,
+        })),
+      });
+      setPricingPreview(data);
+      setCouponPreview({
+        code,
+        discount_amount: data.coupon_discount,
+        subtotal_after_discount: data.final_total,
+      });
       setCouponError("");
     } catch {
       setCouponPreview(null);
+      setPricingPreview(null);
       setCouponError("Invalid or unavailable coupon for current subtotal.");
     }
   }
@@ -316,6 +338,7 @@ export function useNewOrder() {
     discountAmount,
     totalAfterDiscount,
     couponPreview,
+    pricingPreview,
     couponError,
     applyCouponPreview,
     handleSearch,

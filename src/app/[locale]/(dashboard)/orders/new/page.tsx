@@ -44,6 +44,7 @@ export default function NewOrderPage() {
     discountAmount,
     totalAfterDiscount,
     couponPreview,
+    pricingPreview,
     couponError,
     applyCouponPreview,
     handleSearch,
@@ -502,6 +503,22 @@ export default function NewOrderPage() {
                   {totalAfterDiscount.toLocaleString()}
                 </span>
               </div>
+              {pricingPreview && (
+                <div className="space-y-1 text-xs text-muted-foreground">
+                  <p>
+                    Base subtotal: {currencySymbol}
+                    {Number(pricingPreview.base_subtotal || 0).toLocaleString()}
+                  </p>
+                  <p>
+                    Bulk discount: -{currencySymbol}
+                    {Number(pricingPreview.bulk_discount_total || 0).toLocaleString()}
+                  </p>
+                  <p>
+                    Coupon discount: -{currencySymbol}
+                    {Number(pricingPreview.coupon_discount || 0).toLocaleString()}
+                  </p>
+                </div>
+              )}
               {discountAmount > 0 && (
                 <p className="text-xs text-muted-foreground">
                   Discount applied: -{currencySymbol}

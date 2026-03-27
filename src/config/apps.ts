@@ -135,7 +135,7 @@ export const APP_CONFIG: Record<string, AppConfig> = {
     id: "coupons",
     label: "Coupons",
     icon: Tag,
-    description: "Discount codes and promotions",
+    description: "Coupon codes and automatic bulk discounts",
     essential: false,
     href: "/coupons",
     countKey: null,

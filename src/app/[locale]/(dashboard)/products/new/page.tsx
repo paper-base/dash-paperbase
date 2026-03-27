@@ -164,7 +164,7 @@ export default function NewProductPage() {
     formData.append("name", form.name);
     if (normalizedBrand) formData.append("brand", normalizedBrand);
     formData.append("price", form.price);
-    if (form.original_price) formData.append("original_price", form.original_price);
+    formData.append("original_price", form.original_price.trim());
     formData.append("category", form.sub_category || form.category);
     formData.append("description", form.description);
     if (form.badge) formData.append("badge", form.badge);

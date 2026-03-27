@@ -299,9 +299,27 @@ export interface Coupon {
   discount_value: string;
   min_order_value: string | null;
   max_uses: number | null;
+  per_user_max_uses: number | null;
   times_used: number;
+  successful_uses?: number;
+  reversed_uses?: number;
   valid_from: string | null;
   valid_until: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BulkDiscount {
+  public_id: string;
+  target_type: "category" | "subcategory" | "product";
+  category_public_id: string | null;
+  product_public_id: string | null;
+  discount_type: "percentage" | "fixed";
+  discount_value: string;
+  priority: number;
+  start_date: string | null;
+  end_date: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
