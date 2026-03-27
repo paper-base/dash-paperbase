@@ -1,28 +1,50 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { Undo2, AlertTriangle } from "lucide-react";
 import { ClickableText } from "@/components/ui/clickable-text";
 import { Input } from "@/components/ui/input";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { FilterDropdown } from "@/components/filters/FilterDropdown";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useFilters } from "@/hooks/useFilters";
 import api from "@/lib/api";
 import type { Inventory, PaginatedResponse } from "@/types";
 
 export default function InventoryPage() {
   const router = useRouter();
+  const { page, filters, setFilter, setPage, clearFilters } = useFilters([
+    "search",
+    "stock",
+    "tracked",
+    "type",
+  ]);
   const [inventory, setInventory] = useState<Inventory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
   const [count, setCount] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [adjusting, setAdjusting] = useState<string | null>(null);
   const [adjustValue, setAdjustValue] = useState<Record<string, string>>({});
+  const [searchInput, setSearchInput] = useState(filters.search || "");
+  const debouncedSearch = useDebouncedValue(searchInput);
 
-  function fetchData() {
+  useEffect(() => {
+    const next = debouncedSearch.trim();
+    if (next === (filters.search || "")) return;
+    setFilter("search", next);
+  }, [debouncedSearch, filters.search, setFilter]);
+
+  const fetchData = useCallback(() => {
     setLoading(true);
+    const params: Record<string, string | number> = { page };
+    if (filters.search) params.search = filters.search;
+    if (filters.stock) params.stock = filters.stock;
+    if (filters.tracked) params.tracked = filters.tracked;
+    if (filters.type) params.type = filters.type;
     api
       .get<PaginatedResponse<Inventory>>("admin/inventory/", {
-        params: { page },
+        params,
       })
       .then((res) => {
         setInventory(res.data.results);
@@ -31,11 +53,11 @@ export default function InventoryPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }
+  }, [filters.search, filters.stock, filters.tracked, filters.type, page]);
 
   useEffect(() => {
     fetchData();
-  }, [page]);
+  }, [fetchData]);
 
   async function handleAdjust(publicId: string, change: number) {
     setAdjusting(publicId);
@@ -83,6 +105,53 @@ export default function InventoryPage() {
           </div>
         </div>
       </div>
+
+      <FilterBar>
+        <Input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search product / SKU / IDs"
+          className="w-full md:w-72"
+        />
+        <FilterDropdown
+          value={filters.stock}
+          onChange={(value) => setFilter("stock", value)}
+          placeholder="Stock"
+          options={[
+            { value: "in_stock", label: "In stock" },
+            { value: "low_stock", label: "Low stock" },
+            { value: "out_of_stock", label: "Out of stock" },
+          ]}
+        />
+        <FilterDropdown
+          value={filters.tracked}
+          onChange={(value) => setFilter("tracked", value)}
+          placeholder="Tracking"
+          options={[
+            { value: "tracked", label: "Tracked" },
+            { value: "untracked", label: "Untracked" },
+          ]}
+        />
+        <FilterDropdown
+          value={filters.type}
+          onChange={(value) => setFilter("type", value)}
+          placeholder="Record type"
+          options={[
+            { value: "product", label: "Product-level" },
+            { value: "variant", label: "Variant-level" },
+          ]}
+        />
+        <button
+          type="button"
+          onClick={() => {
+            setSearchInput("");
+            clearFilters();
+          }}
+          className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
+        >
+          Clear
+        </button>
+      </FilterBar>
 
       {loading ? (
         <div className="flex h-64 items-center justify-center">
@@ -169,7 +238,7 @@ export default function InventoryPage() {
             <div className="flex items-center justify-between">
               <button
                 disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
+                onClick={() => setPage(page - 1)}
                 className="btn-page"
               >
                 Previous
@@ -179,7 +248,7 @@ export default function InventoryPage() {
               </span>
               <button
                 disabled={!hasNext}
-                onClick={() => setPage((p) => p + 1)}
+                onClick={() => setPage(page + 1)}
                 className="btn-page"
               >
                 Next
