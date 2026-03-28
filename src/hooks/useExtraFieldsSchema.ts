@@ -11,16 +11,19 @@ function generateId(): string {
 
 function normalizeSchema(raw: unknown): ExtraFieldDefinition[] {
   if (!Array.isArray(raw)) return [];
-  return raw.map((f: Record<string, unknown>) => ({
-    id: String(f.id ?? generateId()),
-    entityType: (f.entityType ?? "product") as ExtraFieldEntityType,
-    name: String(f.name ?? ""),
-    fieldType: (f.fieldType ?? "text") as ExtraFieldDefinition["fieldType"],
-    defaultValue: f.defaultValue != null ? String(f.defaultValue) : undefined,
-    required: Boolean(f.required),
-    options: Array.isArray(f.options) ? f.options.map(String) : undefined,
-    order: Number(f.order) ?? 0,
-  }));
+  return raw
+    .map((f: Record<string, unknown>) => ({
+      id: String(f.id ?? generateId()),
+      entityType: (f.entityType ?? "product") as ExtraFieldEntityType,
+      name: String(f.name ?? ""),
+      fieldType: (f.fieldType ?? "text") as ExtraFieldDefinition["fieldType"],
+      defaultValue: f.defaultValue != null ? String(f.defaultValue) : undefined,
+      required: Boolean(f.required),
+      options: Array.isArray(f.options) ? f.options.map(String) : undefined,
+      order: Number(f.order) ?? 0,
+    }))
+    .filter((row) => String(row.entityType ?? "product").toLowerCase() === "product")
+    .map((row) => ({ ...row, entityType: "product" as const }));
 }
 
 export function useExtraFieldsSchema(entityType?: ExtraFieldEntityType) {
@@ -59,13 +62,12 @@ export function useExtraFieldsSchema(entityType?: ExtraFieldEntityType) {
     []
   );
 
-  const addField = useCallback((targetEntityType: ExtraFieldEntityType = "product") => {
+  const addField = useCallback(() => {
     setSchemaState((prev) => {
-      const entityFields = prev.filter((f) => f.entityType === targetEntityType);
-      const maxOrder = entityFields.reduce((m, f) => Math.max(m, f.order), -1);
+      const maxOrder = prev.reduce((m, f) => Math.max(m, f.order), -1);
       const newField: ExtraFieldDefinition = {
         id: generateId(),
-        entityType: targetEntityType,
+        entityType: "product",
         name: "",
         fieldType: "text",
         required: false,

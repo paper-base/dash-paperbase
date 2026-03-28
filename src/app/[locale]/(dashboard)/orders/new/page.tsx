@@ -2,7 +2,6 @@
 
 import { Undo2, Plus, Trash2 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
-import { ExtraFieldsFormSection } from "@/components/ExtraFieldsFormSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -25,10 +24,6 @@ export default function NewOrderPage() {
     fieldErrors,
     form,
     updateForm,
-    extraFields,
-    setExtraFields,
-    extraFieldsErrors,
-    extraFieldsSchema,
     items,
     query,
     results,
@@ -232,23 +227,6 @@ export default function NewOrderPage() {
                   />
                 </FormField>
               </div>
-
-              {extraFieldsSchema.some((f) => f.name.trim()) && (
-                <div className="border-t border-border pt-4">
-                  <h3 className="mb-3 text-sm font-medium text-foreground">
-                    Extra Fields
-                  </h3>
-                  <p className="mb-3 text-xs text-muted-foreground">
-                    Custom fields defined in Settings → Dynamic Fields.
-                  </p>
-                  <ExtraFieldsFormSection
-                    entityType="order"
-                    values={extraFields}
-                    onChange={setExtraFields}
-                    errors={extraFieldsErrors}
-                  />
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>

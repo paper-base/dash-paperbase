@@ -233,7 +233,6 @@ export default function OrdersPage() {
                   <th className="th">Status</th>
                   <th className="th">Total</th>
                   <th className="th">Shipping zone</th>
-                  <th className="th">Extra</th>
                   <th className="th">Date</th>
                 </tr>
               </thead>
@@ -273,11 +272,6 @@ export default function OrdersPage() {
                     </td>
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {order.shipping_zone_public_id || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                      {order.extra_data && typeof order.extra_data === "object"
-                        ? Object.keys(order.extra_data).length
-                        : 0}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {formatDate(order.created_at)}

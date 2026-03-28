@@ -23,11 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useExtraFieldsSchema } from "@/hooks/useExtraFieldsSchema";
-import type {
-  ExtraFieldDefinition,
-  ExtraFieldEntityType,
-  ExtraFieldType,
-} from "@/types/extra-fields";
+import type { ExtraFieldDefinition, ExtraFieldType } from "@/types/extra-fields";
 import { cn } from "@/lib/utils";
 
 const FIELD_TYPES: { value: ExtraFieldType; label: string }[] = [
@@ -37,65 +33,31 @@ const FIELD_TYPES: { value: ExtraFieldType; label: string }[] = [
   { value: "dropdown", label: "Dropdown" },
 ];
 
-const FIXED_FIELDS_BY_ENTITY: Record<
-  ExtraFieldEntityType,
-  { key: string; label: string }[]
-> = {
-  product: [
-    { key: "name", label: "Product Name" },
-    { key: "slug", label: "Slug" },
-    { key: "description", label: "Description" },
-    { key: "price", label: "Base Price" },
-    { key: "original_price", label: "Compare at Price" },
-    { key: "stock", label: "Stock" },
-    { key: "brand", label: "Brand" },
-    { key: "category", label: "Category" },
-    { key: "is_active", label: "Active" },
-  ],
-  customer: [
-    { key: "name", label: "Name" },
-    { key: "email", label: "Email" },
-    { key: "phone", label: "Phone" },
-    { key: "address", label: "Address" },
-    { key: "created_at", label: "Created" },
-    { key: "updated_at", label: "Updated" },
-  ],
-  order: [
-    { key: "order_id", label: "Order ID" },
-    { key: "customer_id", label: "Customer" },
-    { key: "store_id", label: "Store" },
-    { key: "total_amount", label: "Total Amount" },
-    { key: "status", label: "Status" },
-    { key: "created_at", label: "Created" },
-    { key: "updated_at", label: "Updated" },
-  ],
-};
-
-const ENTITY_TABS: { id: ExtraFieldEntityType; label: string }[] = [
-  { id: "product", label: "Product" },
-  { id: "customer", label: "Customer" },
-  { id: "order", label: "Order" },
+const FIXED_PRODUCT_FIELDS: { key: string; label: string }[] = [
+  { key: "name", label: "Product Name" },
+  { key: "slug", label: "Slug" },
+  { key: "description", label: "Description" },
+  { key: "price", label: "Base Price" },
+  { key: "original_price", label: "Compare at Price" },
+  { key: "stock", label: "Stock" },
+  { key: "brand", label: "Brand" },
+  { key: "category", label: "Category" },
+  { key: "is_active", label: "Active" },
 ];
 
-const FIELD_NAME_PLACEHOLDERS: Record<ExtraFieldEntityType, string> = {
-  product: "e.g. color, size, warranty, material",
-  customer: "e.g. preferences, loyalty_tier, referral_code, custom_notes",
-  order: "e.g. gift_message, custom_instructions, discount_metadata",
-};
+const FIELD_NAME_PLACEHOLDER = "e.g. color, size, warranty, material";
 
 const inputClass =
   "w-full rounded-lg bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0";
 
 function SortableFieldItem({
   field,
-  entityType,
   onUpdate,
   onRemove,
   namesExceptThis,
   onMessage,
 }: {
   field: ExtraFieldDefinition;
-  entityType: ExtraFieldEntityType;
   onUpdate: (id: string, updates: Partial<ExtraFieldDefinition>) => void;
   onRemove: (id: string) => void;
   namesExceptThis: string[];
@@ -172,7 +134,7 @@ function SortableFieldItem({
               <Input
                 value={field.name}
                 onChange={(e) => handleNameChange(e.target.value)}
-                placeholder={FIELD_NAME_PLACEHOLDERS[entityType]}
+                placeholder={FIELD_NAME_PLACEHOLDER}
                 className={inputClass}
               />
             </div>
@@ -274,8 +236,6 @@ export function DynamicFieldsPanel({
   message: DynamicFieldsMessage;
   onMessage: (msg: DynamicFieldsMessage) => void;
 }) {
-  const [activeEntity, setActiveEntity] = useState<ExtraFieldEntityType>("product");
-
   const {
     schema,
     addField,
@@ -283,7 +243,7 @@ export function DynamicFieldsPanel({
     removeField,
     reorderFields,
     save,
-  } = useExtraFieldsSchema(activeEntity);
+  } = useExtraFieldsSchema("product");
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -301,10 +261,10 @@ export function DynamicFieldsPanel({
       const activeIdx = schema.findIndex((f) => f.id === active.id);
       const overIdx = schema.findIndex((f) => f.id === over.id);
       if (activeIdx === -1 || overIdx === -1) return;
-      reorderFields(active.id as string, over.id as string, activeEntity);
+      reorderFields(active.id as string, over.id as string, "product");
       onMessage({ type: "success", text: "Order updated." });
     },
-    [schema, reorderFields, activeEntity, onMessage]
+    [schema, reorderFields, onMessage]
   );
 
   const handleAddField = () => {
@@ -313,7 +273,7 @@ export function DynamicFieldsPanel({
       onMessage({ type: "error", text: "Complete existing fields before adding new ones." });
       return;
     }
-    addField(activeEntity);
+    addField();
     onMessage({ type: "success", text: "Field added. Configure it below." });
   };
 
@@ -332,37 +292,17 @@ export function DynamicFieldsPanel({
     );
   });
 
-  const fixedFields = FIXED_FIELDS_BY_ENTITY[activeEntity];
-
   return (
     <div className="w-full space-y-6">
-      <div className="flex flex-wrap gap-2 border-b border-border pb-4">
-        {ENTITY_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveEntity(tab.id)}
-            className={cn(
-              "rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
-              activeEntity === tab.id
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
       <div className="rounded-xl border border-dashed border-border bg-muted/30 p-5">
         <h3 className="text-sm font-semibold text-foreground">
           Fixed mandatory fields
         </h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          These fields are always present on {activeEntity}s and cannot be removed.
+          These fields are always present on products and cannot be removed.
         </p>
         <div className="mt-4 flex flex-wrap gap-1.5 lg:flex-nowrap lg:overflow-x-auto lg:pb-1 [scrollbar-width:thin]">
-          {fixedFields.map(({ key, label }) => (
+          {FIXED_PRODUCT_FIELDS.map(({ key, label }) => (
             <div
               key={key}
               className="flex shrink-0 items-center rounded-md border border-border/70 bg-background/80 px-2 py-1.5 text-xs shadow-sm transition-colors hover:border-border"
@@ -378,8 +318,8 @@ export function DynamicFieldsPanel({
           Extra Fields (JSONB)
         </h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Define custom extra fields for {activeEntity}s. These appear in{" "}
-          {activeEntity} create/edit forms. Values are persisted via the backend API.
+          Define custom extra fields for products. They appear in product create and edit forms. Values are persisted
+          via the backend API on each product&apos;s <code className="rounded bg-muted px-1 text-[11px]">extra_data</code>.
         </p>
 
         {message && (
@@ -415,7 +355,6 @@ export function DynamicFieldsPanel({
                 <SortableFieldItem
                   key={field.id}
                   field={field}
-                  entityType={activeEntity}
                   onUpdate={updateField}
                   onRemove={removeField}
                   namesExceptThis={getNamesExcept(field.id)}

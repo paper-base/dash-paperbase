@@ -52,7 +52,6 @@ export interface OrderItem {
 export interface Order {
   public_id: string;
   order_number: string;
-  extra_data?: Record<string, string | number | boolean>;
   user_public_id?: string | null;
   email: string;
   status: string;
@@ -301,7 +300,6 @@ export interface Customer {
   address: string | null;
   total_orders: number;
   marketing_opt_in: boolean;
-  extra_data?: Record<string, string | number | boolean>;
   created_at: string;
   updated_at?: string;
 }

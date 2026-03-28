@@ -1,6 +1,6 @@
 export type ExtraFieldType = "text" | "number" | "boolean" | "dropdown";
 
-export type ExtraFieldEntityType = "product" | "customer" | "order";
+export type ExtraFieldEntityType = "product";
 
 export interface ExtraFieldDefinition {
   id: string;

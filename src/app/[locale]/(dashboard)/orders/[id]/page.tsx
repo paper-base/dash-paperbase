@@ -15,10 +15,6 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import { useBranding } from "@/context/BrandingContext";
-import { ExtraFieldsFormSection } from "@/components/ExtraFieldsFormSection";
-import { useExtraFieldsSchema } from "@/hooks/useExtraFieldsSchema";
-import { validateRequiredExtraFields } from "@/lib/validation";
-import type { ExtraFieldValues } from "@/types/extra-fields";
 import type {
   Order,
   PaginatedResponse,
@@ -151,9 +147,6 @@ export default function OrderDetailPage() {
     shipping_zone_public_id: "",
     shipping_method_public_id: "",
   });
-  const [extraFields, setExtraFields] = useState<ExtraFieldValues>({});
-  const [extraFieldsErrors, setExtraFieldsErrors] = useState<Record<string, string>>({});
-  const { schema: extraFieldsSchema } = useExtraFieldsSchema("order");
   const [saving, setSaving] = useState(false);
   const [itemEdits, setItemEdits] = useState<Record<string, { variant_public_id: string | null; quantity: number; price: string }>>({});
   const [editableItems, setEditableItems] = useState<EditableOrderItem[]>([]);
@@ -235,11 +228,6 @@ export default function OrderDetailPage() {
       shipping_zone_public_id: order.shipping_zone_public_id ?? "",
       shipping_method_public_id: order.shipping_method_public_id ?? "",
     });
-    setExtraFields(
-      typeof order.extra_data === "object" && order.extra_data !== null
-        ? (order.extra_data as ExtraFieldValues)
-        : {}
-    );
     const nextEdits: Record<string, { variant_public_id: string | null; quantity: number; price: string }> = {};
     for (const item of order.items ?? []) {
       nextEdits[item.public_id] = {
@@ -354,13 +342,6 @@ export default function OrderDetailPage() {
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
-    const schemaWithNames = extraFieldsSchema.filter((f) => f.name.trim());
-    const extraErrors = validateRequiredExtraFields(schemaWithNames, extraFields);
-    if (Object.keys(extraErrors).length > 0) {
-      setExtraFieldsErrors(extraErrors);
-      return;
-    }
-    setExtraFieldsErrors({});
     setSaving(true);
     setEditError("");
     try {
@@ -394,7 +375,6 @@ export default function OrderDetailPage() {
           ),
           ...removedExistingIds.map((publicId) => ({ public_id: publicId, remove: true })),
         ],
-        ...(Object.keys(extraFields).length > 0 && { extra_data: extraFields }),
       };
       const { data } = await api.patch<Order>(`admin/orders/${order_public_id}/`, payload);
       setOrder(data);
@@ -497,8 +477,6 @@ export default function OrderDetailPage() {
   }
 
   const orderDateFormatted = formatOrderDate(order.created_at);
-  const savedExtraData =
-    order.extra_data && typeof order.extra_data === "object" ? order.extra_data : null;
   const computedSubtotal = (order.items ?? []).reduce(
     (s, i) => s + Number(i.price) * i.quantity,
     0
@@ -1078,22 +1056,6 @@ export default function OrderDetailPage() {
                     />
                   </div>
                 </div>
-                {extraFieldsSchema.some((f) => f.name.trim()) && (
-                  <div className="border-t border-border pt-4">
-                    <h3 className="mb-3 text-sm font-medium text-foreground">
-                      Extra Fields
-                    </h3>
-                    <p className="mb-3 text-xs text-muted-foreground">
-                      Custom fields defined in Settings → Dynamic Fields.
-                    </p>
-                    <ExtraFieldsFormSection
-                      entityType="order"
-                      values={extraFields}
-                      onChange={setExtraFields}
-                      errors={extraFieldsErrors}
-                    />
-                  </div>
-                )}
                 <div className="flex gap-2 pt-2">
                   <Button type="submit" disabled={saving}>
                     {saving ? "Saving…" : "Save Changes"}
@@ -1162,37 +1124,6 @@ export default function OrderDetailPage() {
                     </p>
                   </div>
                 </div>
-
-                {(extraFieldsSchema.some((f) => f.name.trim()) ||
-                  (savedExtraData && Object.keys(savedExtraData).length > 0)) && (
-                  <div className="rounded-xl border border-dashed border-card-border bg-card p-4">
-                    <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Extra Fields
-                    </p>
-                    <p className="mb-3 text-xs text-muted-foreground">
-                      Custom fields from Settings → Dynamic Fields. Values are saved as{" "}
-                      <code className="rounded bg-muted px-1 text-[11px]">extra_data</code> on the order.
-                    </p>
-
-                    {savedExtraData && Object.keys(savedExtraData).length > 0 ? (
-                      <dl className="grid gap-2 text-sm sm:grid-cols-2">
-                        {Object.entries(savedExtraData).map(([k, v]) => (
-                          <div
-                            key={k}
-                            className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2"
-                          >
-                            <dt className="text-xs text-muted-foreground">{k}</dt>
-                            <dd className="font-medium text-foreground break-words">
-                              {typeof v === "object" ? JSON.stringify(v) : String(v)}
-                            </dd>
-                          </div>
-                        ))}
-                      </dl>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No extra fields saved yet.</p>
-                    )}
-                  </div>
-                )}
               </div>
             )}
           </CardContent>

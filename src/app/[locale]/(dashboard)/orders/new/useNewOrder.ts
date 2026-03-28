@@ -5,13 +5,10 @@ import {
   useMemo,
   useState,
   useRef,
-  useCallback,
   type FormEvent,
 } from "react";
 import { useRouter } from "@/i18n/navigation";
 import api from "@/lib/api";
-import { useExtraFieldsSchema } from "@/hooks/useExtraFieldsSchema";
-import type { ExtraFieldValues } from "@/types/extra-fields";
 import type {
   Product,
   PaginatedResponse,
@@ -19,11 +16,7 @@ import type {
   ShippingMethod,
   ShippingZone,
 } from "@/types";
-import {
-  orderCreateSchema,
-  parseValidation,
-  validateRequiredExtraFields,
-} from "@/lib/validation";
+import { orderCreateSchema, parseValidation } from "@/lib/validation";
 
 export interface OrderItemRow {
   key: number;
@@ -62,17 +55,6 @@ export function useNewOrder() {
     shipping_zone_public_id: "",
     shipping_method_public_id: "",
   });
-
-  const [extraFields, setExtraFieldsState] = useState<ExtraFieldValues>({});
-  const setExtraFields = useCallback(
-    (value: ExtraFieldValues | ((prev: ExtraFieldValues) => ExtraFieldValues)) => {
-      setFieldErrors({});
-      setExtraFieldsState(value);
-    },
-    [],
-  );
-  const [extraFieldsErrors, setExtraFieldsErrors] = useState<Record<string, string>>({});
-  const { schema: extraFieldsSchema } = useExtraFieldsSchema("order");
 
   const [items, setItems] = useState<OrderItemRow[]>([]);
   const nextKey = useRef(0);
@@ -251,11 +233,6 @@ export function useNewOrder() {
     };
   }, [items, form.shipping_zone_public_id, form.shipping_method_public_id]);
 
-  const schemaWithNames = useMemo(
-    () => extraFieldsSchema.filter((f) => f.name.trim()),
-    [extraFieldsSchema]
-  );
-
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const validation = parseValidation(orderCreateSchema, { ...form, items });
@@ -267,14 +244,6 @@ export function useNewOrder() {
       return;
     }
 
-    const extraErrors = validateRequiredExtraFields(schemaWithNames, extraFields);
-    if (Object.keys(extraErrors).length > 0) {
-      setExtraFieldsErrors(extraErrors);
-      setFieldErrors({});
-      setError("Please fill in all required extra fields.");
-      return;
-    }
-    setExtraFieldsErrors({});
     setFieldErrors({});
     setSaving(true);
     setError("");
@@ -289,7 +258,6 @@ export function useNewOrder() {
           quantity: item.quantity,
           price: item.price,
         })),
-        ...(Object.keys(extraFields).length > 0 && { extra_data: extraFields }),
       };
       await api.post("admin/orders/", payload);
       router.push("/orders");
@@ -306,10 +274,6 @@ export function useNewOrder() {
     fieldErrors,
     form,
     updateForm,
-    extraFields,
-    setExtraFields,
-    extraFieldsErrors,
-    extraFieldsSchema,
     items,
     query,
     results,

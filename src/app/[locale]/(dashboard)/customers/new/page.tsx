@@ -7,10 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ExtraFieldsFormSection } from "@/components/ExtraFieldsFormSection";
-import { useExtraFieldsSchema } from "@/hooks/useExtraFieldsSchema";
-import type { ExtraFieldValues } from "@/types/extra-fields";
-import { validateRequiredExtraFields } from "@/lib/validation";
 
 const fieldControlClass = "w-full rounded-lg bg-muted/50";
 
@@ -46,23 +42,10 @@ export default function NewCustomerPage() {
     phone: "",
     address: "",
   });
-  const [extraFields, setExtraFields] = useState<ExtraFieldValues>({});
-  const [extraFieldsErrors, setExtraFieldsErrors] = useState<Record<string, string>>({});
-  const { schema: extraFieldsSchema } = useExtraFieldsSchema("customer");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-
-    const schemaWithNames = extraFieldsSchema.filter((f) => f.name.trim());
-    const extraErrors = validateRequiredExtraFields(schemaWithNames, extraFields);
-    if (Object.keys(extraErrors).length > 0) {
-      setExtraFieldsErrors(extraErrors);
-      setError("Please fill in all required extra fields.");
-      return;
-    }
-    setExtraFieldsErrors({});
     setError("");
-
     setSaving(true);
     setSuccessMessage("");
     try {
@@ -167,27 +150,6 @@ export default function NewCustomerPage() {
             </Field>
           </CardContent>
         </Card>
-
-        {extraFieldsSchema.some((f) => f.name.trim()) && (
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base font-semibold text-foreground">
-                Extra Fields
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Custom fields defined in Settings → Dynamic Fields.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <ExtraFieldsFormSection
-                entityType="customer"
-                values={extraFields}
-                onChange={setExtraFields}
-                errors={extraFieldsErrors}
-              />
-            </CardContent>
-          </Card>
-        )}
 
         <div className="flex justify-end gap-3">
           <Button

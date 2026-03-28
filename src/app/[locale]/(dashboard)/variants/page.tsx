@@ -3,11 +3,18 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
-import { Undo2, Pencil, Trash2, Plus } from "lucide-react";
+import { Undo2, Plus } from "lucide-react";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClickableText } from "@/components/ui/clickable-text";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type {
@@ -83,6 +90,7 @@ export default function VariantsPage() {
   const [editing, setEditing] = useState<string | "new" | null>(null);
   const [form, setForm] = useState<VariantForm | null>(null);
   const [saving, setSaving] = useState(false);
+  const [togglingVariantId, setTogglingVariantId] = useState<string | null>(null);
 
   const selectedProduct = useMemo(
     () => products.find((p) => p.public_id === productId) ?? null,
@@ -242,6 +250,32 @@ export default function VariantsPage() {
     }
   }
 
+  async function updateVariantActive(v: ProductVariant, is_active: boolean) {
+    if (v.is_active === is_active) return;
+    setTogglingVariantId(v.public_id);
+    setError("");
+    try {
+      await api.patch(`admin/product-variants/${v.public_id}/`, { is_active });
+      setVariants((prev) =>
+        prev.map((row) =>
+          row.public_id === v.public_id ? { ...row, is_active } : row
+        )
+      );
+      await loadMeta();
+    } catch {
+      setError("Could not update active status.");
+      await loadVariants();
+    } finally {
+      setTogglingVariantId(null);
+    }
+  }
+
+  function handleVariantStatusChange(v: ProductVariant, is_active: boolean) {
+    if (v.is_active !== is_active) {
+      void updateVariantActive(v, is_active);
+    }
+  }
+
   if (loading && products.length === 0) {
     return (
       <div className="text-sm text-muted-foreground">Loading catalog…</div>
@@ -329,9 +363,9 @@ export default function VariantsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={saveVariant} className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="block space-y-1">
+                <form onSubmit={saveVariant} className="flex flex-col gap-6">
+                  <div className="flex flex-col gap-4">
+                    <label className="flex flex-col gap-2">
                       <span className="text-xs font-medium text-muted-foreground">SKU</span>
                       <Input
                         className="w-full text-sm"
@@ -340,14 +374,14 @@ export default function VariantsPage() {
                         placeholder="Leave empty to auto-generate"
                       />
                     </label>
-                    <label className="block space-y-1 sm:col-span-2">
+                    <label className="flex flex-col gap-2">
                       <span className="text-xs font-medium text-muted-foreground">
                         Price override (optional)
                       </span>
                       <Input
                         type="number"
                         step="0.01"
-                        className="max-w-xs font-numbers text-sm"
+                        className="w-full max-w-xs font-numbers text-sm"
                         value={form.price_override}
                         onChange={(e) => setForm({ ...form, price_override: e.target.value })}
                         placeholder="Uses product base price if empty"
@@ -356,16 +390,18 @@ export default function VariantsPage() {
                   </div>
 
                   {attributes.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="flex flex-col gap-4">
                       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Options (at most one per type)
                       </p>
-                      <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-4 sm:grid-cols-2">
                         {attributes.map((a) => (
-                          <label key={a.public_id} className="block space-y-1">
-                            <span className="text-xs text-muted-foreground">{a.name}</span>
+                          <label key={a.public_id} className="flex flex-col gap-2">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {a.name}
+                            </span>
                             <Select
-                              className="text-sm"
+                              className="w-full text-sm"
                               value={form.picks[a.public_id] ?? ""}
                               onChange={(e) =>
                                 setForm({
@@ -395,17 +431,22 @@ export default function VariantsPage() {
                     </p>
                   )}
 
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={form.is_active}
-                      onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                      className="form-checkbox"
-                    />
-                    <span className="text-sm">Active</span>
-                  </label>
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Availability
+                    </span>
+                    <label className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={form.is_active}
+                        onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+                        className="form-checkbox"
+                      />
+                      <span className="text-sm text-foreground">Active</span>
+                    </label>
+                  </div>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-3">
                     <Button type="submit" disabled={saving}>
                       {saving ? "Saving…" : "Save"}
                     </Button>
@@ -433,14 +474,23 @@ export default function VariantsPage() {
                     <th className="px-4 py-3 font-medium">Options</th>
                     <th className="px-4 py-3 font-medium">Price</th>
                     <th className="px-4 py-3 font-medium">Stock</th>
-                    <th className="px-4 py-3 font-medium">Active</th>
-                    <th className="px-4 py-3 font-medium w-28"> </th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 font-medium whitespace-nowrap">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {variants.map((v) => (
                     <tr key={v.public_id} className="border-b border-border last:border-0">
-                      <td className="px-4 py-3 font-medium text-foreground">{v.sku}</td>
+                      <td className="px-4 py-3">
+                        <ClickableText
+                          aria-label={`Edit variant ${v.sku}`}
+                          disabled={editing !== null}
+                          onClick={() => openEdit(v)}
+                          className="max-w-full whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {v.sku}
+                        </ClickableText>
+                      </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {v.option_labels?.length
                           ? v.option_labels.join(" · ")
@@ -450,30 +500,54 @@ export default function VariantsPage() {
                         {v.price_override ?? selectedProduct?.price ?? "—"}
                       </td>
                       <td className="px-4 py-3 font-numbers">{v.available_quantity}</td>
-                      <td className="px-4 py-3">{v.is_active ? "Yes" : "No"}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-xs"
-                            aria-label="Edit"
-                            disabled={editing !== null}
-                            onClick={() => openEdit(v)}
-                          >
-                            <Pencil className="size-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-xs"
-                            aria-label="Delete"
-                            disabled={editing !== null}
-                            onClick={() => deleteVariant(v)}
-                          >
-                            <Trash2 className="size-4 text-destructive" />
-                          </Button>
-                        </div>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <Combobox
+                          value={v.is_active ? "active" : "inactive"}
+                          onValueChange={(value) => {
+                            if (!value) return;
+                            handleVariantStatusChange(v, value === "active");
+                          }}
+                          disabled={
+                            editing !== null || togglingVariantId === v.public_id
+                          }
+                        >
+                          <ComboboxInput
+                            placeholder="Status"
+                            showClear={false}
+                            className="w-[110px]"
+                            inputClassName={`cursor-pointer caret-transparent text-xs font-semibold capitalize ${
+                              v.is_active
+                                ? "bg-emerald-500/10 text-emerald-400"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          />
+                          <ComboboxContent>
+                            <ComboboxList>
+                              <ComboboxItem value="active">
+                                <span className="text-xs font-medium capitalize">
+                                  Active
+                                </span>
+                              </ComboboxItem>
+                              <ComboboxItem value="inactive">
+                                <span className="text-xs font-medium capitalize">
+                                  Inactive
+                                </span>
+                              </ComboboxItem>
+                            </ComboboxList>
+                          </ComboboxContent>
+                        </Combobox>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto px-1 py-1 text-sm font-medium text-destructive underline decoration-destructive/80 underline-offset-4 transition-none hover:bg-transparent hover:text-destructive disabled:no-underline disabled:opacity-50"
+                          disabled={editing !== null}
+                          onClick={() => deleteVariant(v)}
+                        >
+                          Delete
+                        </Button>
                       </td>
                     </tr>
                   ))}

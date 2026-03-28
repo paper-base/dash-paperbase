@@ -24,8 +24,8 @@ export default function DynamicFieldsSection({
         <div className="space-y-1">
           <h2 className="text-lg font-medium text-foreground">Dynamic Fields</h2>
           <p className="text-sm text-muted-foreground">
-            Define custom extra fields for products, customers, and orders. These fields appear in create/edit forms.
-            Values are stored locally for now; backend integration coming later.
+            Define custom extra fields for products. They appear on product create and edit forms and are stored in
+            each product&apos;s extra data via the API.
           </p>
         </div>
         <DynamicFieldsPanel message={message} onMessage={onMessage} />

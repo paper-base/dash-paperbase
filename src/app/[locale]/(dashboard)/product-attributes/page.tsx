@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
-import { Undo2, Plus, Pencil, Trash2 } from "lucide-react";
+import { Undo2, Plus } from "lucide-react";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -255,31 +255,30 @@ export default function ProductAttributesPage() {
             return (
             <Card key={a.public_id} className="shadow-sm">
               <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 pb-2">
-                <div>
-                  <CardTitle className="text-base">{a.name}</CardTitle>
-                  <p className="text-xs text-muted-foreground">
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="text-base">
+                    <ClickableText
+                      aria-label={`Edit attribute ${a.name}`}
+                      disabled={attrEditing !== null || valueEditing !== null}
+                      onClick={() => openAttrEdit(a)}
+                      className="max-w-full text-left font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {a.name}
+                    </ClickableText>
+                  </CardTitle>
+                  <p className="mt-1 text-xs text-muted-foreground">
                     slug: <code className="rounded bg-muted px-1">{a.slug}</code> · order {a.order}
                   </p>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex shrink-0 gap-1">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    disabled={attrEditing !== null}
-                    onClick={() => openAttrEdit(a)}
-                  >
-                    <Pencil className="mr-1 size-3.5" />
-                    Edit
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={attrEditing !== null}
+                    className="h-auto px-1 py-1 text-sm font-medium text-destructive underline decoration-destructive/80 underline-offset-4 transition-none hover:bg-transparent hover:text-destructive disabled:no-underline disabled:opacity-50"
+                    disabled={attrEditing !== null || valueEditing !== null}
                     onClick={() => deleteAttr(a.public_id, a.name)}
                   >
-                    <Trash2 className="mr-1 size-3.5 text-destructive" />
                     Delete
                   </Button>
                 </div>
@@ -348,30 +347,28 @@ export default function ProductAttributesPage() {
                         key={v.public_id}
                         className="flex items-center justify-between gap-2 px-3 py-2 text-sm"
                       >
-                        <span>
-                          {v.value}{" "}
-                          <span className="text-xs text-muted-foreground">(order {v.order})</span>
-                        </span>
-                        <div className="flex gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-xs"
-                            aria-label="Edit value"
+                        <div className="min-w-0 flex-1">
+                          <ClickableText
+                            aria-label={`Edit value ${v.value}`}
                             disabled={valueEditing !== null || attrEditing !== null}
                             onClick={() => openValueEdit(a.public_id, v)}
+                            className="text-left disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            <Pencil className="size-4" />
-                          </Button>
+                            {v.value}
+                          </ClickableText>{" "}
+                          <span className="text-xs text-muted-foreground">(order {v.order})</span>
+                        </div>
+                        <div className="flex shrink-0 gap-1">
                           <Button
                             type="button"
                             variant="ghost"
-                            size="icon-xs"
-                            aria-label="Delete value"
+                            size="sm"
+                            className="h-auto px-1 py-1 text-sm font-medium text-destructive underline decoration-destructive/80 underline-offset-4 transition-none hover:bg-transparent hover:text-destructive disabled:no-underline disabled:opacity-50"
+                            aria-label={`Delete value ${v.value}`}
                             disabled={valueEditing !== null || attrEditing !== null}
                             onClick={() => deleteValue(v.public_id, v.value)}
                           >
-                            <Trash2 className="size-4 text-destructive" />
+                            Delete
                           </Button>
                         </div>
                       </li>
