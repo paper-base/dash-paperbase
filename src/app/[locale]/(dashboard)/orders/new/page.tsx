@@ -35,7 +35,6 @@ export default function NewOrderPage() {
     variantsLoadingByProductId,
     shippingZones,
     shippingMethods,
-    merchandiseTotal,
     displayTotal,
     pricingPreview,
     handleSearch,
@@ -314,7 +313,7 @@ export default function NewOrderPage() {
                           fieldErrors[`items.${index}.variant_public_id`];
                         const rowProductErr = fieldErrors[`items.${index}.product_public_id`];
                         const rowQtyErr = fieldErrors[`items.${index}.quantity`];
-                        const rowPriceErr = fieldErrors[`items.${index}.price`];
+                        const rowPriceErr = fieldErrors[`items.${index}.unit_price`];
                         return (
                           <tr key={item.key} className="bg-card">
                             <td className="px-3 py-2">
@@ -406,9 +405,9 @@ export default function NewOrderPage() {
                                 type="number"
                                 step="0.01"
                                 min={0}
-                                value={item.price}
+                                value={item.unit_price}
                                 onChange={(e) =>
-                                  updateItem(item.key, "price", e.target.value)
+                                  updateItem(item.key, "unit_price", e.target.value)
                                 }
                                 className={cn("w-28", rowPriceErr && "border-destructive")}
                                 aria-invalid={!!rowPriceErr}
@@ -447,19 +446,30 @@ export default function NewOrderPage() {
               {pricingPreview && (
                 <div className="space-y-1 text-xs text-muted-foreground">
                   <p>
-                    Merchandise: {currencySymbol}
-                    {Number(pricingPreview.base_subtotal || 0).toLocaleString()}
+                    Subtotal (before discount): {currencySymbol}
+                    {Number(pricingPreview.subtotal_before_discount || 0).toLocaleString()}
+                  </p>
+                  <p>
+                    Discount: −{currencySymbol}
+                    {Number(pricingPreview.discount_total || 0).toLocaleString()}
+                  </p>
+                  <p>
+                    Subtotal (after discount): {currencySymbol}
+                    {Number(pricingPreview.subtotal_after_discount || 0).toLocaleString()}
                   </p>
                   <p>
                     Shipping: {currencySymbol}
                     {Number(pricingPreview.shipping_cost || 0).toLocaleString()}
                   </p>
+                  <p className="font-medium text-foreground">
+                    Total: {currencySymbol}
+                    {Number(pricingPreview.total || 0).toLocaleString()}
+                  </p>
                 </div>
               )}
               {!pricingPreview && items.length > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Line items: {currencySymbol}
-                  {merchandiseTotal.toLocaleString()} (add delivery zone for full quote)
+                  Select a delivery zone to calculate totals (server-side preview).
                 </p>
               )}
             </CardContent>

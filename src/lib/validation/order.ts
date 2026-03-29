@@ -5,7 +5,7 @@ export const orderItemSchema = z.object({
   /** Matches dashboard line items (`variant_public_id`). **/
   variant_public_id: z.string().trim().min(1).nullable(),
   quantity: z.number().int().min(1),
-  price: z.string().trim().min(1),
+  unit_price: z.string().trim().min(1),
 });
 
 export const orderCreateSchema = z.object({

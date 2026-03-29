@@ -153,7 +153,7 @@ export default function CustomerDetailPage() {
                           <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{formatMdyHm(item.ordered_at)}</td>
                           <td className="whitespace-nowrap px-3 py-2 font-medium text-foreground">{item.product_name}</td>
                           <td className="px-3 py-2 text-muted-foreground">{item.quantity}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{asCurrency(item.price)}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{asCurrency(item.unit_price)}</td>
                         </tr>
                       ))}
                     </tbody>

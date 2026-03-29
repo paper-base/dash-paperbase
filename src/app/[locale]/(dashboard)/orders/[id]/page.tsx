@@ -17,6 +17,7 @@ import {
 } from "@/lib/orders/order-statuses";
 import type {
   Order,
+  OrderPricingPreview,
   PaginatedResponse,
   ProductVariant,
   Product,
@@ -98,7 +99,10 @@ export default function OrderDetailPage() {
     shipping_method_public_id: "",
   });
   const [saving, setSaving] = useState(false);
-  const [itemEdits, setItemEdits] = useState<Record<string, { variant_public_id: string | null; quantity: number; price: string }>>({});
+  const [itemEdits, setItemEdits] = useState<
+    Record<string, { variant_public_id: string | null; quantity: number; unit_price: string }>
+  >({});
+  const [pricingPreview, setPricingPreview] = useState<OrderPricingPreview | null>(null);
   const [editableItems, setEditableItems] = useState<EditableOrderItem[]>([]);
   const [variantsByProductId, setVariantsByProductId] = useState<Record<string, ProductVariant[]>>({});
   const [variantsLoadingByProductId, setVariantsLoadingByProductId] = useState<Record<string, boolean>>({});
@@ -162,6 +166,7 @@ export default function OrderDetailPage() {
   function startEditing() {
     if (!order) return;
     setEditError("");
+    setPricingPreview(null);
     setForm({
       shipping_name: order.shipping_name,
       phone: order.phone,
@@ -171,12 +176,13 @@ export default function OrderDetailPage() {
       shipping_zone_public_id: order.shipping_zone_public_id ?? "",
       shipping_method_public_id: order.shipping_method_public_id ?? "",
     });
-    const nextEdits: Record<string, { variant_public_id: string | null; quantity: number; price: string }> = {};
+    const nextEdits: Record<string, { variant_public_id: string | null; quantity: number; unit_price: string }> =
+      {};
     for (const item of order.items ?? []) {
       nextEdits[item.public_id] = {
         variant_public_id: item.variant_public_id ?? null,
         quantity: item.quantity,
-        price: String(item.price),
+        unit_price: String(item.unit_price),
       };
     }
     setItemEdits(nextEdits);
@@ -191,8 +197,12 @@ export default function OrderDetailPage() {
         status: item.status,
         variant_public_id: item.variant_public_id ?? null,
         quantity: item.quantity,
-        price: String(item.price),
+        unit_price: String(item.unit_price),
         original_price: item.original_price,
+        line_subtotal: item.line_subtotal,
+        line_total: item.line_total,
+        catalog_unit_price: item.catalog_unit_price ?? null,
+        catalog_list_price: item.catalog_list_price ?? null,
         variant_option_labels: item.variant_option_labels,
         variant_sku: item.variant_sku,
         variant_inventory_quantity: item.variant_inventory_quantity,
@@ -208,7 +218,63 @@ export default function OrderDetailPage() {
   const orderItems = useMemo(() => order?.items ?? [], [order]);
   const displayItems = useMemo(() => (editing ? editableItems : orderItems), [editing, editableItems, orderItems]);
 
-  async function ensureVariantsLoaded(productId: string) {
+  useEffect(() => {
+    if (!editing) {
+      setPricingPreview(null);
+      return;
+    }
+    if (editableItems.length === 0) {
+      setPricingPreview(null);
+      return;
+    }
+    const ac = new AbortController();
+    const timer = window.setTimeout(() => {
+      const payloadItems = editableItems
+        .map((it) => {
+          if (!it.product_public_id) return null;
+          const editKey = orderLineEditKey(it);
+          const e = itemEdits[editKey];
+          const variant_public_id = e?.variant_public_id ?? it.variant_public_id ?? null;
+          const quantity = e?.quantity ?? it.quantity;
+          return {
+            product_public_id: it.product_public_id,
+            variant_public_id,
+            quantity,
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => x != null);
+      if (payloadItems.length === 0) {
+        setPricingPreview(null);
+        return;
+      }
+      api
+        .post<OrderPricingPreview>(
+          "admin/orders/pricing-preview/",
+          {
+            shipping_zone_public_id: form.shipping_zone_public_id,
+            shipping_method_public_id: form.shipping_method_public_id || null,
+            items: payloadItems,
+          },
+          { signal: ac.signal },
+        )
+        .then(({ data }) => setPricingPreview(data))
+        .catch(() => {
+          if (!ac.signal.aborted) setPricingPreview(null);
+        });
+    }, 300);
+    return () => {
+      window.clearTimeout(timer);
+      ac.abort();
+    };
+  }, [
+    editing,
+    editableItems,
+    itemEdits,
+    form.shipping_zone_public_id,
+    form.shipping_method_public_id,
+  ]);
+
+  const ensureVariantsLoaded = useCallback(async (productId: string) => {
     if (!productId) return;
     if (variantsByProductId[productId]) return;
     setVariantsLoadingByProductId((p) => ({ ...p, [productId]: true }));
@@ -224,7 +290,22 @@ export default function OrderDetailPage() {
     } finally {
       setVariantsLoadingByProductId((p) => ({ ...p, [productId]: false }));
     }
-  }
+  }, [variantsByProductId]);
+
+  const editProductIds = useMemo(() => {
+    if (!editing) return [];
+    const ids = editableItems
+      .map((i) => i.product_public_id)
+      .filter((id): id is string => Boolean(id));
+    return [...new Set(ids)];
+  }, [editing, editableItems]);
+
+  useEffect(() => {
+    if (!editing || editProductIds.length === 0) return;
+    for (const pid of editProductIds) {
+      void ensureVariantsLoaded(pid);
+    }
+  }, [editing, editProductIds, ensureVariantsLoaded]);
 
   function handleProductSearch(value: string) {
     setProductQuery(value);
@@ -269,8 +350,8 @@ export default function OrderDetailPage() {
         status: "active",
         variant_public_id: null,
         quantity: 1,
-        price: String(product.price ?? "0"),
-        original_price: product.original_price,
+        unit_price: String(product.price ?? "0"),
+        original_price: product.original_price ?? undefined,
         variant_option_labels: [],
         variant_sku: null,
         variant_inventory_quantity: null,
@@ -304,26 +385,31 @@ export default function OrderDetailPage() {
         shipping_zone_public_id: form.shipping_zone_public_id,
         shipping_method_public_id: form.shipping_method_public_id || null,
         items: [
-          ...editableItems.map((it) =>
-            it.public_id
+          ...editableItems.map((it) => {
+            // New lines use `item.key` in itemEdits; existing lines use public_id (same as orderLineEditKey).
+            const editKey = orderLineEditKey(it);
+            const edits = itemEdits[editKey];
+            const variant_public_id =
+              edits?.variant_public_id ?? it.variant_public_id ?? null;
+            const quantity = edits?.quantity ?? it.quantity;
+            return it.public_id
               ? {
                   public_id: it.public_id,
-                  variant_public_id: itemEdits[it.public_id]?.variant_public_id ?? it.variant_public_id ?? null,
-                  quantity: itemEdits[it.public_id]?.quantity ?? it.quantity,
-                  price: itemEdits[it.public_id]?.price ?? String(it.price),
+                  variant_public_id,
+                  quantity,
                 }
               : {
                   product_public_id: it.product_public_id,
-                  variant_public_id: it.variant_public_id ?? null,
-                  quantity: it.quantity,
-                  price: String(it.price),
-                }
-          ),
+                  variant_public_id,
+                  quantity,
+                };
+          }),
           ...removedExistingIds.map((publicId) => ({ public_id: publicId, remove: true })),
         ],
       };
       const { data } = await api.patch<Order>(`admin/orders/${order_public_id}/`, payload);
       setOrder(data);
+      setPricingPreview(null);
       setEditing(false);
     } catch (err: unknown) {
       setEditError(extractApiDetail(err, "Failed to save order changes."));
@@ -374,21 +460,11 @@ export default function OrderDetailPage() {
   }
 
   const orderDateFormatted = formatOrderDate(order.created_at);
-  const computedSubtotal = (order.items ?? []).reduce(
-    (s, i) => s + Number(i.price) * i.quantity,
-    0
-  );
-  // Some older orders (and previously dashboard-created orders) stored `order.total` as items-only.
-  // Compute a consistent breakdown-based total for display.
-  const combinedDiscount = (order.items ?? []).reduce((sum, i) => {
-    const orig = i.original_price != null && i.original_price !== "" ? Number(i.original_price) : 0;
-    const p = Number(i.price);
-    if (orig > p) return sum + (orig - p) * i.quantity;
-    return sum;
-  }, 0);
-  const subtotalNum = order.subtotal != null ? Number(order.subtotal) : computedSubtotal;
-  const shippingCostNum = order.shipping_cost != null ? Number(order.shipping_cost) : 0;
-  const totalNum = order.total != null ? Number(order.total) : subtotalNum + shippingCostNum;
+  const savedSubtotalBefore = Number(order.subtotal_before_discount ?? 0);
+  const savedDiscountTotal = Number(order.discount_total ?? 0);
+  const savedSubtotalAfter = Number(order.subtotal_after_discount ?? 0);
+  const shippingCostNum = Number(order.shipping_cost ?? 0);
+  const savedTotalNum = Number(order.total ?? 0);
   const methodLabel =
     (order.shipping_method_public_id
       ? shippingMethods.find((m) => m.public_id === order.shipping_method_public_id)?.name
@@ -455,7 +531,10 @@ export default function OrderDetailPage() {
                 variant="outline"
                 size="sm"
                 className="rounded-lg"
-                onClick={() => setEditing(false)}
+                onClick={() => {
+                  setPricingPreview(null);
+                  setEditing(false);
+                }}
               >
                 Cancel
               </Button>
@@ -528,7 +607,6 @@ export default function OrderDetailPage() {
                       edit={edit}
                       variants={variants}
                       variantsLoading={variantsLoading}
-                      selectedVariant={selectedVariant}
                       onQuantityChange={(e) =>
                         setItemEdits((prev) => ({
                           ...prev,
@@ -542,7 +620,8 @@ export default function OrderDetailPage() {
                                 selectedVariant?.available_quantity ?? Number.MAX_SAFE_INTEGER,
                               ),
                             ),
-                            price: prev[itemEditKey]?.price ?? String(item.price),
+                            unit_price:
+                              prev[itemEditKey]?.unit_price ?? String(item.unit_price),
                           },
                         }))
                       }
@@ -553,7 +632,8 @@ export default function OrderDetailPage() {
                           [itemEditKey]: {
                             variant_public_id: raw || null,
                             quantity: prev[itemEditKey]?.quantity ?? item.quantity,
-                            price: prev[itemEditKey]?.price ?? String(item.price),
+                            unit_price:
+                              prev[itemEditKey]?.unit_price ?? String(item.unit_price),
                           },
                         }));
                       }}
@@ -585,38 +665,151 @@ export default function OrderDetailPage() {
             <CardDescription>Final Payment Amount</CardDescription>
           </CardHeader>
           <CardContent className="px-4 pt-6 sm:px-6">
-            <dl className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Subtotal</dt>
-                <dd>{currencySymbol}{subtotalNum.toLocaleString()}</dd>
+            {!editing && (
+              <dl className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Subtotal (before discount)</dt>
+                  <dd>
+                    {currencySymbol}
+                    {savedSubtotalBefore.toLocaleString()}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Discount</dt>
+                  <dd className={savedDiscountTotal ? "text-foreground" : undefined}>
+                    {savedDiscountTotal
+                      ? `-${currencySymbol}${savedDiscountTotal.toLocaleString()}`
+                      : "—"}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Subtotal (after discount)</dt>
+                  <dd>
+                    {currencySymbol}
+                    {savedSubtotalAfter.toLocaleString()}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Shipping Cost</dt>
+                  <dd>
+                    {shippingCostNum
+                      ? `${currencySymbol}${shippingCostNum.toLocaleString()}`
+                      : "—"}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Shipping method</dt>
+                  <dd className="text-muted-foreground">{methodLabel}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Courier</dt>
+                  <dd className="text-muted-foreground">{courierSummary}</dd>
+                </div>
+                <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
+                  <dt>Total</dt>
+                  <dd>
+                    {currencySymbol}
+                    {savedTotalNum.toLocaleString()}
+                  </dd>
+                </div>
+              </dl>
+            )}
+            {editing && (
+              <div className="space-y-6">
+                <div>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Saved (last persisted)
+                  </p>
+                  <dl className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <dt className="text-muted-foreground">Subtotal (before discount)</dt>
+                      <dd>
+                        {currencySymbol}
+                        {savedSubtotalBefore.toLocaleString()}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-muted-foreground">Discount</dt>
+                      <dd className={savedDiscountTotal ? "text-foreground" : undefined}>
+                        {savedDiscountTotal
+                          ? `-${currencySymbol}${savedDiscountTotal.toLocaleString()}`
+                          : "—"}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-muted-foreground">Subtotal (after discount)</dt>
+                      <dd>
+                        {currencySymbol}
+                        {savedSubtotalAfter.toLocaleString()}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-muted-foreground">Shipping Cost</dt>
+                      <dd>
+                        {shippingCostNum
+                          ? `${currencySymbol}${shippingCostNum.toLocaleString()}`
+                          : "—"}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
+                      <dt>Total</dt>
+                      <dd>
+                        {currencySymbol}
+                        {savedTotalNum.toLocaleString()}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+                <div>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    New total (unsaved preview)
+                  </p>
+                  {pricingPreview ? (
+                    <dl className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <dt className="text-muted-foreground">Subtotal (before discount)</dt>
+                        <dd>
+                          {currencySymbol}
+                          {Number(pricingPreview.subtotal_before_discount).toLocaleString()}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt className="text-muted-foreground">Discount</dt>
+                        <dd>
+                          {Number(pricingPreview.discount_total) > 0
+                            ? `-${currencySymbol}${Number(pricingPreview.discount_total).toLocaleString()}`
+                            : "—"}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt className="text-muted-foreground">Subtotal (after discount)</dt>
+                        <dd>
+                          {currencySymbol}
+                          {Number(pricingPreview.subtotal_after_discount).toLocaleString()}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt className="text-muted-foreground">Shipping Cost</dt>
+                        <dd>
+                          {Number(pricingPreview.shipping_cost) > 0
+                            ? `${currencySymbol}${Number(pricingPreview.shipping_cost).toLocaleString()}`
+                            : "—"}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
+                        <dt>Total</dt>
+                        <dd>
+                          {currencySymbol}
+                          {Number(pricingPreview.total).toLocaleString()}
+                        </dd>
+                      </div>
+                    </dl>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Calculating…</p>
+                  )}
+                </div>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Discount</dt>
-                <dd className={combinedDiscount ? "text-destructive" : undefined}>
-                  {combinedDiscount ? `-${currencySymbol}${combinedDiscount.toLocaleString()}` : "—"}
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Shipping Cost</dt>
-                <dd>
-                  {shippingCostNum
-                    ? `${currencySymbol}${shippingCostNum.toLocaleString()}`
-                    : "—"}
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Shipping method</dt>
-                <dd className="text-muted-foreground">{methodLabel}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Courier</dt>
-                <dd className="text-muted-foreground">{courierSummary}</dd>
-              </div>
-              <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
-                <dt>Total</dt>
-                <dd>{currencySymbol}{totalNum.toLocaleString()}</dd>
-              </div>
-            </dl>
+            )}
           </CardContent>
         </Card>
 

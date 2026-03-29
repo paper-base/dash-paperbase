@@ -11,8 +11,12 @@ export type EditableOrderItem = {
   status?: OrderItem["status"];
   variant_public_id: string | null;
   quantity: number;
-  price: string;
+  unit_price: string;
   original_price?: string | null;
+  line_subtotal?: string;
+  line_total?: string;
+  catalog_unit_price?: string | null;
+  catalog_list_price?: string | null;
   variant_option_labels?: string[];
   variant_sku?: string | null;
   variant_inventory_quantity?: number | null;

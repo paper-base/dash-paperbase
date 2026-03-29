@@ -16,7 +16,7 @@ describe("order schema", () => {
           product_public_id: "1",
           variant_public_id: null,
           quantity: 1,
-          price: "100",
+          unit_price: "100",
         },
       ],
     });
@@ -51,7 +51,7 @@ describe("order schema", () => {
           product_public_id: "1",
           variant_public_id: null,
           quantity: 1,
-          price: "100",
+          unit_price: "100",
         },
       ],
     });

@@ -45,8 +45,25 @@ export interface OrderItem {
   /** Present on storefront order create responses; admin detail may omit. */
   variant_options?: OrderItemVariantOption[] | null;
   quantity: number;
-  price: string;
-  original_price?: string | null;
+  unit_price: string;
+  original_price: string;
+  discount_amount: string;
+  line_subtotal: string;
+  line_total: string;
+  /** Live catalog sell price (admin order detail); null if product removed. */
+  catalog_unit_price?: string | null;
+  /** Live list/MSRP used for discount display; mirrors catalog at read time. */
+  catalog_list_price?: string | null;
+}
+
+/** Response from POST admin/orders/pricing-preview/ */
+export interface OrderPricingPreview {
+  subtotal_before_discount: string;
+  discount_total: string;
+  subtotal_after_discount: string;
+  shipping_cost: string;
+  total: string;
+  lines?: Array<Record<string, string | number>>;
 }
 
 export interface Order {
@@ -55,7 +72,9 @@ export interface Order {
   user_public_id?: string | null;
   email: string;
   status: string;
-  subtotal?: string;
+  subtotal_before_discount: string;
+  discount_total: string;
+  subtotal_after_discount: string;
   shipping_cost?: string;
   shipping_zone_public_id?: string | null;
   shipping_method_public_id?: string | null;
@@ -121,6 +140,8 @@ export interface ProductVariant {
   product_public_id: string;
   sku: string;
   price_override: string | null;
+  /** Catalog sell price (override or product base); admin list/detail. */
+  effective_price?: string;
   available_quantity: number;
   stock_source?: string;
   is_active: boolean;
@@ -324,7 +345,7 @@ export interface CustomerDetailsResponse {
     product_public_id: string;
     product_name: string;
     quantity: number;
-    price: string;
+    unit_price: string;
   }>;
 }
 

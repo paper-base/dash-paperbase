@@ -13,7 +13,7 @@ import type { ProductVariant } from "@/types";
 export type LineItemEdit = {
   variant_public_id: string | null;
   quantity: number;
-  price: string;
+  unit_price: string;
 };
 
 export type OrderLineProductCardProps = {
@@ -23,7 +23,6 @@ export type OrderLineProductCardProps = {
   edit: LineItemEdit | undefined;
   variants: ProductVariant[];
   variantsLoading: boolean;
-  selectedVariant: ProductVariant | null;
   onQuantityChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onVariantChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onVariantFocus: () => void;
@@ -37,19 +36,84 @@ function OrderLineProductCardInner({
   edit,
   variants,
   variantsLoading,
-  selectedVariant,
   onQuantityChange,
   onVariantChange,
   onVariantFocus,
   onRemove,
 }: OrderLineProductCardProps) {
   const isUnavailable = item.status === "deleted" || !item.product_public_id;
-  const itemDiscount =
-    item.original_price != null &&
-    item.original_price !== "" &&
-    Number(item.original_price) > Number(item.price)
-      ? (Number(item.original_price) - Number(item.price)) * item.quantity
-      : 0;
+  const qtyShown = edit?.quantity ?? item.quantity;
+  const snapshotUnit = Number("unit_price" in item ? item.unit_price : 0);
+  const catalogUnitRaw =
+    "catalog_unit_price" in item && item.catalog_unit_price != null && item.catalog_unit_price !== ""
+      ? Number(item.catalog_unit_price)
+      : NaN;
+  const catalogListRaw =
+    "catalog_list_price" in item && item.catalog_list_price != null && item.catalog_list_price !== ""
+      ? Number(item.catalog_list_price)
+      : NaN;
+  const variantIdForPrice =
+    (editing ? edit?.variant_public_id : null) ?? item.variant_public_id ?? null;
+  const selectedVar =
+    variantIdForPrice && variants.length
+      ? variants.find((v) => v.public_id === variantIdForPrice)
+      : null;
+  const fromVariantEffective =
+    selectedVar?.effective_price != null && selectedVar.effective_price !== ""
+      ? Number(selectedVar.effective_price)
+      : NaN;
+
+  const showLiveCatalogView = !editing && !Number.isNaN(catalogUnitRaw);
+
+  /** Actual sell / charged unit (catalog or snapshot). */
+  let sellUnit: number;
+  if (editing) {
+    if (!Number.isNaN(fromVariantEffective)) {
+      sellUnit = fromVariantEffective;
+    } else if (variants.length === 0 && !Number.isNaN(catalogUnitRaw)) {
+      sellUnit = catalogUnitRaw;
+    } else if (!variantsLoading && !Number.isNaN(catalogUnitRaw)) {
+      sellUnit = catalogUnitRaw;
+    } else {
+      sellUnit = Number(edit?.unit_price ?? snapshotUnit);
+    }
+  } else if (showLiveCatalogView) {
+    sellUnit = catalogUnitRaw;
+  } else {
+    sellUnit = snapshotUnit;
+  }
+
+  /** List / undiscounted unit shown as “Unit Price” (MSRP or snapshot original). */
+  const snapshotOrig =
+    "original_price" in item && item.original_price != null && item.original_price !== ""
+      ? Number(item.original_price)
+      : NaN;
+  let displayListUnit: number;
+  if (!Number.isNaN(catalogListRaw)) {
+    displayListUnit = catalogListRaw;
+  } else if (!Number.isNaN(snapshotOrig)) {
+    displayListUnit = snapshotOrig;
+  } else {
+    displayListUnit = sellUnit;
+  }
+
+  const lineSub = "line_subtotal" in item && item.line_subtotal != null ? Number(item.line_subtotal) : null;
+  const lineTot = "line_total" in item && item.line_total != null ? Number(item.line_total) : null;
+  let itemDiscount = 0;
+  if (
+    !editing &&
+    !Number.isNaN(catalogListRaw) &&
+    !Number.isNaN(catalogUnitRaw) &&
+    catalogListRaw > catalogUnitRaw
+  ) {
+    itemDiscount = (catalogListRaw - catalogUnitRaw) * qtyShown;
+  } else if (lineSub != null && lineTot != null && lineSub > lineTot) {
+    itemDiscount = lineSub - lineTot;
+  } else {
+    const orig =
+      item.original_price != null && item.original_price !== "" ? Number(item.original_price) : 0;
+    if (orig > sellUnit) itemDiscount = (orig - sellUnit) * qtyShown;
+  }
   const imageUrl = resolveOrderLineImageUrl(item.product_image);
 
   const subtitle =
@@ -126,19 +190,19 @@ function OrderLineProductCardInner({
               <span className="tabular-nums text-foreground">{item.quantity}</span>
             )}
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-muted-foreground">Price</span>
+          <div className="flex w-full items-center justify-between gap-2">
+            <span className="text-muted-foreground">Unit Price</span>
             <span className="tabular-nums font-medium text-foreground">
               {currencySymbol}
-              {Number(edit?.price ?? item.price).toLocaleString()}
+              {displayListUnit.toLocaleString()}
             </span>
           </div>
           {!editing && itemDiscount > 0 && (
             <div className="flex items-center justify-between gap-2">
               <span className="text-muted-foreground">Discount</span>
-              <span className="tabular-nums">
-                <span className="text-muted-foreground">−{currencySymbol}</span>
-                <span className="text-destructive">{itemDiscount.toLocaleString()}</span>
+              <span className="tabular-nums font-medium text-foreground">
+                −{currencySymbol}
+                {itemDiscount.toLocaleString()}
               </span>
             </div>
           )}
@@ -149,9 +213,9 @@ function OrderLineProductCardInner({
             <span className="block text-left text-xs font-medium text-muted-foreground">
               Variant
             </span>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+            <div className="w-full min-w-0">
               <Select
-                className="h-8 min-w-0 flex-1 py-1"
+                className="h-8 w-full min-w-0 py-1"
                 size="sm"
                 value={edit?.variant_public_id ?? ""}
                 onFocus={onVariantFocus}
@@ -165,11 +229,6 @@ function OrderLineProductCardInner({
                   </option>
                 ))}
               </Select>
-              {selectedVariant && (
-                <span className="shrink-0 text-xs text-muted-foreground whitespace-nowrap">
-                  Stock: {selectedVariant.available_quantity}
-                </span>
-              )}
             </div>
           </div>
         )}

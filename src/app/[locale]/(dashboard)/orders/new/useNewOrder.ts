@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-  useRef,
-  type FormEvent,
-} from "react";
+import { useEffect, useState, useRef, type FormEvent } from "react";
 import { useRouter } from "@/i18n/navigation";
 import api from "@/lib/api";
 import type {
@@ -15,6 +9,7 @@ import type {
   ProductVariant,
   ShippingMethod,
   ShippingZone,
+  OrderPricingPreview,
 } from "@/types";
 import { orderCreateSchema, parseValidation } from "@/lib/validation";
 
@@ -25,7 +20,7 @@ export interface OrderItemRow {
   product_image: string | null;
   variant_public_id: string | null;
   quantity: number;
-  price: string;
+  unit_price: string;
 }
 
 export interface OrderForm {
@@ -69,11 +64,7 @@ export function useNewOrder() {
 
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
-  const [pricingPreview, setPricingPreview] = useState<{
-    base_subtotal: string;
-    shipping_cost: string;
-    final_total: string;
-  } | null>(null);
+  const [pricingPreview, setPricingPreview] = useState<OrderPricingPreview | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -157,7 +148,7 @@ export function useNewOrder() {
         product_image: product.image_url ?? product.image ?? null,
         variant_public_id: null,
         quantity: 1,
-        price: product.price,
+        unit_price: String(product.price ?? "0"),
       },
     ]);
     setQuery("");
@@ -186,14 +177,7 @@ export function useNewOrder() {
     setForm((prev) => ({ ...prev, ...patch }));
   }
 
-  const merchandiseTotal = useMemo(
-    () => items.reduce((sum, item) => sum + Number(item.price || 0) * item.quantity, 0),
-    [items]
-  );
-
-  const displayTotal = pricingPreview
-    ? Number(pricingPreview.final_total || 0)
-    : merchandiseTotal;
+  const displayTotal = pricingPreview ? Number(pricingPreview.total || 0) : 0;
 
   useEffect(() => {
     if (items.length === 0) {
@@ -203,11 +187,7 @@ export function useNewOrder() {
     const ac = new AbortController();
     const timer = window.setTimeout(() => {
       api
-        .post<{
-          base_subtotal: string;
-          shipping_cost: string;
-          final_total: string;
-        }>(
+        .post<OrderPricingPreview>(
           "admin/orders/pricing-preview/",
           {
             shipping_zone_public_id: form.shipping_zone_public_id,
@@ -216,6 +196,7 @@ export function useNewOrder() {
               product_public_id: item.product_public_id,
               variant_public_id: item.variant_public_id,
               quantity: item.quantity,
+              unit_price: item.unit_price,
             })),
           },
           { signal: ac.signal }
@@ -254,7 +235,7 @@ export function useNewOrder() {
           product_public_id: item.product_public_id,
           variant_public_id: item.variant_public_id,
           quantity: item.quantity,
-          price: item.price,
+          unit_price: item.unit_price,
         })),
       };
       await api.post("admin/orders/", payload);
@@ -283,7 +264,6 @@ export function useNewOrder() {
     variantsLoadingByProductId,
     shippingZones,
     shippingMethods,
-    merchandiseTotal,
     displayTotal,
     pricingPreview,
     handleSearch,
