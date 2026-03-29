@@ -66,16 +66,16 @@ function CategoryTreeRows({
         return (
           <Fragment key={node.public_id}>
             <tr className="hover:bg-muted/40">
-              <td className="px-4 py-3">
+              <td className="px-4 py-3 whitespace-nowrap">
                 <div
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 whitespace-nowrap"
                   style={{ paddingLeft: depth * 16 }}
                 >
                   {hasKids ? (
                     <button
                       type="button"
                       aria-expanded={isOpen}
-                      className="rounded p-0.5 text-muted-foreground hover:bg-muted"
+                      className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
                       onClick={() => onToggle(node.public_id)}
                     >
                       {isOpen ? (
@@ -89,31 +89,39 @@ function CategoryTreeRows({
                   )}
                   <ClickableText
                     onClick={() => onEdit(node)}
-                    className="font-medium text-foreground"
+                    className="font-medium text-foreground whitespace-nowrap"
                   >
                     {node.name}
                   </ClickableText>
                 </div>
               </td>
-              <td className="px-4 py-3 text-muted-foreground">{node.slug}</td>
-              <td className="px-4 py-3 text-foreground">{node.child_count}</td>
-              <td className="px-4 py-3 text-foreground">{node.product_count}</td>
-              <td className="px-4 py-3 text-foreground">{node.order}</td>
-              <td className="px-4 py-3">
+              <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                {node.slug}
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap text-foreground">
+                {node.child_count}
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap text-foreground">
+                {node.product_count}
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap text-foreground">
+                {node.order}
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap">
                 <ActiveBadge active={node.is_active} activeLabel={labels.active} inactiveLabel={labels.inactive} />
               </td>
-              <td className="px-4 py-3">
-                <div className="flex flex-wrap gap-2">
+              <td className="px-4 py-3 whitespace-nowrap">
+                <div className="flex flex-nowrap items-center gap-2">
                   <ClickableText
                     onClick={() => onAddChild(node.public_id)}
-                    className="text-sm"
+                    className="shrink-0 text-sm whitespace-nowrap"
                   >
                     {labels.addChild}
                   </ClickableText>
                   <ClickableText
                     variant="destructive"
                     onClick={() => onDelete(node.public_id)}
-                    className="text-sm"
+                    className="shrink-0 text-sm whitespace-nowrap"
                   >
                     {labels.delete}
                   </ClickableText>
@@ -465,7 +473,7 @@ function ActiveBadge({
 }) {
   return (
     <span
-      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+      className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${
         active
           ? "bg-emerald-500/20 text-emerald-400"
           : "bg-muted text-muted-foreground"
