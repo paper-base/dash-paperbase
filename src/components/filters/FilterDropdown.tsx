@@ -32,12 +32,14 @@ export function FilterDropdown({
   placeholder,
   options,
   className = "",
+  disabled = false,
 }: {
   value?: string;
   onChange: (value: string) => void;
   placeholder: string;
   options: FilterOption[];
   className?: string;
+  disabled?: boolean;
 }) {
   const emptyItem = useMemo(
     (): ComboItem => ({ value: "", label: placeholder }),
@@ -59,6 +61,7 @@ export function FilterDropdown({
       isItemEqualToValue={(a, b) => a.value === b.value}
     >
       <ComboboxInput
+        disabled={disabled}
         placeholder={placeholder}
         showClear={false}
         className={className || "w-[160px]"}

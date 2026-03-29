@@ -6,8 +6,8 @@ import { useRouter } from "@/i18n/navigation";
 import { ChevronDown, ChevronRight, Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import { ClickableText } from "@/components/ui/clickable-text";
+import { FilterDropdown } from "@/components/filters/FilterDropdown";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import type { AdminCategoryTreeNode } from "@/types";
 import {
   collectDescendantPublicIds,
@@ -359,18 +359,14 @@ export default function CategoriesPage() {
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
           <div className="grid grid-cols-2 gap-3">
-            <Select
+            <FilterDropdown
               value={form.parent}
-              onChange={(e) => setForm({ ...form, parent: e.target.value })}
+              onChange={(value) => setForm({ ...form, parent: value })}
+              placeholder={tPages("categoriesParentRoot")}
+              options={parentOptions}
               disabled={mode === "new_child"}
-            >
-              <option value="">{tPages("categoriesParentRoot")}</option>
-              {parentOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
+              className="min-w-0 w-full"
+            />
             <Input
               type="number"
               placeholder={tPages("categoriesPlaceholderOrder")}
