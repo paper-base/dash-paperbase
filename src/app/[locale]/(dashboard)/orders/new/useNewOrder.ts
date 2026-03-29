@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef, type FormEvent } from "react";
+import { useEffect, useState, useRef, useMemo, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import api from "@/lib/api";
 import type {
@@ -11,7 +12,8 @@ import type {
   ShippingZone,
   OrderPricingPreview,
 } from "@/types";
-import { orderCreateSchema, parseValidation } from "@/lib/validation";
+import { joinVillageThanaDistrict } from "@/lib/orders/shipping-address-parts";
+import { buildOrderCreateSchema, parseValidation } from "@/lib/validation";
 
 export interface OrderItemRow {
   key: number;
@@ -27,7 +29,9 @@ export interface OrderForm {
   shipping_name: string;
   phone: string;
   email: string;
-  shipping_address: string;
+  /** Composed with thana + district into API `shipping_address`. */
+  village: string;
+  thana: string;
   district: string;
   shipping_zone_public_id: string;
   shipping_method_public_id: string;
@@ -35,6 +39,21 @@ export interface OrderForm {
 
 export function useNewOrder() {
   const router = useRouter();
+  const t = useTranslations("pages");
+  const orderCreateSchema = useMemo(
+    () =>
+      buildOrderCreateSchema({
+        shippingNameRequired: t("orderValidationShippingNameRequired"),
+        phoneRequired: t("orderValidationPhoneRequired"),
+        emailInvalid: t("orderValidationEmailInvalid"),
+        roadVillageRequired: t("orderValidationRoadVillageRequired"),
+        thanaRequired: t("orderValidationThanaRequired"),
+        districtRequired: t("orderValidationDistrictRequired"),
+        zoneRequired: t("orderValidationZoneRequired"),
+        itemsRequired: t("orderValidationItemsRequired"),
+      }),
+    [t],
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -43,7 +62,8 @@ export function useNewOrder() {
     shipping_name: "",
     phone: "",
     email: "",
-    shipping_address: "",
+    village: "",
+    thana: "",
     district: "",
     shipping_zone_public_id: "",
     shipping_method_public_id: "",
@@ -144,7 +164,7 @@ export function useNewOrder() {
       {
         key: nextKey.current++,
         product_public_id: product.public_id,
-        product_name: product.name || "Unavailable",
+        product_name: product.name || t("orderNewProductUnavailable"),
         product_image: product.image_url ?? product.image ?? null,
         variant_public_id: null,
         quantity: 1,
@@ -218,10 +238,12 @@ export function useNewOrder() {
     if (!validation.success) {
       setFieldErrors(validation.errors);
       const firstMessage =
-        Object.values(validation.errors)[0] ?? "Please correct the highlighted fields.";
+        Object.values(validation.errors)[0] ?? t("orderFormFixHighlightedFields");
       setError(firstMessage);
       return;
     }
+
+    const { village, thana, district, items: validatedItems, ...rest } = validation.data;
 
     setFieldErrors({});
     setSaving(true);
@@ -229,9 +251,14 @@ export function useNewOrder() {
 
     try {
       const payload = {
-        ...form,
-        shipping_method_public_id: form.shipping_method_public_id || null,
-        items: items.map((item) => ({
+        shipping_name: rest.shipping_name,
+        phone: rest.phone,
+        email: rest.email,
+        shipping_address: joinVillageThanaDistrict(village, thana, district),
+        district,
+        shipping_zone_public_id: rest.shipping_zone_public_id,
+        shipping_method_public_id: rest.shipping_method_public_id || null,
+        items: validatedItems.map((item) => ({
           product_public_id: item.product_public_id,
           variant_public_id: item.variant_public_id,
           quantity: item.quantity,
@@ -241,7 +268,7 @@ export function useNewOrder() {
       await api.post("admin/orders/", payload);
       router.push("/orders");
     } catch {
-      setError("Failed to create order. Please check the details and try again.");
+      setError(t("orderNewCreateFailed"));
     } finally {
       setSaving(false);
     }

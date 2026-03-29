@@ -26,6 +26,17 @@ import {
 
 const MAX_IMAGES = MAX_PRODUCT_IMAGES;
 
+/** Slot 0 = main (`Product.image`); slots 1…MAX-1 = `ProductImage` rows sorted by `order`. */
+function galleryPublicIdsPerSlot(p: Product | null): (string | null)[] {
+  const arr: (string | null)[] = Array(MAX_IMAGES).fill(null);
+  if (!p?.images?.length) return arr;
+  const sorted = p.images.slice().sort((a, b) => a.order - b.order);
+  for (let j = 0; j < sorted.length && j < MAX_IMAGES - 1; j++) {
+    arr[j + 1] = sorted[j].public_id;
+  }
+  return arr;
+}
+
 function formatApiValidationError(data: unknown): string {
   if (data == null) return "Failed to update product.";
   if (typeof data === "string") return data;
@@ -222,8 +233,25 @@ export default function EditProductPage() {
       formData.append("extra_data", JSON.stringify(extraFields));
     }
 
+    const galleryIdsBeforeSave = galleryPublicIdsPerSlot(product);
+
     try {
       const { data } = await api.patch(`admin/products/${product_public_id}/`, formData);
+
+      for (let i = 1; i < MAX_IMAGES; i++) {
+        const file = imageFiles[i];
+        if (!file) continue;
+        const previousId = galleryIdsBeforeSave[i];
+        if (previousId) {
+          await api.delete(`admin/product-images/${previousId}/`);
+        }
+        const galleryData = new FormData();
+        galleryData.append("product_public_id", product_public_id);
+        galleryData.append("image", file);
+        galleryData.append("order", String(i));
+        await api.post("admin/product-images/", galleryData);
+      }
+
       setProduct(data);
       router.push("/products");
     } catch (err: unknown) {

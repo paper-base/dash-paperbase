@@ -69,7 +69,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
       setLoading(true);
       setError("");
       try {
-        const { data } = await api.get<SearchResponse>("search/", {
+        const { data } = await api.get<SearchResponse>("admin/search/", {
           params: { query: trimmed },
         });
         if (cancelled) return;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { Product } from "@/types";
@@ -26,6 +27,7 @@ export function ProductSearchBar({
   onSelectProduct,
   onDismissResults,
 }: ProductSearchBarProps) {
+  const tPages = useTranslations("pages");
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,7 +51,7 @@ export function ProductSearchBar({
   return (
     <div ref={rootRef} className="space-y-2 px-4 pb-4 pt-2 sm:px-6">
       <label className="sr-only" htmlFor="order-add-product-search">
-        Search products to add
+        {tPages("orderDetailAddProductSearchLabel")}
       </label>
       <div className="relative">
         <Search
@@ -60,14 +62,14 @@ export function ProductSearchBar({
           id="order-add-product-search"
           value={value}
           onChange={(e) => onValueChange(e.target.value)}
-          placeholder="Search active products..."
+          placeholder={tPages("orderDetailSearchActiveProductsPlaceholder")}
           className="h-10 rounded-lg border-border/80 bg-background pl-9 pr-3 shadow-sm"
           autoComplete="off"
         />
         {showProductResults && productResults.length > 0 && (
           <div
             className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-y-auto overflow-x-hidden rounded-lg border border-border bg-popover shadow-md [scrollbar-width:thin]"
-            aria-label="Product search results"
+            aria-label={tPages("orderDetailProductSearchResultsAria")}
           >
             {productResults.map((product) => (
               <button
@@ -87,7 +89,7 @@ export function ProductSearchBar({
         )}
       </div>
       {searchingProducts && (
-        <p className="text-xs text-muted-foreground">Searching products...</p>
+        <p className="text-xs text-muted-foreground">{tPages("orderDetailSearchingProducts")}</p>
       )}
     </div>
   );

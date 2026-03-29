@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Undo2, Plus, Trash2 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,8 @@ function firstLineItemError(fieldErrors: Record<string, string>): string | undef
 }
 
 export default function NewOrderPage() {
+  const tPages = useTranslations("pages");
+  const tCommon = useTranslations("common");
   const { currencySymbol } = useBranding();
   const {
     saving,
@@ -55,7 +58,7 @@ export default function NewOrderPage() {
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Back to orders"
+              aria-label={tPages("orderNewBackAria")}
               onClick={() => router.back()}
               className="shrink-0"
             >
@@ -64,16 +67,16 @@ export default function NewOrderPage() {
           </div>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Add Order
+              {tPages("orderNewTitle")}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Create an order and manage its line items (admin-style).
+              {tPages("orderNewSubtitle")}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button type="button" variant="outline" onClick={() => router.back()}>
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button
             type="submit"
@@ -82,7 +85,7 @@ export default function NewOrderPage() {
             className="gap-2"
           >
             <Plus className="size-4" />
-            {saving ? "Creating..." : "Create Order"}
+            {saving ? tPages("orderNewCreating") : tPages("orderNewCreateOrder")}
           </Button>
         </div>
       </div>
@@ -104,19 +107,19 @@ export default function NewOrderPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader className="border-b border-border/50">
-              <CardTitle>Order details</CardTitle>
-              <CardDescription>Customer and shipping information</CardDescription>
+              <CardTitle>{tPages("orderNewOrderDetailsTitle")}</CardTitle>
+              <CardDescription>{tPages("orderNewOrderDetailsDescription")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField label="Shipping method (rates)">
+                <FormField label={tPages("orderNewShippingMethod")}>
                   <Select
                     value={form.shipping_method_public_id}
                     onChange={(e) => updateForm({ shipping_method_public_id: e.target.value })}
                     aria-invalid={!!fieldErrors.shipping_method_public_id}
                     className={cn(fieldErrors.shipping_method_public_id && "border-destructive")}
                   >
-                    <option value="">Auto (cheapest match)</option>
+                    <option value="">{tPages("orderNewShippingMethodAuto")}</option>
                     {shippingMethods.map((m) => (
                       <option key={m.public_id} value={m.public_id}>
                         {m.name}
@@ -125,7 +128,11 @@ export default function NewOrderPage() {
                   </Select>
                 </FormField>
 
-                <FormField label="Delivery zone (rates)" required error={fieldErrors.shipping_zone_public_id}>
+                <FormField
+                  label={tPages("orderNewDeliveryZone")}
+                  required
+                  error={fieldErrors.shipping_zone_public_id}
+                >
                   <Select
                     value={form.shipping_zone_public_id}
                     onChange={(e) => updateForm({ shipping_zone_public_id: e.target.value })}
@@ -133,7 +140,7 @@ export default function NewOrderPage() {
                     className={cn(fieldErrors.shipping_zone_public_id && "border-destructive")}
                     required
                   >
-                    <option value="">Select delivery zone</option>
+                    <option value="">{tPages("orderNewSelectZone")}</option>
                     {shippingZones.map((z) => (
                       <option key={z.public_id} value={z.public_id}>
                         {z.name}
@@ -142,75 +149,94 @@ export default function NewOrderPage() {
                   </Select>
                 </FormField>
 
-                <FormField label="Name" required error={fieldErrors.shipping_name}>
+                <FormField label={tPages("orderNewName")} required error={fieldErrors.shipping_name}>
                   <Input
                     id="order-shipping-name"
                     type="text"
                     required
                     value={form.shipping_name}
                     onChange={(e) => updateForm({ shipping_name: e.target.value })}
-                    placeholder="Customer name"
+                    placeholder={tPages("orderNewNamePlaceholder")}
                     aria-invalid={!!fieldErrors.shipping_name}
                     className={cn(fieldErrors.shipping_name && "border-destructive")}
                   />
                 </FormField>
 
-                <FormField label="Phone" required error={fieldErrors.phone}>
+                <FormField label={tPages("orderNewPhone")} required error={fieldErrors.phone}>
                   <Input
                     id="order-phone"
                     type="tel"
                     required
                     value={form.phone}
                     onChange={(e) => updateForm({ phone: e.target.value })}
-                    placeholder="01XXXXXXXXX"
+                    placeholder={tPages("orderNewPhonePlaceholder")}
                     aria-invalid={!!fieldErrors.phone}
                     className={cn(fieldErrors.phone && "border-destructive")}
                   />
                 </FormField>
 
-                <FormField label="Email" required error={fieldErrors.email}>
+                <FormField label={tPages("orderNewEmail")} required error={fieldErrors.email}>
                   <Input
                     id="order-email"
                     type="email"
                     value={form.email}
                     onChange={(e) => updateForm({ email: e.target.value })}
-                    placeholder="customer@example.com"
+                    placeholder={tPages("orderNewEmailPlaceholder")}
                     aria-invalid={!!fieldErrors.email}
                     className={cn(fieldErrors.email && "border-destructive")}
                   />
                 </FormField>
 
-                <FormField label="District" required error={fieldErrors.district}>
+                <FormField
+                  label={tPages("orderFormRoadVillage")}
+                  required
+                  error={fieldErrors.village}
+                >
                   <Input
-                    id="order-district"
+                    id="order-village"
                     type="text"
-                    value={form.district}
-                    onChange={(e) => updateForm({ district: e.target.value })}
-                    placeholder="Dhaka"
-                    aria-invalid={!!fieldErrors.district}
-                    className={cn(fieldErrors.district && "border-destructive")}
+                    required
+                    value={form.village}
+                    onChange={(e) => updateForm({ village: e.target.value })}
+                    placeholder={tPages("orderFormRoadVillagePlaceholder")}
+                    aria-invalid={!!fieldErrors.village}
+                    className={cn(fieldErrors.village && "border-destructive")}
+                  />
+                </FormField>
+
+                <FormField
+                  label={tPages("orderFormThana")}
+                  required
+                  error={fieldErrors.thana}
+                >
+                  <Input
+                    id="order-thana"
+                    type="text"
+                    required
+                    value={form.thana}
+                    onChange={(e) => updateForm({ thana: e.target.value })}
+                    placeholder={tPages("orderFormThanaPlaceholder")}
+                    aria-invalid={!!fieldErrors.thana}
+                    className={cn(fieldErrors.thana && "border-destructive")}
                   />
                 </FormField>
 
                 <div className="sm:col-span-2">
                   <FormField
-                    label="Address"
+                    label={tPages("orderFormDistrict")}
                     required
-                    htmlFor="order-shipping-address"
-                    error={fieldErrors.shipping_address}
+                    htmlFor="order-district"
+                    error={fieldErrors.district}
                   >
-                    <textarea
-                      id="order-shipping-address"
+                    <Input
+                      id="order-district"
+                      type="text"
                       required
-                      rows={2}
-                      value={form.shipping_address}
-                      onChange={(e) => updateForm({ shipping_address: e.target.value })}
-                      className={cn(
-                        "input",
-                        fieldErrors.shipping_address && "border-destructive aria-invalid:ring-destructive/20",
-                      )}
-                      placeholder="Full shipping address"
-                      aria-invalid={!!fieldErrors.shipping_address}
+                      value={form.district}
+                      onChange={(e) => updateForm({ district: e.target.value })}
+                      placeholder={tPages("orderFormDistrictPlaceholder")}
+                      aria-invalid={!!fieldErrors.district}
+                      className={cn(fieldErrors.district && "border-destructive")}
                     />
                   </FormField>
                 </div>
@@ -222,8 +248,8 @@ export default function NewOrderPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader className="border-b border-border/50">
-              <CardTitle>Order items</CardTitle>
-              <CardDescription>Inline line items (admin-style)</CardDescription>
+              <CardTitle>{tPages("orderNewItemsTitle")}</CardTitle>
+              <CardDescription>{tPages("orderNewItemsDescription")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div ref={searchRef} className="relative">
@@ -232,7 +258,7 @@ export default function NewOrderPage() {
                   value={query}
                   onChange={(e) => handleSearch(e.target.value)}
                   onFocus={() => results.length > 0 && setShowResults(true)}
-                  placeholder="Search products…"
+                  placeholder={tPages("orderNewSearchProductsPlaceholder")}
                 />
                 {searching && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -248,22 +274,15 @@ export default function NewOrderPage() {
                         type="button"
                         onClick={() => addProduct(product)}
                         disabled={!product.public_id}
-                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
+                        className="flex w-full items-center px-4 py-2.5 text-left text-sm hover:bg-muted"
                       >
-                        {(product.image_url || product.image) && (
-                          <img
-                            src={(product.image_url || product.image)!}
-                            alt={product.name}
-                            className="h-8 w-8 rounded object-cover"
-                          />
-                        )}
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium text-foreground">
-                            {product.name || "Unavailable"}
+                            {product.name || tPages("orderNewProductUnavailable")}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {currencySymbol}
-                            {Number(product.price || 0).toLocaleString()} · Stock:{" "}
+                            {Number(product.price || 0).toLocaleString()} · {tPages("orderNewStock")}:{" "}
                             {product.available_quantity ?? product.total_stock ?? 0}
                           </p>
                         </div>
@@ -283,11 +302,11 @@ export default function NewOrderPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/40">
-                      <th className="th">Product</th>
-                      <th className="th">Variant</th>
-                      <th className="th">Qty</th>
-                      <th className="th">Price</th>
-                      <th className="th text-right">Delete</th>
+                      <th className="th">{tPages("orderNewColProduct")}</th>
+                      <th className="th">{tPages("orderNewColVariant")}</th>
+                      <th className="th">{tPages("orderNewColQty")}</th>
+                      <th className="th">{tPages("orderNewColPrice")}</th>
+                      <th className="th text-right">{tPages("orderNewColDelete")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
@@ -297,7 +316,7 @@ export default function NewOrderPage() {
                           colSpan={5}
                           className="px-3 py-8 text-center text-sm text-muted-foreground"
                         >
-                          Add products above to create line items.
+                          {tPages("orderNewEmptyLineItems")}
                         </td>
                       </tr>
                     ) : (
@@ -349,7 +368,7 @@ export default function NewOrderPage() {
                                   aria-invalid={!!rowVariantErr}
                                 >
                                   <option value="">
-                                    {loadingVariants ? "Loading…" : "Default"}
+                                    {loadingVariants ? tCommon("loading") : tPages("orderNewVariantDefault")}
                                   </option>
                                   {variants.map((v) => (
                                     <option key={v.public_id} value={v.public_id}>
@@ -361,7 +380,7 @@ export default function NewOrderPage() {
 
                                 {selectedVariant && (
                                   <span className="whitespace-nowrap text-xs text-muted-foreground">
-                                    Stock: {selectedVariant.available_quantity}
+                                    {tPages("orderNewStock")}: {selectedVariant.available_quantity}
                                   </span>
                                 )}
                               </div>
@@ -423,7 +442,7 @@ export default function NewOrderPage() {
                                 size="icon"
                                 onClick={() => removeItem(item.key)}
                                 className="text-muted-foreground hover:text-destructive"
-                                aria-label="Remove item"
+                                aria-label={tPages("orderNewRemoveItemAria")}
                               >
                                 <Trash2 className="size-4" />
                               </Button>
@@ -437,7 +456,7 @@ export default function NewOrderPage() {
               </div>
 
               <div className="flex items-center justify-between border-t border-border pt-4">
-                <span className="text-sm text-muted-foreground">Estimated total</span>
+                <span className="text-sm text-muted-foreground">{tPages("orderNewEstimatedTotal")}</span>
                 <span className="text-lg font-semibold text-foreground">
                   {currencySymbol}
                   {displayTotal.toLocaleString()}
@@ -446,31 +465,29 @@ export default function NewOrderPage() {
               {pricingPreview && (
                 <div className="space-y-1 text-xs text-muted-foreground">
                   <p>
-                    Subtotal (before discount): {currencySymbol}
+                    {tPages("orderNewSubtotalBeforeDiscount")}: {currencySymbol}
                     {Number(pricingPreview.subtotal_before_discount || 0).toLocaleString()}
                   </p>
                   <p>
-                    Discount: −{currencySymbol}
+                    {tPages("orderNewDiscount")}: −{currencySymbol}
                     {Number(pricingPreview.discount_total || 0).toLocaleString()}
                   </p>
                   <p>
-                    Subtotal (after discount): {currencySymbol}
+                    {tPages("orderNewSubtotalAfterDiscount")}: {currencySymbol}
                     {Number(pricingPreview.subtotal_after_discount || 0).toLocaleString()}
                   </p>
                   <p>
-                    Shipping: {currencySymbol}
+                    {tPages("orderNewShippingLine")}: {currencySymbol}
                     {Number(pricingPreview.shipping_cost || 0).toLocaleString()}
                   </p>
                   <p className="font-medium text-foreground">
-                    Total: {currencySymbol}
+                    {tPages("orderNewTotalLine")}: {currencySymbol}
                     {Number(pricingPreview.total || 0).toLocaleString()}
                   </p>
                 </div>
               )}
               {!pricingPreview && items.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Select a delivery zone to calculate totals (server-side preview).
-                </p>
+                <p className="text-xs text-muted-foreground">{tPages("orderNewSelectZoneForPreview")}</p>
               )}
             </CardContent>
           </Card>

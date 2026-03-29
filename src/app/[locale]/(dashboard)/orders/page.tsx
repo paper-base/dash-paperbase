@@ -45,16 +45,11 @@ function extractApiDetail(err: unknown, fallback: string): string {
   return fallback;
 }
 
+/** Shown after dispatch: Steadfast consignment id only (not provider name). */
 function courierCell(order: Order): string {
-  if (!order.sent_to_courier && !(order.courier_provider || "").trim()) {
-    return "—";
-  }
-  const p = (order.courier_provider || "").trim();
+  if (!order.sent_to_courier) return "—";
   const c = (order.courier_consignment_id || "").trim();
-  if (p && c) return `${p} · ${c}`;
-  if (p) return p;
-  if (c) return c;
-  return "—";
+  return c || "—";
 }
 
 export default function OrdersPage() {
@@ -337,7 +332,7 @@ export default function OrdersPage() {
                   <th className="th">Phone</th>
                   <th className="th">Status</th>
                   <th className="th">Total</th>
-                  <th className="th">Courier</th>
+                  <th className="th">{tPages("ordersListConsignmentId")}</th>
                   <th className="th">Date</th>
                 </tr>
               </thead>

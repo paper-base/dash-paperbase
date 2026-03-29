@@ -1,6 +1,7 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Package, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClickableText } from "@/components/ui/clickable-text";
@@ -41,6 +42,8 @@ function OrderLineProductCardInner({
   onVariantFocus,
   onRemove,
 }: OrderLineProductCardProps) {
+  const tPages = useTranslations("pages");
+  const tCommon = useTranslations("common");
   const isUnavailable = item.status === "deleted" || !item.product_public_id;
   const qtyShown = edit?.quantity ?? item.quantity;
   const snapshotUnit = Number("unit_price" in item ? item.unit_price : 0);
@@ -116,18 +119,19 @@ function OrderLineProductCardInner({
   }
   const imageUrl = resolveOrderLineImageUrl(item.product_image);
 
-  const subtitle =
-    [
-      item.product_brand || null,
-      item.variant_option_labels?.length
-        ? item.variant_option_labels.join(" · ")
-        : item.variant_sku
-          ? `SKU: ${item.variant_sku}`
-          : null,
-      item.variant_inventory_quantity != null ? `Stock: ${item.variant_inventory_quantity}` : null,
-    ]
-      .filter(Boolean)
-      .join(" · ") || "—";
+  const subtitle = useMemo(() => {
+    const parts: string[] = [];
+    if (item.product_brand) parts.push(item.product_brand);
+    if (item.variant_option_labels?.length) {
+      parts.push(item.variant_option_labels.join(" · "));
+    } else if (item.variant_sku) {
+      parts.push(`${tPages("orderDetailSkuPrefix")}: ${item.variant_sku}`);
+    }
+    if (item.variant_inventory_quantity != null) {
+      parts.push(`${tPages("orderNewStock")}: ${item.variant_inventory_quantity}`);
+    }
+    return parts.length ? parts.join(" · ") : "—";
+  }, [item, tPages]);
 
   return (
     <div className="relative flex h-full min-h-0 min-w-0 flex-col rounded-xl border border-border/80 bg-card p-4 shadow-sm">
@@ -137,7 +141,7 @@ function OrderLineProductCardInner({
           variant="ghost"
           size="icon"
           className="absolute right-2 top-2 z-10 size-8 shrink-0 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-          aria-label="Remove line item"
+          aria-label={tPages("orderNewRemoveItemAria")}
           onClick={onRemove}
         >
           <X className="size-4" />
@@ -159,7 +163,7 @@ function OrderLineProductCardInner({
         <div className="w-full min-w-0 flex-1 space-y-1.5 text-left">
           <p className="text-sm font-medium leading-snug text-foreground">
             {isUnavailable ? (
-              "Unavailable"
+              tPages("orderNewProductUnavailable")
             ) : (
               <ClickableText
                 href={`/products/${item.product_public_id}`}
@@ -176,7 +180,7 @@ function OrderLineProductCardInner({
 
         <div className="mt-auto w-full min-w-0 space-y-2 border-t border-border/50 pt-3 text-sm">
           <div className="flex items-center justify-between gap-2 text-muted-foreground">
-            <span>Qty</span>
+            <span>{tPages("orderNewColQty")}</span>
             {editing ? (
               <Input
                 type="number"
@@ -191,7 +195,7 @@ function OrderLineProductCardInner({
             )}
           </div>
           <div className="flex w-full items-center justify-between gap-2">
-            <span className="text-muted-foreground">Unit Price</span>
+            <span className="text-muted-foreground">{tPages("orderDetailUnitPrice")}</span>
             <span className="tabular-nums font-medium text-foreground">
               {currencySymbol}
               {displayListUnit.toLocaleString()}
@@ -199,7 +203,7 @@ function OrderLineProductCardInner({
           </div>
           {!editing && itemDiscount > 0 && (
             <div className="flex items-center justify-between gap-2">
-              <span className="text-muted-foreground">Discount</span>
+              <span className="text-muted-foreground">{tPages("orderNewDiscount")}</span>
               <span className="tabular-nums font-medium text-foreground">
                 −{currencySymbol}
                 {itemDiscount.toLocaleString()}
@@ -211,7 +215,7 @@ function OrderLineProductCardInner({
         {editing && (
           <div className="w-full min-w-0 space-y-1.5">
             <span className="block text-left text-xs font-medium text-muted-foreground">
-              Variant
+              {tPages("orderNewColVariant")}
             </span>
             <div className="w-full min-w-0">
               <Select
@@ -222,7 +226,9 @@ function OrderLineProductCardInner({
                 onChange={onVariantChange}
                 disabled={variantsLoading || isUnavailable}
               >
-                <option value="">{variantsLoading ? "Loading…" : "Default"}</option>
+                <option value="">
+                  {variantsLoading ? tCommon("loading") : tPages("orderNewVariantDefault")}
+                </option>
                 {variants.map((v) => (
                   <option key={v.public_id} value={v.public_id}>
                     {(v.option_labels?.join(" · ") || v.sku) ?? v.public_id}

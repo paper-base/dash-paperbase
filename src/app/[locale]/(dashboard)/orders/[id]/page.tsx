@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useParams } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import {
   Undo2,
@@ -28,7 +29,6 @@ import { Button } from "@/components/ui/button";
 import { ClickableText } from "@/components/ui/clickable-text";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardHeader,
@@ -45,12 +45,17 @@ import {
   orderLineListKey,
   orderLineRemoveKey,
 } from "@/lib/orders/editable-order-item";
+import {
+  joinVillageThanaDistrict,
+  splitShippingAddressForForm,
+} from "@/lib/orders/shipping-address-parts";
 
 type EditForm = {
   shipping_name: string;
   phone: string;
   email: string;
-  shipping_address: string;
+  village: string;
+  thana: string;
   district: string;
   shipping_zone_public_id: string;
   shipping_method_public_id: string;
@@ -69,22 +74,25 @@ function extractApiDetail(err: unknown, fallback: string): string {
   return fallback;
 }
 
-function formatOrderDate(iso: string) {
+function formatOrderDate(iso: string, locale: string) {
   const d = new Date(iso);
-  const month = d.toLocaleString("en-US", { month: "long" });
-  const day = d.getDate();
-  const year = d.getFullYear();
-  const time = d.toLocaleTimeString("en-US", {
-    hour: "2-digit",
+  const intlLocale = locale === "bn" ? "bn-BD" : "en-US";
+  return new Intl.DateTimeFormat(intlLocale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
     minute: "2-digit",
-    hour12: true,
-  }).toLowerCase().replace(/\s/g, " ");
-  return `${month}, ${day} ${year} at ${time}`;
+  }).format(d);
 }
 
 export default function OrderDetailPage() {
   const { id: order_public_id } = useParams<{ locale: string; id: string }>();
   const router = useRouter();
+  const locale = useLocale();
+  const tPages = useTranslations("pages");
+  const tNav = useTranslations("nav");
+  const tCommon = useTranslations("common");
   const { currencySymbol } = useBranding();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,7 +101,8 @@ export default function OrderDetailPage() {
     shipping_name: "",
     phone: "",
     email: "",
-    shipping_address: "",
+    village: "",
+    thana: "",
     district: "",
     shipping_zone_public_id: "",
     shipping_method_public_id: "",
@@ -167,12 +176,14 @@ export default function OrderDetailPage() {
     if (!order) return;
     setEditError("");
     setPricingPreview(null);
+    const addr = splitShippingAddressForForm(order.shipping_address);
     setForm({
       shipping_name: order.shipping_name,
       phone: order.phone,
       email: order.email,
-      shipping_address: order.shipping_address,
-      district: order.district,
+      village: addr.village,
+      thana: addr.thana,
+      district: (addr.trailingDistrict || order.district || "").trim(),
       shipping_zone_public_id: order.shipping_zone_public_id ?? "",
       shipping_method_public_id: order.shipping_method_public_id ?? "",
     });
@@ -344,7 +355,7 @@ export default function OrderDetailPage() {
         key: `new-${Date.now()}-${product.public_id}-${prev.length}`,
         public_id: null,
         product_public_id: product.public_id,
-        product_name: product.name || "Unavailable",
+        product_name: product.name || tPages("orderNewProductUnavailable"),
         product_brand: product.brand ?? undefined,
         product_image: product.image_url ?? product.image ?? null,
         status: "active",
@@ -370,6 +381,10 @@ export default function OrderDetailPage() {
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
+    if (!form.village.trim() || !form.thana.trim() || !form.district.trim()) {
+      setEditError(tPages("orderEditAddressFieldsRequired"));
+      return;
+    }
     setSaving(true);
     setEditError("");
     try {
@@ -380,7 +395,11 @@ export default function OrderDetailPage() {
         shipping_name: form.shipping_name,
         phone: form.phone,
         email: form.email,
-        shipping_address: form.shipping_address,
+        shipping_address: joinVillageThanaDistrict(
+          form.village,
+          form.thana,
+          form.district,
+        ),
         district: form.district,
         shipping_zone_public_id: form.shipping_zone_public_id,
         shipping_method_public_id: form.shipping_method_public_id || null,
@@ -412,14 +431,14 @@ export default function OrderDetailPage() {
       setPricingPreview(null);
       setEditing(false);
     } catch (err: unknown) {
-      setEditError(extractApiDetail(err, "Failed to save order changes."));
+      setEditError(extractApiDetail(err, tPages("orderDetailSaveFailed")));
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete() {
-    if (!confirm("Delete this order permanently?")) return;
+    if (!confirm(tPages("orderDetailConfirmDelete"))) return;
     try {
       await api.delete(`admin/orders/${order_public_id}/`);
       router.push("/orders");
@@ -439,7 +458,7 @@ export default function OrderDetailPage() {
       );
       setOrder(data.order);
     } catch (err: unknown) {
-      setStatusUpdateError(extractApiDetail(err, "Failed to update order status."));
+      setStatusUpdateError(extractApiDetail(err, tPages("orderDetailStatusUpdateFailed")));
     } finally {
       setStatusUpdateLoading(false);
     }
@@ -447,19 +466,20 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
+      <div className="flex h-64 flex-col items-center justify-center gap-2">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <span className="sr-only">{tCommon("loading")}</span>
       </div>
     );
   }
 
   if (!order) {
     return (
-      <p className="text-muted-foreground">Order not found.</p>
+      <p className="text-muted-foreground">{tPages("orderDetailNotFound")}</p>
     );
   }
 
-  const orderDateFormatted = formatOrderDate(order.created_at);
+  const orderDateFormatted = formatOrderDate(order.created_at, locale);
   const savedSubtotalBefore = Number(order.subtotal_before_discount ?? 0);
   const savedDiscountTotal = Number(order.discount_total ?? 0);
   const savedSubtotalAfter = Number(order.subtotal_after_discount ?? 0);
@@ -491,7 +511,7 @@ export default function OrderDetailPage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => router.back()}
-                aria-label="Go back"
+                aria-label={tPages("goBack")}
                 className="shrink-0"
               >
                 <Undo2 className="size-4" />
@@ -507,7 +527,7 @@ export default function OrderDetailPage() {
               variant="muted"
               className="text-muted-foreground hover:text-foreground"
             >
-              Orders
+              {tNav("orders")}
             </ClickableText>
             <span aria-hidden>/</span>
             <span>
@@ -522,7 +542,7 @@ export default function OrderDetailPage() {
             onClick={handleDelete}
             className="rounded-lg border-destructive text-destructive hover:bg-destructive/10"
           >
-            Delete Order
+            {tPages("orderDetailDeleteOrder")}
           </Button>
           {editing ? (
             <>
@@ -536,7 +556,7 @@ export default function OrderDetailPage() {
                   setEditing(false);
                 }}
               >
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button
                 type="submit"
@@ -545,12 +565,12 @@ export default function OrderDetailPage() {
                 disabled={saving}
                 className="rounded-lg"
               >
-                {saving ? "Saving…" : "Save Changes"}
+                {saving ? tPages("orderDetailSaving") : tPages("orderDetailSaveChanges")}
               </Button>
             </>
           ) : (
             <Button size="sm" onClick={startEditing} className="rounded-lg">
-              Edit Order
+              {tPages("orderDetailEditOrder")}
             </Button>
           )}
         </div>
@@ -563,8 +583,8 @@ export default function OrderDetailPage() {
           style={rightColHeight !== null ? { height: rightColHeight } : undefined}
         >
           <CardHeader className="shrink-0 border-b border-border/50 px-4 pb-4 pt-5 sm:px-6">
-            <CardTitle>Product</CardTitle>
-            <CardDescription>product details</CardDescription>
+            <CardTitle>{tPages("orderDetailProductCardTitle")}</CardTitle>
+            <CardDescription>{tPages("orderDetailProductCardDescription")}</CardDescription>
           </CardHeader>
           {editing && (
             <div className="shrink-0 border-b border-border/50">
@@ -584,7 +604,10 @@ export default function OrderDetailPage() {
             <div
               className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto scroll-smooth px-4 pt-4 sm:px-6 [scrollbar-width:thin] max-h-[70vh] lg:max-h-none [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-none [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent"
             >
-              <ProductGrid hasItems={displayItems.length > 0}>
+              <ProductGrid
+                hasItems={displayItems.length > 0}
+                emptyLabel={tPages("orderDetailNoLineItems")}
+              >
                 {displayItems.map((item, index) => {
                   const itemEditKey = orderLineEditKey(item);
                   const edit = itemEdits[itemEditKey];
@@ -661,21 +684,21 @@ export default function OrderDetailPage() {
         {/* Payment */}
         <Card className="overflow-hidden rounded-xl border border-dashed border-card-border bg-card shadow-sm">
           <CardHeader className="border-b border-border/50 px-4 pb-4 sm:px-6">
-            <CardTitle>Payment</CardTitle>
-            <CardDescription>Final Payment Amount</CardDescription>
+            <CardTitle>{tPages("orderDetailPaymentTitle")}</CardTitle>
+            <CardDescription>{tPages("orderDetailPaymentDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="px-4 pt-6 sm:px-6">
             {!editing && (
               <dl className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Subtotal (before discount)</dt>
+                  <dt className="text-muted-foreground">{tPages("orderDetailSubtotalBeforeDiscount")}</dt>
                   <dd>
                     {currencySymbol}
                     {savedSubtotalBefore.toLocaleString()}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Discount</dt>
+                  <dt className="text-muted-foreground">{tPages("orderDetailDiscount")}</dt>
                   <dd className={savedDiscountTotal ? "text-foreground" : undefined}>
                     {savedDiscountTotal
                       ? `-${currencySymbol}${savedDiscountTotal.toLocaleString()}`
@@ -683,14 +706,14 @@ export default function OrderDetailPage() {
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Subtotal (after discount)</dt>
+                  <dt className="text-muted-foreground">{tPages("orderDetailSubtotalAfterDiscount")}</dt>
                   <dd>
                     {currencySymbol}
                     {savedSubtotalAfter.toLocaleString()}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Shipping Cost</dt>
+                  <dt className="text-muted-foreground">{tPages("orderDetailShippingCost")}</dt>
                   <dd>
                     {shippingCostNum
                       ? `${currencySymbol}${shippingCostNum.toLocaleString()}`
@@ -698,15 +721,15 @@ export default function OrderDetailPage() {
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Shipping method</dt>
+                  <dt className="text-muted-foreground">{tPages("orderDetailShippingMethodLabel")}</dt>
                   <dd className="text-muted-foreground">{methodLabel}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Courier</dt>
+                  <dt className="text-muted-foreground">{tPages("orderDetailCourier")}</dt>
                   <dd className="text-muted-foreground">{courierSummary}</dd>
                 </div>
                 <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
-                  <dt>Total</dt>
+                  <dt>{tPages("orderDetailTotal")}</dt>
                   <dd>
                     {currencySymbol}
                     {savedTotalNum.toLocaleString()}
@@ -718,18 +741,18 @@ export default function OrderDetailPage() {
               <div className="space-y-6">
                 <div>
                   <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Saved (last persisted)
+                    {tPages("orderDetailSavedPersisted")}
                   </p>
                   <dl className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Subtotal (before discount)</dt>
+                      <dt className="text-muted-foreground">{tPages("orderDetailSubtotalBeforeDiscount")}</dt>
                       <dd>
                         {currencySymbol}
                         {savedSubtotalBefore.toLocaleString()}
                       </dd>
                     </div>
                     <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Discount</dt>
+                      <dt className="text-muted-foreground">{tPages("orderDetailDiscount")}</dt>
                       <dd className={savedDiscountTotal ? "text-foreground" : undefined}>
                         {savedDiscountTotal
                           ? `-${currencySymbol}${savedDiscountTotal.toLocaleString()}`
@@ -737,14 +760,14 @@ export default function OrderDetailPage() {
                       </dd>
                     </div>
                     <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Subtotal (after discount)</dt>
+                      <dt className="text-muted-foreground">{tPages("orderDetailSubtotalAfterDiscount")}</dt>
                       <dd>
                         {currencySymbol}
                         {savedSubtotalAfter.toLocaleString()}
                       </dd>
                     </div>
                     <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Shipping Cost</dt>
+                      <dt className="text-muted-foreground">{tPages("orderDetailShippingCost")}</dt>
                       <dd>
                         {shippingCostNum
                           ? `${currencySymbol}${shippingCostNum.toLocaleString()}`
@@ -752,7 +775,7 @@ export default function OrderDetailPage() {
                       </dd>
                     </div>
                     <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
-                      <dt>Total</dt>
+                      <dt>{tPages("orderDetailTotal")}</dt>
                       <dd>
                         {currencySymbol}
                         {savedTotalNum.toLocaleString()}
@@ -762,19 +785,19 @@ export default function OrderDetailPage() {
                 </div>
                 <div>
                   <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    New total (unsaved preview)
+                    {tPages("orderDetailNewTotalPreview")}
                   </p>
                   {pricingPreview ? (
                     <dl className="space-y-3 text-sm">
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Subtotal (before discount)</dt>
+                        <dt className="text-muted-foreground">{tPages("orderDetailSubtotalBeforeDiscount")}</dt>
                         <dd>
                           {currencySymbol}
                           {Number(pricingPreview.subtotal_before_discount).toLocaleString()}
                         </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Discount</dt>
+                        <dt className="text-muted-foreground">{tPages("orderDetailDiscount")}</dt>
                         <dd>
                           {Number(pricingPreview.discount_total) > 0
                             ? `-${currencySymbol}${Number(pricingPreview.discount_total).toLocaleString()}`
@@ -782,14 +805,14 @@ export default function OrderDetailPage() {
                         </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Subtotal (after discount)</dt>
+                        <dt className="text-muted-foreground">{tPages("orderDetailSubtotalAfterDiscount")}</dt>
                         <dd>
                           {currencySymbol}
                           {Number(pricingPreview.subtotal_after_discount).toLocaleString()}
                         </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Shipping Cost</dt>
+                        <dt className="text-muted-foreground">{tPages("orderDetailShippingCost")}</dt>
                         <dd>
                           {Number(pricingPreview.shipping_cost) > 0
                             ? `${currencySymbol}${Number(pricingPreview.shipping_cost).toLocaleString()}`
@@ -797,7 +820,7 @@ export default function OrderDetailPage() {
                         </dd>
                       </div>
                       <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
-                        <dt>Total</dt>
+                        <dt>{tPages("orderDetailTotal")}</dt>
                         <dd>
                           {currencySymbol}
                           {Number(pricingPreview.total).toLocaleString()}
@@ -805,7 +828,7 @@ export default function OrderDetailPage() {
                       </div>
                     </dl>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Calculating…</p>
+                    <p className="text-sm text-muted-foreground">{tPages("orderDetailCalculating")}</p>
                   )}
                 </div>
               </div>
@@ -816,11 +839,11 @@ export default function OrderDetailPage() {
         {!editing && (
           <Card className="overflow-hidden rounded-xl border border-dashed border-card-border bg-card shadow-sm">
             <CardHeader className="border-b border-border/50 px-4 pb-4 sm:px-6">
-              <CardTitle>Order Status</CardTitle>
+              <CardTitle>{tPages("orderDetailOrderStatusTitle")}</CardTitle>
               <CardDescription>
-                Current:{" "}
-                <span className="capitalize text-foreground">
-                  {formatOrderStatusLabel(order.status)}
+                {tPages("orderDetailOrderStatusCurrent")}:{" "}
+                <span className="text-foreground">
+                  {formatOrderStatusLabel(order.status, tPages)}
                 </span>
               </CardDescription>
             </CardHeader>
@@ -828,7 +851,7 @@ export default function OrderDetailPage() {
               <div className="space-y-2">
                 {order.status === "cancelled" ? (
                   <p className="text-sm text-muted-foreground">
-                    This order is cancelled. Status cannot be changed.
+                    {tPages("orderDetailOrderCancelledHint")}
                   </p>
                 ) : (
                   <div className="flex flex-wrap items-center gap-2">
@@ -836,16 +859,18 @@ export default function OrderDetailPage() {
                       value={order.status}
                       onChange={(e) => handleStatusChange(e.target.value)}
                       disabled={statusUpdateLoading}
-                      className="h-9 w-[180px] capitalize"
+                      className="h-9 w-[180px]"
                     >
                       {ORDER_STATUS_OPTIONS.map((s) => (
                         <option key={s} value={s}>
-                          {formatOrderStatusLabel(s)}
+                          {formatOrderStatusLabel(s, tPages)}
                         </option>
                       ))}
                     </Select>
                     {statusUpdateLoading ? (
-                      <span className="text-xs text-muted-foreground">Updating…</span>
+                      <span className="text-xs text-muted-foreground">
+                        {tPages("orderDetailStatusUpdating")}
+                      </span>
                     ) : null}
                   </div>
                 )}
@@ -860,15 +885,15 @@ export default function OrderDetailPage() {
         {/* Customer */}
         <Card className="overflow-hidden rounded-xl border border-dashed border-card-border bg-card shadow-sm">
           <CardHeader className="border-b border-border/50 px-4 pb-4 sm:px-6">
-            <CardTitle>Customer</CardTitle>
-            <CardDescription>Information Detail</CardDescription>
+            <CardTitle>{tPages("orderDetailCustomerTitle")}</CardTitle>
+            <CardDescription>{tPages("orderDetailCustomerDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="px-4 pt-6 sm:px-6">
             {editing ? (
               <form id="order-edit-form" onSubmit={handleSave} className="space-y-4">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Order number
+                    {tPages("orderDetailOrderNumber")}
                   </label>
                   <Input
                     value={order.order_number}
@@ -878,28 +903,27 @@ export default function OrderDetailPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Order status
+                    {tPages("orderDetailOrderStatusField")}
                   </label>
                   <Input
-                    value={formatOrderStatusLabel(order.status)}
+                    value={formatOrderStatusLabel(order.status, tPages)}
                     readOnly
-                    className="cursor-default bg-muted/50 capitalize"
+                    className="cursor-default bg-muted/50"
                   />
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Use the Order Status card to change status. Send to courier from the orders list
-                    when the order is confirmed.
+                    {tPages("orderDetailStatusChangeHint")}
                   </p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Shipping method (rates)
+                      {tPages("orderNewShippingMethod")}
                     </label>
                     <Select
                       value={form.shipping_method_public_id}
                       onChange={(e) => setForm({ ...form, shipping_method_public_id: e.target.value })}
                     >
-                      <option value="">Auto (cheapest match)</option>
+                      <option value="">{tPages("orderNewShippingMethodAuto")}</option>
                       {shippingMethods.map((m) => (
                         <option key={m.public_id} value={m.public_id}>
                           {m.name}
@@ -909,14 +933,14 @@ export default function OrderDetailPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Delivery zone (rates)
+                      {tPages("orderNewDeliveryZone")}
                     </label>
                     <Select
                       value={form.shipping_zone_public_id}
                       onChange={(e) => setForm({ ...form, shipping_zone_public_id: e.target.value })}
                       required
                     >
-                      <option value="">Select delivery zone</option>
+                      <option value="">{tPages("orderNewSelectZone")}</option>
                       {shippingZones.map((z) => (
                         <option key={z.public_id} value={z.public_id}>
                           {z.name}
@@ -926,7 +950,7 @@ export default function OrderDetailPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Name
+                      {tPages("orderNewName")}
                     </label>
                     <Input
                       value={form.shipping_name}
@@ -937,7 +961,7 @@ export default function OrderDetailPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Phone
+                      {tPages("orderNewPhone")}
                     </label>
                     <Input
                       value={form.phone}
@@ -950,7 +974,7 @@ export default function OrderDetailPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Email
+                      {tPages("orderNewEmail")}
                     </label>
                     <Input
                       type="email"
@@ -962,25 +986,35 @@ export default function OrderDetailPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      District
+                      {tPages("orderFormRoadVillage")}
                     </label>
                     <Input
-                      value={form.district}
+                      value={form.village}
                       onChange={(e) =>
-                        setForm({ ...form, district: e.target.value })
+                        setForm({ ...form, village: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      {tPages("orderFormThana")}
+                    </label>
+                    <Input
+                      value={form.thana}
+                      onChange={(e) =>
+                        setForm({ ...form, thana: e.target.value })
                       }
                     />
                   </div>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Address
+                    {tPages("orderFormDistrict")}
                   </label>
-                  <Textarea
-                    rows={2}
-                    value={form.shipping_address}
+                  <Input
+                    value={form.district}
                     onChange={(e) =>
-                      setForm({ ...form, shipping_address: e.target.value })
+                      setForm({ ...form, district: e.target.value })
                     }
                   />
                 </div>
@@ -993,7 +1027,7 @@ export default function OrderDetailPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      General Information
+                      {tPages("orderDetailGeneralInformation")}
                     </p>
                     <p className="font-medium text-foreground">
                       {order.shipping_name || "—"}
@@ -1012,14 +1046,37 @@ export default function OrderDetailPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Shipping Address
+                      {tPages("orderDetailShippingAddress")}
                     </p>
-                    <p className="text-sm text-foreground">
-                      {order.shipping_address || "—"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {order.district || "—"}
-                    </p>
+                    {(() => {
+                      const addr = splitShippingAddressForForm(order.shipping_address);
+                      const districtLine =
+                        order.district?.trim() ||
+                        addr.trailingDistrict ||
+                        "—";
+                      return (
+                        <>
+                          <p className="text-sm text-foreground">
+                            <span className="text-muted-foreground">
+                              {tPages("orderFormRoadVillage")}:{" "}
+                            </span>
+                            {addr.village || "—"}
+                          </p>
+                          <p className="text-sm text-foreground">
+                            <span className="text-muted-foreground">
+                              {tPages("orderFormThana")}:{" "}
+                            </span>
+                            {addr.thana || "—"}
+                          </p>
+                          <p className="text-sm text-foreground">
+                            <span className="text-muted-foreground">
+                              {tPages("orderFormDistrict")}:{" "}
+                            </span>
+                            {districtLine}
+                          </p>
+                        </>
+                      );
+                    })()}
                     {order.phone && (
                       <p className="text-sm text-muted-foreground">
                         {order.phone}
@@ -1033,10 +1090,10 @@ export default function OrderDetailPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Billing Address
+                      {tPages("orderDetailBillingAddress")}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Same as shipping address
+                      {tPages("orderDetailSameAsShipping")}
                     </p>
                   </div>
                 </div>

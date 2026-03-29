@@ -370,10 +370,9 @@ export interface ShippingMethod {
 
 export interface Courier {
   public_id: string;
-  provider: "pathao" | "steadfast";
+  provider: "steadfast";
   api_key_masked: string;
   secret_key_masked: string;
-  access_token_masked: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;

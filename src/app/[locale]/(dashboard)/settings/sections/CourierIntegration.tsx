@@ -3,30 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { Truck, Plus, X } from "lucide-react";
 import api from "@/lib/api";
+import { formatAdminApiErrorFromAxios } from "@/lib/admin-api-error";
 import type { Courier, PaginatedResponse } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-
-const PROVIDER_OPTIONS = [
-  { value: "pathao", label: "Pathao" },
-  { value: "steadfast", label: "Steadfast" },
-] as const;
 
 type ConnectForm = {
-  provider: string;
   api_key: string;
   secret_key: string;
-  access_token: string;
-  refresh_token: string;
 };
 
 const emptyForm: ConnectForm = {
-  provider: "steadfast",
   api_key: "",
   secret_key: "",
-  access_token: "",
-  refresh_token: "",
 };
 
 export default function CourierIntegration() {
@@ -59,16 +48,24 @@ export default function CourierIntegration() {
     e.preventDefault();
     setError("");
     setSaving(true);
+    const payload = {
+      provider: "steadfast" as const,
+      api_key: form.api_key.trim(),
+      secret_key: form.secret_key.trim(),
+      is_active: true,
+    };
     try {
-      await api.post("admin/couriers/", form);
+      await api.post("admin/couriers/", payload);
       setShowForm(false);
       setForm({ ...emptyForm });
       fetchCouriers();
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? "Failed to connect courier.";
-      setError(msg);
+      setError(
+        formatAdminApiErrorFromAxios(
+          err,
+          "Failed to save courier settings. Check the form and try again.",
+        ),
+      );
     } finally {
       setSaving(false);
     }
@@ -103,7 +100,7 @@ export default function CourierIntegration() {
 
   return (
     <div className="rounded-xl border border-border bg-muted/30 p-4 md:p-5">
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Truck className="size-5 text-muted-foreground" />
           <h3 className="text-sm font-semibold text-foreground">
@@ -123,15 +120,16 @@ export default function CourierIntegration() {
         )}
       </div>
       <p className="mb-4 text-xs text-muted-foreground">
-        Connect Pathao or Steadfast to dispatch orders directly from the
-        dashboard.
+        Connect <strong>Steadfast (Packzy)</strong> to send orders from the dashboard.
+        Credentials are stored in Akkho only until you dispatch. You need the{" "}
+        <strong>API key</strong> and <strong>secret key</strong> from the Packzy portal.
       </p>
 
       {showForm && (
         <div className="mb-4 rounded-lg border border-border bg-background p-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3 flex items-center justify-between">
             <span className="text-sm font-medium text-foreground">
-              Connect a Courier
+              Connect Steadfast
             </span>
             <button
               type="button"
@@ -144,29 +142,12 @@ export default function CourierIntegration() {
               <X className="size-4" />
             </button>
           </div>
-          <form onSubmit={handleConnect} className="space-y-3 max-w-md">
+          <form onSubmit={handleConnect} className="max-w-md space-y-3">
             {error && (
               <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
                 {error}
               </div>
             )}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground">
-                Provider
-              </label>
-              <Select
-                value={form.provider}
-                onChange={(e) =>
-                  setForm({ ...form, provider: e.target.value })
-                }
-              >
-                {PROVIDER_OPTIONS.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-foreground">
                 API Key
@@ -178,64 +159,27 @@ export default function CourierIntegration() {
                 onChange={(e) =>
                   setForm({ ...form, api_key: e.target.value })
                 }
-                placeholder="Enter API key"
+                placeholder="Packzy API key"
                 className="max-w-md"
                 autoComplete="off"
               />
             </div>
-            {form.provider === "steadfast" && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-foreground">
-                  Secret Key
-                </label>
-                <Input
-                  type="password"
-                  required
-                  value={form.secret_key}
-                  onChange={(e) =>
-                    setForm({ ...form, secret_key: e.target.value })
-                  }
-                  placeholder="Enter secret key"
-                  className="max-w-md"
-                  autoComplete="off"
-                />
-              </div>
-            )}
-            {form.provider === "pathao" && (
-              <>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-foreground">
-                    Access Token
-                  </label>
-                  <Input
-                    type="password"
-                    required
-                    value={form.access_token}
-                    onChange={(e) =>
-                      setForm({ ...form, access_token: e.target.value })
-                    }
-                    placeholder="Enter access/bearer token"
-                    className="max-w-md"
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-foreground">
-                    Refresh Token (optional)
-                  </label>
-                  <Input
-                    type="password"
-                    value={form.refresh_token}
-                    onChange={(e) =>
-                      setForm({ ...form, refresh_token: e.target.value })
-                    }
-                    placeholder="Enter refresh token"
-                    className="max-w-md"
-                    autoComplete="off"
-                  />
-                </div>
-              </>
-            )}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground">
+                Secret Key
+              </label>
+              <Input
+                type="password"
+                required
+                value={form.secret_key}
+                onChange={(e) =>
+                  setForm({ ...form, secret_key: e.target.value })
+                }
+                placeholder="Packzy secret key"
+                className="max-w-md"
+                autoComplete="off"
+              />
+            </div>
             <div className="flex gap-2 pt-1">
               <Button type="submit" size="sm" disabled={saving}>
                 {saving ? "Connecting..." : "Connect"}
@@ -263,7 +207,7 @@ export default function CourierIntegration() {
       ) : couriers.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-6 text-center">
           <p className="text-sm text-muted-foreground">
-            No couriers connected yet.
+            No courier connected yet.
           </p>
           {!showForm && (
             <Button
@@ -273,7 +217,7 @@ export default function CourierIntegration() {
               className="text-xs"
             >
               <Plus className="mr-1 size-3.5" />
-              Connect Courier
+              Connect Steadfast
             </Button>
           )}
         </div>
@@ -286,8 +230,8 @@ export default function CourierIntegration() {
             >
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-foreground capitalize">
-                    {c.provider}
+                  <span className="text-sm font-medium capitalize text-foreground">
+                    Steadfast
                   </span>
                   <span
                     className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -312,20 +256,12 @@ export default function CourierIntegration() {
                       <code className="font-mono">{c.secret_key_masked}</code>
                     </span>
                   )}
-                  {c.access_token_masked && (
-                    <span>
-                      Token:{" "}
-                      <code className="font-mono">
-                        {c.access_token_masked}
-                      </code>
-                    </span>
-                  )}
                   <span>
                     Connected {new Date(c.created_at).toLocaleDateString()}
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex shrink-0 items-center gap-2">
                 <Button
                   size="sm"
                   variant="outline"
@@ -344,7 +280,7 @@ export default function CourierIntegration() {
                   variant="outline"
                   disabled={deletingId === c.public_id}
                   onClick={() => handleDelete(c.public_id)}
-                  className="border-destructive text-destructive hover:bg-destructive/10 text-xs"
+                  className="border-destructive text-xs text-destructive hover:bg-destructive/10"
                 >
                   {deletingId === c.public_id ? "Removing..." : "Disconnect"}
                 </Button>
