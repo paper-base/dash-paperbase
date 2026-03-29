@@ -10,6 +10,7 @@ import {
 } from "react";
 import api from "@/lib/api";
 import type { Branding } from "@/types";
+import { emptySocialLinks } from "@/lib/storeSocialLinks";
 
 interface BrandingState {
   branding: Branding | null;
@@ -30,6 +31,7 @@ const defaultBranding: Branding = {
   contact_email: "",
   phone: "",
   address: "",
+  social_links: emptySocialLinks(),
 };
 
 const BrandingContext = createContext<BrandingState | undefined>(undefined);

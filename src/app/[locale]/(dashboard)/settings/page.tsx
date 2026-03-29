@@ -71,6 +71,8 @@ export default function SettingsPage() {
     setPhone,
     address,
     setAddress,
+    socialLinks,
+    setSocialLink,
     previewUrl,
     currentLogoUrl,
     clearLogo,
@@ -217,6 +219,8 @@ export default function SettingsPage() {
             onContactEmailChange={setContactEmail}
             onPhoneChange={setPhone}
             onAddressChange={setAddress}
+            socialLinks={socialLinks}
+            onSocialLinkChange={setSocialLink}
             storeSaving={storeSaving}
             storeMessage={storeMessage}
             onSubmit={handleStoreSubmit}

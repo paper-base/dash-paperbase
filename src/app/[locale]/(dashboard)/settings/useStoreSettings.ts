@@ -7,6 +7,11 @@ import { defaultBranding } from "@/context/BrandingContext";
 import { useAutoExpire } from "@/hooks/useAutoExpire";
 import type { SettingsMessage } from "./useAccountSettings";
 import { parseValidation, storeUpdateSchema } from "@/lib/validation";
+import {
+  emptySocialLinks,
+  mergeSocialLinksFromApi,
+  type StoreSocialLinkKey,
+} from "@/lib/storeSocialLinks";
 
 function resolveLogoUrl(url: string | null): string | null {
   if (!url) return null;
@@ -28,6 +33,7 @@ export function useStoreSettings({ onSaveSuccess }: UseStoreSettingsOptions = {}
   const [contactEmail, setContactEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [socialLinks, setSocialLinks] = useState(emptySocialLinks);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [clearLogo, setClearLogo] = useState(false);
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
@@ -44,6 +50,7 @@ export function useStoreSettings({ onSaveSuccess }: UseStoreSettingsOptions = {}
     phone?: string | null;
     address?: string | null;
     logo_url?: string | null;
+    social_links?: Record<string, string> | null;
   }) {
     if (branding.admin_name) setStoreName(branding.admin_name);
     setStoreType(branding.store_type ?? "");
@@ -51,6 +58,11 @@ export function useStoreSettings({ onSaveSuccess }: UseStoreSettingsOptions = {}
     setPhone(branding.phone ?? "");
     setAddress(branding.address ?? "");
     setCurrentLogoUrl(resolveLogoUrl(branding.logo_url ?? null));
+    setSocialLinks(mergeSocialLinksFromApi(branding.social_links ?? undefined));
+  }
+
+  function setSocialLink(key: StoreSocialLinkKey, value: string) {
+    setSocialLinks((prev) => ({ ...prev, [key]: value }));
   }
 
   const previewUrl = logoFile ? URL.createObjectURL(logoFile) : currentLogoUrl;
@@ -97,6 +109,7 @@ export function useStoreSettings({ onSaveSuccess }: UseStoreSettingsOptions = {}
 
       if (logoFile) formData.append("logo", logoFile);
       if (clearLogo) formData.append("clear_logo", "true");
+      formData.append("social_links", JSON.stringify(socialLinks));
 
       await api.patch("admin/branding/", formData);
       onSaveSuccess?.();
@@ -124,6 +137,8 @@ export function useStoreSettings({ onSaveSuccess }: UseStoreSettingsOptions = {}
     setPhone,
     address,
     setAddress,
+    socialLinks,
+    setSocialLink,
     logoFile,
     setLogoFile,
     clearLogo,

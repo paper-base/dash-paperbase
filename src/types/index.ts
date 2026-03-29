@@ -1,3 +1,18 @@
+/** Social profile URLs for storefront; keys align with `GET/PATCH admin/branding/` `social_links`. */
+export type BrandingSocialLinks = Partial<
+  Record<
+    | "facebook"
+    | "instagram"
+    | "twitter"
+    | "youtube"
+    | "linkedin"
+    | "tiktok"
+    | "pinterest"
+    | "website",
+    string
+  >
+>;
+
 export interface Branding {
   public_id: string;
   logo_url: string | null;
@@ -9,6 +24,7 @@ export interface Branding {
   contact_email: string;
   phone: string;
   address: string;
+  social_links?: BrandingSocialLinks;
   brand_showcase?: Array<{
     public_id: string;
     name: string;

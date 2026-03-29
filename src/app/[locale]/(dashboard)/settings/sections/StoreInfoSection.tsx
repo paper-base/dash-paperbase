@@ -6,6 +6,10 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
+import {
+  STORE_SOCIAL_LINK_KEYS,
+  type StoreSocialLinkKey,
+} from "@/lib/storeSocialLinks";
 
 type SettingsMessage = { type: "success" | "error"; text: string } | null;
 
@@ -22,6 +26,8 @@ export default function StoreInfoSection({
   contactEmail,
   phone,
   address,
+  socialLinks,
+  onSocialLinkChange,
   onStoreNameChange,
   onStoreTypeChange,
   onContactEmailChange,
@@ -43,6 +49,8 @@ export default function StoreInfoSection({
   contactEmail: string;
   phone: string;
   address: string;
+  socialLinks: Record<StoreSocialLinkKey, string>;
+  onSocialLinkChange: (key: StoreSocialLinkKey, value: string) => void;
   onStoreNameChange: Dispatch<SetStateAction<string>>;
   onStoreTypeChange: Dispatch<SetStateAction<string>>;
   onContactEmailChange: Dispatch<SetStateAction<string>>;
@@ -183,6 +191,35 @@ export default function StoreInfoSection({
               placeholder={t("store.addressPlaceholder")}
               className="w-full"
             />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <h3 className="text-base font-medium text-foreground">{t("store.socialHeading")}</h3>
+            <p className="text-sm text-muted-foreground">{t("store.socialSubtitle")}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {STORE_SOCIAL_LINK_KEYS.map((key) => (
+              <div key={key} className="flex flex-col gap-2">
+                <label
+                  htmlFor={`social_${key}`}
+                  className="text-sm font-medium leading-normal text-foreground"
+                >
+                  {t(`store.socialLabels.${key}` as never)}
+                </label>
+                <Input
+                  id={`social_${key}`}
+                  type="url"
+                  inputMode="url"
+                  autoComplete="off"
+                  value={socialLinks[key]}
+                  onChange={(e) => onSocialLinkChange(key, e.target.value)}
+                  placeholder={t("store.socialUrlPlaceholder")}
+                  className="w-full"
+                />
+              </div>
+            ))}
           </div>
         </div>
 
