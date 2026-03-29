@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Copy, KeyRound, Loader2, RefreshCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,7 @@ function extractRows(data: unknown): APIKeyRow[] {
 }
 
 export default function NetworkingSection({ hidden }: { hidden: boolean }) {
+  const t = useTranslations("settings");
   const [keys, setKeys] = useState<APIKeyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,12 +65,12 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
       setKeys(extractRows(data));
       setError(null);
     } catch {
-      setError("Could not load API keys.");
+      setError(t("networking.loadError"));
       setKeys([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -79,21 +81,21 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
     setMessage(null);
     setRevealedKey(null);
     try {
-      const payload = { name: newKeyName.trim() || "Default key" };
+      const payload = { name: newKeyName.trim() || t("networking.defaultKeyName") };
       const { data } = await api.post<APIKeyCreateResponse>("settings/network/api-keys/", payload);
       setNewKeyName("");
       setRevealedKey(data.api_key);
-      setMessage("API key created. Save it now; it will not be shown again.");
+      setMessage(t("networking.msgCreated"));
       await load();
     } catch {
-      setMessage("Failed to create API key.");
+      setMessage(t("networking.msgCreateFailed"));
     } finally {
       setBusy(false);
     }
   }
 
   async function regenerateKey(publicId: string, currentName: string) {
-    if (!globalThis.confirm("Regenerate this API key? The old key will be revoked.")) return;
+    if (!globalThis.confirm(t("networking.confirmRegenerate"))) return;
     setBusy(true);
     setMessage(null);
     setRevealedKey(null);
@@ -103,26 +105,26 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
         { name: currentName }
       );
       setRevealedKey(data.api_key);
-      setMessage("API key regenerated. Save the new key now; it will not be shown again.");
+      setMessage(t("networking.msgRegenerated"));
       await load();
     } catch {
-      setMessage("Could not regenerate API key.");
+      setMessage(t("networking.msgRegenerateFailed"));
     } finally {
       setBusy(false);
     }
   }
 
   async function revokeKey(publicId: string) {
-    if (!globalThis.confirm("Delete (revoke) this API key?")) return;
+    if (!globalThis.confirm(t("networking.confirmRevoke"))) return;
     setBusy(true);
     setMessage(null);
     try {
       await api.delete(`settings/network/api-keys/${publicId}/`);
       // Remove immediately so deleted keys disappear from the screen.
       setKeys((prev) => prev.filter((row) => row.public_id !== publicId));
-      setMessage("API key revoked.");
+      setMessage(t("networking.msgRevoked"));
     } catch {
-      setMessage("Could not revoke API key.");
+      setMessage(t("networking.msgRevokeFailed"));
     } finally {
       setBusy(false);
     }
@@ -142,14 +144,12 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
     >
       <SettingsSectionBody>
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold text-foreground">Networking</h2>
-          <p className="text-sm text-muted-foreground">
-            Use API keys to authenticate tenant API and WebSocket requests.
-          </p>
+          <h2 className="text-lg font-semibold text-foreground">{t("networking.heading")}</h2>
+          <p className="text-sm text-muted-foreground">{t("networking.subtitle")}</p>
         </div>
 
         <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">API Base URL</p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("networking.apiBaseUrl")}</p>
           <div className="mt-2 flex items-start justify-between gap-2">
             <code className="min-w-0 break-all rounded bg-background px-2 py-1 text-sm">{API_BASE_URL}</code>
             <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => copy(API_BASE_URL)}>
@@ -171,7 +171,7 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
 
         {revealedKey && (
           <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 text-sm">
-            <p className="font-medium text-foreground">New API key (shown once)</p>
+            <p className="font-medium text-foreground">{t("networking.newKeyTitle")}</p>
             <div className="mt-2 flex items-center justify-between gap-2">
               <code className="rounded bg-background px-2 py-1 break-all">{revealedKey}</code>
               <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => copy(revealedKey)}>
@@ -184,7 +184,7 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            Loading API keys…
+            {t("networking.loadingKeys")}
           </div>
         ) : (
           <div className="space-y-3">
@@ -196,8 +196,9 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
                 <div className="min-w-0">
                   <p className="font-medium text-foreground">{k.name}</p>
                   <p className="break-words text-xs leading-relaxed text-muted-foreground">
-                    Prefix: <code className="break-all rounded bg-muted px-1">{k.key_prefix}</code> · Created:{" "}
-                    {formatCreatedAt(k.created_at)} · {k.revoked_at ? "Revoked" : "Active"}
+                    {t("networking.prefix")}{" "}
+                    <code className="break-all rounded bg-muted px-1">{k.key_prefix}</code> · {t("networking.created")}{" "}
+                    {formatCreatedAt(k.created_at)} · {k.revoked_at ? t("networking.statusRevoked") : t("networking.statusActive")}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
@@ -209,7 +210,7 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
                     onClick={() => void regenerateKey(k.public_id, k.name)}
                   >
                     <RefreshCcw className="mr-1 size-4" />
-                    Regenerate
+                    {t("networking.regenerate")}
                   </Button>
                   <Button
                     type="button"
@@ -217,7 +218,7 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
                     size="icon"
                     className="size-8 text-destructive hover:text-destructive"
                     disabled={busy || !!k.revoked_at}
-                    aria-label="Delete API key"
+                    aria-label={t("networking.deleteKeyAria")}
                     onClick={() => void revokeKey(k.public_id)}
                   >
                     <Trash2 className="size-4" />
@@ -226,16 +227,16 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
               </div>
             ))}
             {keys.length === 0 && (
-              <p className="text-sm text-muted-foreground">No API keys yet.</p>
+              <p className="text-sm text-muted-foreground">{t("networking.noKeys")}</p>
             )}
           </div>
         )}
 
         <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">Create API key</p>
+          <p className="text-sm font-medium text-foreground">{t("networking.createHeading")}</p>
           <div className="flex max-w-xl flex-col gap-2 sm:flex-row sm:items-center">
             <Input
-              placeholder="e.g. Frontend"
+              placeholder={t("networking.namePlaceholder")}
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
               disabled={busy}
@@ -250,7 +251,7 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
               onClick={() => void createKey()}
             >
               <KeyRound className="mr-2 size-4" />
-              Create Key
+              {t("networking.createButton")}
             </Button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Undo2, Plus } from "lucide-react";
 import api from "@/lib/api";
@@ -21,6 +22,8 @@ const emptyAttr: AttrForm = { name: "", slug: "", order: "0" };
 const emptyValue: ValueForm = { value: "", order: "0" };
 
 export default function ProductAttributesPage() {
+  const tPages = useTranslations("pages");
+  const tCommon = useTranslations("common");
   const [attributes, setAttributes] = useState<ProductAttributeAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -52,11 +55,11 @@ export default function ProductAttributesPage() {
       }
       setAttributes(acc);
     } catch {
-      setError("Could not load attributes.");
+      setError(tPages("attributesLoadFailed"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tPages]);
 
   useEffect(() => {
     fetchData();
@@ -95,19 +98,19 @@ export default function ProductAttributesPage() {
       await fetchData();
     } catch (err: unknown) {
       const d = err as { response?: { data?: unknown } };
-      setError(JSON.stringify(d.response?.data ?? "Save failed"));
+      setError(JSON.stringify(d.response?.data ?? tPages("attributesSaveFailed")));
     } finally {
       setAttrSaving(false);
     }
   }
 
   async function deleteAttr(publicId: string, name: string) {
-    if (!confirm(`Delete attribute "${name}" and all its values?`)) return;
+    if (!confirm(tPages("attributesConfirmDeleteAttr", { name }))) return;
     try {
       await api.delete(`admin/product-attributes/${publicId}/`);
       await fetchData();
     } catch {
-      setError("Delete failed (attribute may be in use).");
+      setError(tPages("attributesDeleteAttrFailed"));
     }
   }
 
@@ -140,43 +143,45 @@ export default function ProductAttributesPage() {
       await fetchData();
     } catch (err: unknown) {
       const d = err as { response?: { data?: unknown } };
-      setError(JSON.stringify(d.response?.data ?? "Save failed"));
+      setError(JSON.stringify(d.response?.data ?? tPages("attributesSaveFailed")));
     } finally {
       setValueSaving(false);
     }
   }
 
   async function deleteValue(publicId: string, label: string) {
-    if (!confirm(`Delete value "${label}"?`)) return;
+    if (!confirm(tPages("attributesConfirmDeleteValue", { label }))) return;
     try {
       await api.delete(`admin/product-attribute-values/${publicId}/`);
       await fetchData();
     } catch {
-      setError("Delete failed (value may be linked to variants).");
+      setError(tPages("attributesDeleteValueFailed"));
     }
   }
 
   if (loading) {
-    return <div className="text-sm text-muted-foreground">Loading…</div>;
+    return <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>;
   }
 
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-medium tracking-tight text-foreground">Attributes</h1>
+          <h1 className="text-2xl font-medium tracking-tight text-foreground">
+            {tPages("attributesTitle")}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Option types and values used on variants (e.g. Color → Red, Blue). Then assign them on{" "}
+            {tPages("attributesSubtitleBefore")}{" "}
             <ClickableText href="/variants" className="underline-offset-2">
-              Variants
+              {tPages("attributesSubtitleLink")}
             </ClickableText>
-            .
+            {tPages("attributesSubtitleAfter")}
           </p>
         </div>
         <Button variant="outline" size="sm" asChild>
           <Link href="/variants">
             <Undo2 className="mr-2 size-4" />
-            Variants
+            {tPages("attributesVariantsLink")}
           </Link>
         </Button>
       </header>
@@ -190,7 +195,7 @@ export default function ProductAttributesPage() {
       <div className="flex flex-wrap gap-2">
         <Button type="button" size="sm" onClick={openAttrNew} disabled={attrEditing !== null}>
           <Plus className="mr-2 size-4" />
-          New attribute
+          {tPages("attributesNewAttribute")}
         </Button>
       </div>
 
@@ -198,13 +203,13 @@ export default function ProductAttributesPage() {
         <Card className="border-primary/30 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">
-              {attrEditing === "new" ? "New attribute" : "Edit attribute"}
+              {attrEditing === "new" ? tPages("attributesNewAttribute") : tPages("attributesEditAttribute")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={saveAttr} className="grid gap-3 sm:max-w-md">
               <label className="space-y-1">
-                <span className="text-xs text-muted-foreground">Name *</span>
+                <span className="text-xs text-muted-foreground">{tPages("attributesNameRequired")}</span>
                 <Input
                   required
                   className="w-full text-sm"
@@ -213,16 +218,16 @@ export default function ProductAttributesPage() {
                 />
               </label>
               <label className="space-y-1">
-                <span className="text-xs text-muted-foreground">Slug (optional)</span>
+                <span className="text-xs text-muted-foreground">{tPages("attributesSlugOptional")}</span>
                 <Input
                   className="w-full text-sm"
                   value={attrForm.slug}
                   onChange={(e) => setAttrForm({ ...attrForm, slug: e.target.value })}
-                  placeholder="Auto from name if empty"
+                  placeholder={tPages("attributesSlugPlaceholder")}
                 />
               </label>
               <label className="space-y-1">
-                <span className="text-xs text-muted-foreground">Order</span>
+                <span className="text-xs text-muted-foreground">{tPages("attributesOrder")}</span>
                 <Input
                   type="number"
                   className="w-full font-numbers text-sm"
@@ -232,10 +237,10 @@ export default function ProductAttributesPage() {
               </label>
               <div className="flex gap-2">
                 <Button type="submit" disabled={attrSaving}>
-                  {attrSaving ? "Saving…" : "Save"}
+                  {attrSaving ? tCommon("saving") : tCommon("save")}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setAttrEditing(null)}>
-                  Cancel
+                  {tCommon("cancel")}
                 </Button>
               </div>
             </form>
@@ -246,7 +251,7 @@ export default function ProductAttributesPage() {
       <div className="space-y-4">
         {attributes.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-            No attributes yet. Create one (e.g. &quot;Color&quot;, &quot;Size&quot;), then add values.
+            {tPages("attributesEmpty")}
           </p>
         ) : (
           attributes.map((a) => {
@@ -258,7 +263,7 @@ export default function ProductAttributesPage() {
                 <div className="min-w-0 flex-1">
                   <CardTitle className="text-base">
                     <ClickableText
-                      aria-label={`Edit attribute ${a.name}`}
+                      aria-label={tPages("attributesEditAttributeAria", { name: a.name })}
                       disabled={attrEditing !== null || valueEditing !== null}
                       onClick={() => openAttrEdit(a)}
                       className="max-w-full text-left font-semibold disabled:cursor-not-allowed disabled:opacity-50"
@@ -267,7 +272,8 @@ export default function ProductAttributesPage() {
                     </ClickableText>
                   </CardTitle>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    slug: <code className="rounded bg-muted px-1">{a.slug}</code> · order {a.order}
+                    {tPages("attributesSlugMeta")}{" "}
+                    <code className="rounded bg-muted px-1">{a.slug}</code> {tPages("attributesOrderMeta", { order: a.order })}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-1">
@@ -279,14 +285,14 @@ export default function ProductAttributesPage() {
                     disabled={attrEditing !== null || valueEditing !== null}
                     onClick={() => deleteAttr(a.public_id, a.name)}
                   >
-                    Delete
+                    {tCommon("delete")}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Values
+                    {tPages("attributesValuesHeading")}
                   </span>
                   <Button
                     type="button"
@@ -296,7 +302,7 @@ export default function ProductAttributesPage() {
                     onClick={() => openValueNew(a.public_id)}
                   >
                     <Plus className="mr-1 size-3.5" />
-                    Add value
+                    {tPages("attributesAddValue")}
                   </Button>
                 </div>
 
@@ -306,25 +312,27 @@ export default function ProductAttributesPage() {
                     className="rounded-lg border border-border bg-muted/20 p-3 space-y-2"
                   >
                     <p className="text-sm font-medium">
-                      {editingValue.public_id === "new" ? "New value" : "Edit value"}
+                      {editingValue.public_id === "new"
+                        ? tPages("attributesNewValue")
+                        : tPages("attributesEditValue")}
                     </p>
                     <Input
                       required
                       className="w-full text-sm"
                       value={valueForm.value}
                       onChange={(e) => setValueForm({ ...valueForm, value: e.target.value })}
-                      placeholder="e.g. Red, M"
+                      placeholder={tPages("attributesValuePlaceholder")}
                     />
                     <Input
                       type="number"
                       className="w-32 font-numbers text-sm"
                       value={valueForm.order}
                       onChange={(e) => setValueForm({ ...valueForm, order: e.target.value })}
-                      title="Order"
+                      title={tPages("attributesOrder")}
                     />
                     <div className="flex gap-2">
                       <Button type="submit" size="sm" disabled={valueSaving}>
-                        Save
+                        {tCommon("save")}
                       </Button>
                       <Button
                         type="button"
@@ -332,14 +340,14 @@ export default function ProductAttributesPage() {
                         size="sm"
                         onClick={() => setValueEditing(null)}
                       >
-                        Cancel
+                        {tCommon("cancel")}
                       </Button>
                     </div>
                   </form>
                 ) : null}
 
                 {a.values.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No values yet.</p>
+                  <p className="text-sm text-muted-foreground">{tPages("attributesNoValues")}</p>
                 ) : (
                   <ul className="divide-y divide-border rounded-lg border border-border">
                     {a.values.map((v) => (
@@ -349,14 +357,16 @@ export default function ProductAttributesPage() {
                       >
                         <div className="min-w-0 flex-1">
                           <ClickableText
-                            aria-label={`Edit value ${v.value}`}
+                            aria-label={tPages("attributesEditValueAria", { label: v.value })}
                             disabled={valueEditing !== null || attrEditing !== null}
                             onClick={() => openValueEdit(a.public_id, v)}
                             className="text-left disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {v.value}
                           </ClickableText>{" "}
-                          <span className="text-xs text-muted-foreground">(order {v.order})</span>
+                          <span className="text-xs text-muted-foreground">
+                            {tPages("attributesValueOrderMeta", { order: v.order })}
+                          </span>
                         </div>
                         <div className="flex shrink-0 gap-1">
                           <Button
@@ -364,11 +374,11 @@ export default function ProductAttributesPage() {
                             variant="ghost"
                             size="sm"
                             className="h-auto px-1 py-1 text-sm font-medium text-destructive underline decoration-destructive/80 underline-offset-4 transition-none hover:bg-transparent hover:text-destructive disabled:no-underline disabled:opacity-50"
-                            aria-label={`Delete value ${v.value}`}
+                            aria-label={tPages("attributesDeleteValueAria", { label: v.value })}
                             disabled={valueEditing !== null || attrEditing !== null}
                             onClick={() => deleteValue(v.public_id, v.value)}
                           >
-                            Delete
+                            {tCommon("delete")}
                           </Button>
                         </div>
                       </li>

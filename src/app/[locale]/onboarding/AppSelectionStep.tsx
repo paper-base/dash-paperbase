@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { OPTIONAL_APP_IDS, APP_CONFIG, type AppConfig } from "@/config/apps";
 
@@ -18,6 +19,9 @@ export function AppSelectionStep({
   onSubmit,
   onBack,
 }: AppSelectionStepProps) {
+  const t = useTranslations("auth.onboarding");
+  const tCommon = useTranslations("common");
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {error && (
@@ -26,10 +30,7 @@ export function AppSelectionStep({
         </div>
       )}
 
-      <p className="text-sm text-muted-foreground">
-        Products, Orders, and Customers are always enabled. Choose additional
-        apps for your store:
-      </p>
+      <p className="text-sm text-muted-foreground">{t("appsIntro")}</p>
 
       <div className="grid gap-2 sm:grid-cols-2">
         {OPTIONAL_APP_IDS.map((id) => {
@@ -74,14 +75,14 @@ export function AppSelectionStep({
           onClick={onBack}
           className="flex-1"
         >
-          Back
+          {tCommon("back")}
         </Button>
         <Button
           type="submit"
           disabled={loading}
           className="flex-1"
         >
-          {loading ? "Creating store..." : "Create store"}
+          {loading ? t("creatingStore") : t("createStore")}
         </Button>
       </div>
     </form>

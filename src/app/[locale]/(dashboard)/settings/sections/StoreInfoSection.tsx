@@ -2,6 +2,7 @@
 
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import type React from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
@@ -51,6 +52,7 @@ export default function StoreInfoSection({
   storeMessage: SettingsMessage;
   onSubmit: (e: FormEvent) => void;
 }) {
+  const t = useTranslations("settings");
   return (
     <section
       id="panel-store"
@@ -61,24 +63,24 @@ export default function StoreInfoSection({
     >
       <SettingsSectionBody>
         <div className="space-y-1">
-          <h2 className="text-lg font-medium text-foreground">Store Info</h2>
-          <p className="text-sm text-muted-foreground">Your store identity. Powers frontend, invoices, and emails.</p>
+          <h2 className="text-lg font-medium text-foreground">{t("store.heading")}</h2>
+          <p className="text-sm text-muted-foreground">{t("store.subtitle")}</p>
         </div>
 
         <form onSubmit={onSubmit} className="w-full space-y-6">
         <div className="space-y-2">
           <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            Logo
+            {t("store.logo")}
           </label>
 
           <div className="flex flex-wrap items-center gap-4">
             {previewUrl && !clearLogo ? (
               <div className="relative size-20 overflow-hidden rounded-full border border-border bg-muted">
-                <img src={previewUrl} alt="Logo preview" className="size-full object-cover" />
+                <img src={previewUrl} alt={t("store.logoPreviewAlt")} className="size-full object-cover" />
               </div>
             ) : (
               <div className="flex size-20 items-center justify-center rounded-full border border-dashed border-border bg-muted text-muted-foreground">
-                No logo
+                {t("store.noLogo")}
               </div>
             )}
 
@@ -106,7 +108,7 @@ export default function StoreInfoSection({
                       if (e.target.checked) onLogoFileChange(null);
                     }}
                   />
-                  Remove logo
+                  {t("store.removeLogo")}
                 </label>
               )}
             </div>
@@ -116,69 +118,69 @@ export default function StoreInfoSection({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col gap-2">
             <label htmlFor="store_name" className="text-sm font-medium leading-normal text-foreground">
-              Store name
+              {t("store.storeName")}
             </label>
             <Input
               id="store_name"
               value={storeName}
               onChange={(e) => onStoreNameChange(e.target.value)}
-              placeholder="e.g. Acme"
+              placeholder={t("store.storeNamePlaceholder")}
               className="w-full"
             />
           </div>
 
           <div className="flex flex-col gap-2">
             <label htmlFor="store_type" className="text-sm font-medium leading-normal text-foreground">
-              Store type
+              {t("store.storeType")}
             </label>
             <Input
               id="store_type"
               value={storeType}
               onChange={(e) => onStoreTypeChange(e.target.value)}
-              placeholder="e.g. Fashion, Retail, E-commerce"
+              placeholder={t("store.storeTypePlaceholder")}
               className="w-full"
               maxLength={60}
             />
-            <p className="text-xs text-muted-foreground">Category or type of your store. Max 4 words.</p>
+            <p className="text-xs text-muted-foreground">{t("store.storeTypeHint")}</p>
           </div>
 
           <div className="flex flex-col gap-2">
             <label htmlFor="store_contact_email" className="text-sm font-medium leading-normal text-foreground">
-              Contact email
+              {t("store.contactEmail")}
             </label>
             <Input
               id="store_contact_email"
               type="email"
               value={contactEmail}
               onChange={(e) => onContactEmailChange(e.target.value)}
-              placeholder="contact@yourstore.com"
+              placeholder={t("store.contactEmailPlaceholder")}
               className="w-full"
             />
           </div>
 
           <div className="flex flex-col gap-2">
             <label htmlFor="store_phone" className="text-sm font-medium leading-normal text-foreground">
-              Phone number
+              {t("store.phone")}
             </label>
             <Input
               id="store_phone"
               type="tel"
               value={phone}
               onChange={(e) => onPhoneChange(e.target.value)}
-              placeholder="+880 1XXX-XXXXXX"
+              placeholder={t("store.phonePlaceholder")}
               className="w-full"
             />
           </div>
 
           <div className="flex flex-col gap-2 md:col-span-2">
             <label htmlFor="store_address" className="text-sm font-medium leading-normal text-foreground">
-              Address
+              {t("store.address")}
             </label>
             <Input
               id="store_address"
               value={address}
               onChange={(e) => onAddressChange(e.target.value)}
-              placeholder="123 Main St, City, Country"
+              placeholder={t("store.addressPlaceholder")}
               className="w-full"
             />
           </div>
@@ -193,7 +195,7 @@ export default function StoreInfoSection({
         )}
 
         <Button type="submit" disabled={storeSaving}>
-          {storeSaving ? "Saving…" : "Save store settings"}
+          {storeSaving ? t("saving") : t("store.saveButton")}
         </Button>
         </form>
       </SettingsSectionBody>

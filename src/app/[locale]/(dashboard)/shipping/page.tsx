@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Plus, Undo2 } from "lucide-react";
 
@@ -71,6 +72,29 @@ function unwrap<T>(data: PaginatedResponse<T> | T[]): T[] {
 
 export default function ShippingPage() {
   const router = useRouter();
+  const tPages = useTranslations("pages");
+  const tCommon = useTranslations("common");
+
+  const methodTypeLabel = useMemo(
+    () =>
+      ({
+        standard: tPages("shippingMethodTypeStandard"),
+        express: tPages("shippingMethodTypeExpress"),
+        pickup: tPages("shippingMethodTypePickup"),
+        other: tPages("shippingMethodTypeOther"),
+      }) as Record<ShippingMethod["method_type"], string>,
+    [tPages],
+  );
+
+  const rateTypeLabel = useMemo(
+    () =>
+      ({
+        flat: tPages("shippingRateTypeFlat"),
+        order_total: tPages("shippingRateTypeOrderTotal"),
+        weight: tPages("shippingRateTypeWeight"),
+      }) as Record<ShippingRate["rate_type"], string>,
+    [tPages],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
 
@@ -123,9 +147,9 @@ export default function ShippingPage() {
         const detail =
           (e.response?.data as { detail?: string } | undefined)?.detail ||
           (typeof e.response?.data === "string" ? e.response?.data : null);
-        setError(detail || "Failed to load shipping rules.");
+        setError(detail || tPages("shippingLoadFailed"));
       } else {
-        setError("Failed to load shipping rules.");
+        setError(tPages("shippingLoadFailed"));
       }
     } finally {
       setLoading(false);
@@ -202,10 +226,10 @@ export default function ShippingPage() {
         const data = e.response?.data as
           | { detail?: string; name?: string[] }
           | undefined;
-        const msg = data?.name?.[0] || data?.detail || "Failed to save zone.";
+        const msg = data?.name?.[0] || data?.detail || tPages("shippingSaveZoneFailed");
         setError(msg);
       } else {
-        setError("Failed to save zone.");
+        setError(tPages("shippingSaveZoneFailed"));
       }
     } finally {
       setSaving(false);
@@ -237,10 +261,10 @@ export default function ShippingPage() {
         const data = e.response?.data as
           | { detail?: string; name?: string[] }
           | undefined;
-        const msg = data?.name?.[0] || data?.detail || "Failed to save method.";
+        const msg = data?.name?.[0] || data?.detail || tPages("shippingSaveMethodFailed");
         setError(msg);
       } else {
-        setError("Failed to save method.");
+        setError(tPages("shippingSaveMethodFailed"));
       }
     } finally {
       setSaving(false);
@@ -273,9 +297,9 @@ export default function ShippingPage() {
       console.error(e);
       if (axios.isAxiosError(e)) {
         const data = e.response?.data as { detail?: string } | undefined;
-        setError(data?.detail || "Failed to save rate.");
+        setError(data?.detail || tPages("shippingSaveRateFailed"));
       } else {
-        setError("Failed to save rate.");
+        setError(tPages("shippingSaveRateFailed"));
       }
     } finally {
       setSaving(false);
@@ -283,14 +307,14 @@ export default function ShippingPage() {
   }
 
   async function del(kind: "zones" | "methods" | "rates", publicId: string) {
-    if (!confirm("Delete this item?")) return;
+    if (!confirm(tPages("shippingConfirmDelete"))) return;
     setError("");
     try {
       await api.delete(`admin/shipping-${kind}/${publicId}/`);
       fetchAll();
     } catch (e) {
       console.error(e);
-      setError("Failed to delete item.");
+      setError(tPages("shippingDeleteFailed"));
     }
   }
 
@@ -310,13 +334,13 @@ export default function ShippingPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              aria-label="Go back"
+              aria-label={tPages("shippingGoBackAria")}
               className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
             >
               <Undo2 className="h-4 w-4" />
             </button>
           </div>
-          <h1 className="text-2xl font-medium text-foreground">Shipping</h1>
+          <h1 className="text-2xl font-medium text-foreground">{tPages("shippingTitle")}</h1>
         </div>
       </div>
 
@@ -329,14 +353,16 @@ export default function ShippingPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="rounded-xl border border-border bg-card p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium">Zones ({zones.length})</h2>
+            <h2 className="text-lg font-medium">
+              {tPages("shippingZonesTitle", { count: zones.length })}
+            </h2>
             <button
               type="button"
               onClick={openNewZone}
               className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted"
             >
               <Plus className="h-4 w-4" />
-              Add
+              {tCommon("add")}
             </button>
           </div>
 
@@ -346,7 +372,7 @@ export default function ShippingPage() {
                 value={zoneForm.name}
                 onChange={(e) => setZoneForm((f) => ({ ...f, name: e.target.value }))}
                 className="text-sm"
-                placeholder="Zone name (e.g. Dhaka / Inside)"
+                placeholder={tPages("shippingZoneNamePlaceholder")}
                 required
               />
               <label className="flex items-center gap-2 text-sm">
@@ -358,7 +384,7 @@ export default function ShippingPage() {
                     setZoneForm((f) => ({ ...f, is_active: e.target.checked }))
                   }
                 />
-                Active
+                {tCommon("active")}
               </label>
               <div className="flex gap-2">
                 <button
@@ -366,14 +392,14 @@ export default function ShippingPage() {
                   disabled={saving}
                   className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
-                  {saving ? "Saving..." : "Save"}
+                  {saving ? tCommon("saving") : tCommon("save")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditingZone(null)}
                   className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
                 >
-                  Cancel
+                  {tCommon("cancel")}
                 </button>
               </div>
             </form>
@@ -390,7 +416,7 @@ export default function ShippingPage() {
                     <div className="font-medium">
                       {z.name}{" "}
                       <span className="text-xs text-muted-foreground">
-                        {z.is_active ? "Active" : "Inactive"}
+                        {z.is_active ? tCommon("active") : tCommon("inactive")}
                       </span>
                     </div>
                     <div className="text-xs text-muted-foreground">
@@ -402,14 +428,14 @@ export default function ShippingPage() {
                       onClick={() => openEditZone(z)}
                       className="mr-2 text-sm"
                     >
-                      Edit
+                      {tCommon("edit")}
                     </ClickableText>
                     <ClickableText
                       variant="destructive"
                       onClick={() => del("zones", z.public_id)}
                       className="text-sm"
                     >
-                      Delete
+                      {tCommon("delete")}
                     </ClickableText>
                   </div>
                 </div>
@@ -417,7 +443,7 @@ export default function ShippingPage() {
             ))}
             {zones.length === 0 && (
               <div className="rounded-lg border border-dashed border-border/60 bg-background px-3 py-8 text-center text-sm text-muted-foreground">
-                No zones yet.
+                {tPages("shippingZonesEmpty")}
               </div>
             )}
           </div>
@@ -425,14 +451,16 @@ export default function ShippingPage() {
 
         <section className="rounded-xl border border-border bg-card p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium">Methods ({methods.length})</h2>
+            <h2 className="text-lg font-medium">
+              {tPages("shippingMethodsTitle", { count: methods.length })}
+            </h2>
             <button
               type="button"
               onClick={openNewMethod}
               className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted"
             >
               <Plus className="h-4 w-4" />
-              Add
+              {tCommon("add")}
             </button>
           </div>
 
@@ -442,7 +470,7 @@ export default function ShippingPage() {
                 value={methodForm.name}
                 onChange={(e) => setMethodForm((f) => ({ ...f, name: e.target.value }))}
                 className="text-sm"
-                placeholder="Method name (e.g. Standard)"
+                placeholder={tPages("shippingMethodNamePlaceholder")}
                 required
               />
               <div className="grid grid-cols-2 gap-3">
@@ -456,20 +484,22 @@ export default function ShippingPage() {
                   }
                   className="text-sm"
                 >
-                  <option value="standard">Standard</option>
-                  <option value="express">Express</option>
-                  <option value="pickup">Pickup</option>
-                  <option value="other">Other</option>
+                  <option value="standard">{tPages("shippingMethodTypeStandard")}</option>
+                  <option value="express">{tPages("shippingMethodTypeExpress")}</option>
+                  <option value="pickup">{tPages("shippingMethodTypePickup")}</option>
+                  <option value="other">{tPages("shippingMethodTypeOther")}</option>
                 </Select>
                 <Input
                   value={methodForm.order}
                   onChange={(e) => setMethodForm((f) => ({ ...f, order: e.target.value }))}
                   className="text-sm"
-                  placeholder="Sort order"
+                  placeholder={tPages("shippingSortOrderPlaceholder")}
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Applies to zones</label>
+                <label className="mb-1 block text-sm font-medium">
+                  {tPages("shippingAppliesToZones")}
+                </label>
                 <select
                   multiple
                   value={methodForm.zone_public_ids}
@@ -486,7 +516,7 @@ export default function ShippingPage() {
                   ))}
                 </select>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  Leave empty to apply to all zones.
+                  {tPages("shippingZonesEmptyHint")}
                 </div>
               </div>
               <label className="flex items-center gap-2 text-sm">
@@ -498,7 +528,7 @@ export default function ShippingPage() {
                     setMethodForm((f) => ({ ...f, is_active: e.target.checked }))
                   }
                 />
-                Active
+                {tCommon("active")}
               </label>
               <div className="flex gap-2">
                 <button
@@ -506,14 +536,14 @@ export default function ShippingPage() {
                   disabled={saving}
                   className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
-                  {saving ? "Saving..." : "Save"}
+                  {saving ? tCommon("saving") : tCommon("save")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditingMethod(null)}
                   className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
                 >
-                  Cancel
+                  {tCommon("cancel")}
                 </button>
               </div>
             </form>
@@ -530,14 +560,18 @@ export default function ShippingPage() {
                     <div className="font-medium">
                       {m.name}{" "}
                       <span className="text-xs text-muted-foreground">
-                        {m.is_active ? "Active" : "Inactive"}
+                        {m.is_active ? tCommon("active") : tCommon("inactive")}
                       </span>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      type: {m.method_type} · order: {m.order} · zones:{" "}
-                      {(m.zone_public_ids || [])
-                        .map((pid) => zoneByPublicId.get(pid)?.name || pid)
-                        .join(", ") || "all"}
+                      {tPages("shippingMethodMeta", {
+                        type: methodTypeLabel[m.method_type],
+                        order: m.order,
+                        zones:
+                          (m.zone_public_ids || [])
+                            .map((pid) => zoneByPublicId.get(pid)?.name || pid)
+                            .join(", ") || tPages("shippingZonesAll"),
+                      })}
                     </div>
                   </div>
                   <div className="shrink-0 text-right text-sm">
@@ -545,14 +579,14 @@ export default function ShippingPage() {
                       onClick={() => openEditMethod(m)}
                       className="mr-2 text-sm"
                     >
-                      Edit
+                      {tCommon("edit")}
                     </ClickableText>
                     <ClickableText
                       variant="destructive"
                       onClick={() => del("methods", m.public_id)}
                       className="text-sm"
                     >
-                      Delete
+                      {tCommon("delete")}
                     </ClickableText>
                   </div>
                 </div>
@@ -560,7 +594,7 @@ export default function ShippingPage() {
             ))}
             {methods.length === 0 && (
               <div className="rounded-lg border border-dashed border-border/60 bg-background px-3 py-8 text-center text-sm text-muted-foreground">
-                No methods yet.
+                {tPages("shippingMethodsEmpty")}
               </div>
             )}
           </div>
@@ -568,14 +602,16 @@ export default function ShippingPage() {
 
         <section className="rounded-xl border border-border bg-card p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium">Rates ({rates.length})</h2>
+            <h2 className="text-lg font-medium">
+              {tPages("shippingRatesTitle", { count: rates.length })}
+            </h2>
             <button
               type="button"
               onClick={openNewRate}
               className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted"
             >
               <Plus className="h-4 w-4" />
-              Add
+              {tCommon("add")}
             </button>
           </div>
 
@@ -590,7 +626,7 @@ export default function ShippingPage() {
                 required
               >
                 <option value="" disabled>
-                  Select method
+                  {tPages("shippingSelectMethod")}
                 </option>
                 {methods.map((m) => (
                   <option key={m.public_id} value={m.public_id}>
@@ -607,7 +643,7 @@ export default function ShippingPage() {
                 required
               >
                 <option value="" disabled>
-                  Select zone
+                  {tPages("shippingSelectZone")}
                 </option>
                 {zones.map((z) => (
                     <option key={z.public_id} value={z.public_id}>
@@ -626,15 +662,15 @@ export default function ShippingPage() {
                   }
                   className="text-sm"
                 >
-                  <option value="flat">Flat</option>
-                  <option value="order_total">By order total</option>
-                  <option value="weight">By weight</option>
+                  <option value="flat">{tPages("shippingRateTypeFlat")}</option>
+                  <option value="order_total">{tPages("shippingRateTypeOrderTotal")}</option>
+                  <option value="weight">{tPages("shippingRateTypeWeight")}</option>
                 </Select>
                 <Input
                   value={rateForm.price}
                   onChange={(e) => setRateForm((f) => ({ ...f, price: e.target.value }))}
                   className="text-sm"
-                  placeholder="Price (e.g. 60.00)"
+                  placeholder={tPages("shippingPricePlaceholder")}
                   required
                 />
               </div>
@@ -645,7 +681,7 @@ export default function ShippingPage() {
                     setRateForm((f) => ({ ...f, min_order_total: e.target.value }))
                   }
                   className="text-sm"
-                  placeholder="Min order total (optional)"
+                  placeholder={tPages("shippingMinOrderPlaceholder")}
                 />
                 <Input
                   value={rateForm.max_order_total}
@@ -653,7 +689,7 @@ export default function ShippingPage() {
                     setRateForm((f) => ({ ...f, max_order_total: e.target.value }))
                   }
                   className="text-sm"
-                  placeholder="Max order total (optional)"
+                  placeholder={tPages("shippingMaxOrderPlaceholder")}
                 />
               </div>
               <label className="flex items-center gap-2 text-sm">
@@ -665,7 +701,7 @@ export default function ShippingPage() {
                     setRateForm((f) => ({ ...f, is_active: e.target.checked }))
                   }
                 />
-                Active
+                {tCommon("active")}
               </label>
               <div className="flex gap-2">
                 <button
@@ -673,14 +709,14 @@ export default function ShippingPage() {
                   disabled={saving}
                   className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
-                  {saving ? "Saving..." : "Save"}
+                  {saving ? tCommon("saving") : tCommon("save")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditingRate(null)}
                   className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
                 >
-                  Cancel
+                  {tCommon("cancel")}
                 </button>
               </div>
             </form>
@@ -702,14 +738,16 @@ export default function ShippingPage() {
                         r.shipping_zone_public_id}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {r.is_active ? "Active" : "Inactive"} · {r.rate_type} · price:{" "}
-                      {r.price}
-                      {(r.min_order_total || r.max_order_total) && (
-                        <>
-                          {" "}
-                          · range: {r.min_order_total || "—"} – {r.max_order_total || "—"}
-                        </>
-                      )}
+                      {tPages("shippingRateMeta", {
+                        status: r.is_active ? tCommon("active") : tCommon("inactive"),
+                        rateType: rateTypeLabel[r.rate_type],
+                        price: r.price,
+                      })}
+                      {(r.min_order_total || r.max_order_total) &&
+                        tPages("shippingRateRange", {
+                          min: r.min_order_total || "—",
+                          max: r.max_order_total || "—",
+                        })}
                     </div>
                   </div>
                   <div className="shrink-0 text-right text-sm">
@@ -717,14 +755,14 @@ export default function ShippingPage() {
                       onClick={() => openEditRate(r)}
                       className="mr-2 text-sm"
                     >
-                      Edit
+                      {tCommon("edit")}
                     </ClickableText>
                     <ClickableText
                       variant="destructive"
                       onClick={() => del("rates", r.public_id)}
                       className="text-sm"
                     >
-                      Delete
+                      {tCommon("delete")}
                     </ClickableText>
                   </div>
                 </div>
@@ -732,7 +770,7 @@ export default function ShippingPage() {
             ))}
             {rates.length === 0 && (
               <div className="rounded-lg border border-dashed border-border/60 bg-background px-3 py-8 text-center text-sm text-muted-foreground">
-                No rates yet.
+                {tPages("shippingRatesEmpty")}
               </div>
             )}
           </div>

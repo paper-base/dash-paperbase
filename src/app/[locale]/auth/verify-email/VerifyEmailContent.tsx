@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -27,13 +28,13 @@ function decodeEmailParam(value: string): string {
   }
 }
 
-function extractMessage(err: unknown): string {
+function extractMessage(err: unknown, generic: string): string {
   const res =
     err && typeof err === "object" && "response" in err
       ? (err as { response?: { data?: Record<string, unknown> } }).response
           ?.data
       : null;
-  if (!res || typeof res !== "object") return "Something went wrong. Please try again.";
+  if (!res || typeof res !== "object") return generic;
   const msg = (v: unknown) =>
     Array.isArray(v) ? (v[0] as string) : typeof v === "string" ? v : null;
   return (
@@ -43,11 +44,13 @@ function extractMessage(err: unknown): string {
     (typeof res === "object" && res !== null && "non_field_errors" in res
       ? msg((res as { non_field_errors?: unknown }).non_field_errors)
       : null) ??
-    "Something went wrong. Please try again."
+    generic
   );
 }
 
 export default function VerifyEmailContent() {
+  const t = useTranslations("auth.verifyEmail");
+  const tCommon = useTranslations("common");
   const searchParams = useSearchParams();
   const uid = searchParams.get("uid") ?? "";
   const token = searchParams.get("token") ?? "";
@@ -103,7 +106,7 @@ export default function VerifyEmailContent() {
     if (typeof window !== "undefined" && sessionStorage.getItem(doneKey)) {
       clearPendingVerificationEmail();
       setLinkStatus("success");
-      setLinkMessage("Email verified successfully.");
+      setLinkMessage(t("verifiedDefault"));
       return;
     }
     setLinkStatus("loading");
@@ -115,19 +118,19 @@ export default function VerifyEmailContent() {
         setLinkMessage(
           typeof data?.detail === "string"
             ? data.detail
-            : "Email verified successfully."
+            : t("verifiedDefault")
         );
       })
       .catch((err: unknown) => {
         setLinkStatus("error");
-        setLinkMessage(extractMessage(err));
+        setLinkMessage(extractMessage(err, t("genericError")));
       });
-  }, [isFromEmailLink, uid, token]);
+  }, [isFromEmailLink, uid, token, t]);
 
   async function handleResend() {
     const resendEmail = effectiveEmail || normalizeEmail(emailInput);
     if (!resendEmail) {
-      setResendError("Email address is required to resend verification.");
+      setResendError(t("emailRequiredResend"));
       return;
     }
     setPendingVerificationEmail(resendEmail);
@@ -144,7 +147,7 @@ export default function VerifyEmailContent() {
         cooldown.startCooldown(info.retryAfter);
         setResendError("");
       } else {
-        setResendError(extractMessage(err));
+        setResendError(extractMessage(err, t("genericError")));
       }
     } finally {
       setResendLoading(false);
@@ -155,7 +158,7 @@ export default function VerifyEmailContent() {
     if (linkStatus === "loading" || linkStatus === "idle") {
       return (
         <div className="mx-auto w-11/12 max-w-sm text-center text-sm text-muted-foreground sm:w-full">
-          Verifying your email…
+          {t("verifying")}
         </div>
       );
     }
@@ -164,7 +167,7 @@ export default function VerifyEmailContent() {
         <div className="space-y-8 sm:space-y-10">
           <div className="space-y-2 text-center">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Email verified
+              {t("verifiedTitle")}
             </h1>
             <p className="text-sm leading-relaxed text-muted-foreground">
               {linkMessage}
@@ -173,7 +176,7 @@ export default function VerifyEmailContent() {
 
           <div className="mx-auto w-11/12 max-w-sm space-y-6 sm:w-full">
             <Button asChild className="mt-2 w-full">
-              <Link href="/login">Log in</Link>
+              <Link href="/login">{t("logIn")}</Link>
             </Button>
           </div>
         </div>
@@ -183,17 +186,15 @@ export default function VerifyEmailContent() {
       <div className="space-y-8 sm:space-y-10">
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Verification failed
+            {t("failedTitle")}
           </h1>
           <p className="text-sm leading-relaxed text-destructive">{linkMessage}</p>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            Request a new link from the signup flow or contact support.
-          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">{t("failedHint")}</p>
         </div>
 
         <div className="mx-auto w-11/12 max-w-sm space-y-6 sm:w-full">
           <Button asChild variant="outline" className="mt-2 w-full">
-            <Link href="/login">Back to login</Link>
+            <Link href="/login">{t("backToLogin")}</Link>
           </Button>
         </div>
       </div>
@@ -204,12 +205,9 @@ export default function VerifyEmailContent() {
     <div className="space-y-8 sm:space-y-10">
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          Check your email
+          {t("checkTitle")}
         </h1>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          We&apos;ve sent a verification link to your email address. Please check your
-          inbox.
-        </p>
+        <p className="text-sm leading-relaxed text-muted-foreground">{t("checkBody")}</p>
       </div>
 
       <div className="mx-auto w-11/12 max-w-sm space-y-6 sm:w-full">
@@ -224,21 +222,19 @@ export default function VerifyEmailContent() {
               autoComplete="email"
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
-              placeholder="Enter your email address"
+              placeholder={t("emailPlaceholder")}
             />
-            <p className="text-xs text-muted-foreground">
-              Enter your signup email to request a new verification link.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("emailHint")}</p>
           </div>
         )}
 
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Didn&apos;t receive the email? Check spam or resend.
+          {t("resendHint")}
         </p>
 
         {resendSuccess && (
           <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-foreground">
-            If the email exists, verification link has been sent.
+            {t("resendSuccess")}
           </div>
         )}
         {resendError ? (
@@ -254,10 +250,10 @@ export default function VerifyEmailContent() {
           onClick={handleResend}
         >
           {cooldown.isLimited
-            ? `Retry in ${cooldown.remaining}s`
+            ? tCommon("retryInSeconds", { seconds: cooldown.remaining })
             : resendLoading
-              ? "Sending…"
-              : "Resend email"}
+              ? t("sending")
+              : t("resendEmail")}
         </Button>
       </div>
 
@@ -266,7 +262,7 @@ export default function VerifyEmailContent() {
           href="/login"
           className="font-medium text-foreground underline-offset-4 hover:underline"
         >
-          Back to login
+          {t("backToLogin")}
         </Link>
       </p>
     </div>

@@ -24,16 +24,31 @@ export type SettingsSection =
   | "billing"
   | "data";
 
-export const SECTIONS: { id: SettingsSection; label: string; icon: LucideIcon }[] = [
-  { id: "store", label: "Store Info", icon: Store },
-  { id: "eav", label: "Dynamic Fields", icon: Layers },
-  { id: "apps", label: "Apps", icon: LayoutGrid },
-  { id: "integrations", label: "Integrations", icon: Plug },
-  { id: "networking", label: "Networking", icon: Network },
-  { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "account", label: "Account", icon: User },
-  { id: "security", label: "Security", icon: Shield },
-  { id: "billing", label: "Billing", icon: CreditCard },
-  { id: "data", label: "Data & Export", icon: Database },
-];
+export type SettingsSectionLabelKey =
+  | "sectionStore"
+  | "sectionEav"
+  | "sectionApps"
+  | "sectionIntegrations"
+  | "sectionNetworking"
+  | "sectionNotifications"
+  | "sectionAccount"
+  | "sectionSecurity"
+  | "sectionBilling"
+  | "sectionData";
 
+export const SECTIONS: {
+  id: SettingsSection;
+  labelKey: SettingsSectionLabelKey;
+  icon: LucideIcon;
+}[] = [
+  { id: "store", labelKey: "sectionStore", icon: Store },
+  { id: "eav", labelKey: "sectionEav", icon: Layers },
+  { id: "apps", labelKey: "sectionApps", icon: LayoutGrid },
+  { id: "integrations", labelKey: "sectionIntegrations", icon: Plug },
+  { id: "networking", labelKey: "sectionNetworking", icon: Network },
+  { id: "notifications", labelKey: "sectionNotifications", icon: Bell },
+  { id: "account", labelKey: "sectionAccount", icon: User },
+  { id: "security", labelKey: "sectionSecurity", icon: Shield },
+  { id: "billing", labelKey: "sectionBilling", icon: CreditCard },
+  { id: "data", labelKey: "sectionData", icon: Database },
+];

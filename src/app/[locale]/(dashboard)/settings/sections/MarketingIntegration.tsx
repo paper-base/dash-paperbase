@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Plug, Plus, X, Save } from "lucide-react";
 import api from "@/lib/api";
 import type {
@@ -11,6 +12,7 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { formatIntegrationDate } from "../formatIntegrationDate";
 
 type ConnectForm = {
   provider: string;
@@ -26,14 +28,15 @@ const emptyForm: ConnectForm = {
   test_event_code: "",
 };
 
-const EVENT_LABELS: { key: keyof IntegrationEventSettings; label: string }[] = [
-  { key: "track_purchase", label: "Purchase" },
-  { key: "track_initiate_checkout", label: "Initiate Checkout" },
-  { key: "track_view_content", label: "View Content" },
-  { key: "track_page_view", label: "Page View" },
+const EVENT_LABEL_KEYS: { key: keyof IntegrationEventSettings; labelKey: string }[] = [
+  { key: "track_purchase", labelKey: "eventPurchase" },
+  { key: "track_initiate_checkout", labelKey: "eventInitiateCheckout" },
+  { key: "track_view_content", labelKey: "eventViewContent" },
+  { key: "track_page_view", labelKey: "eventPageView" },
 ];
 
 export default function MarketingIntegration() {
+  const t = useTranslations("settings");
   const [integrations, setIntegrations] = useState<MarketingIntegrationType[]>(
     []
   );
@@ -82,7 +85,7 @@ export default function MarketingIntegration() {
         Object.values(data ?? {})
           .flat()
           .join(" ") ??
-        "Failed to connect integration.";
+        t("marketing.connectFailed");
       setError(msg);
     } finally {
       setSaving(false);
@@ -90,7 +93,7 @@ export default function MarketingIntegration() {
   }
 
   async function handleDelete(publicId: string) {
-    if (!confirm("Disconnect this marketing integration?")) return;
+    if (!confirm(t("marketing.confirmDisconnect"))) return;
     setDeletingId(publicId);
     try {
       await api.delete(`admin/marketing-integrations/${publicId}/`);
@@ -138,9 +141,9 @@ export default function MarketingIntegration() {
 
   const providerLabel = (provider: string) => {
     const map: Record<string, string> = {
-      facebook: "Conversions API",
-      google_analytics: "Google Analytics",
-      tiktok: "TikTok",
+      facebook: t("marketing.providerFacebook"),
+      google_analytics: t("marketing.providerGoogle"),
+      tiktok: t("marketing.providerTiktok"),
     };
     return map[provider] ?? provider;
   };
@@ -152,9 +155,7 @@ export default function MarketingIntegration() {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Plug className="size-5 text-muted-foreground" aria-hidden />
-          <h3 className="text-sm font-semibold text-foreground">
-            Marketing Integrations
-          </h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("marketing.heading")}</h3>
         </div>
         {!showForm && integrations.length > 0 && (
           <Button
@@ -164,25 +165,17 @@ export default function MarketingIntegration() {
             className="text-xs"
           >
             <Plus className="mr-1 size-3.5" />
-            Add
+            {t("add")}
           </Button>
         )}
       </div>
-      <p className="mb-2 text-xs text-muted-foreground">
-        Connect server-side marketing tools to measure campaigns and attribute
-        conversions. Credentials are stored securely on your store.
-      </p>
-      <p className="mb-4 text-xs text-muted-foreground/80 italic">
-        Google Analytics, TikTok, and other marketing integrations are coming
-        soon.
-      </p>
+      <p className="mb-2 text-xs text-muted-foreground">{t("marketing.intro")}</p>
+      <p className="mb-4 text-xs text-muted-foreground/80 italic">{t("marketing.comingSoon")}</p>
 
       {showForm && (
         <div className="mb-4 rounded-lg border border-border bg-background p-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-foreground">
-              Connect Marketing Integration
-            </span>
+            <span className="text-sm font-medium text-foreground">{t("marketing.connectTitle")}</span>
             <button
               type="button"
               onClick={() => {
@@ -203,23 +196,19 @@ export default function MarketingIntegration() {
             {!hasFacebook && (
               <>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-foreground">
-                    Pixel ID
-                  </label>
+                  <label className="text-sm font-medium text-foreground">{t("marketing.pixelId")}</label>
                   <Input
                     required
                     value={form.pixel_id}
                     onChange={(e) =>
                       setForm({ ...form, pixel_id: e.target.value })
                     }
-                    placeholder="e.g. 123456789012345"
+                    placeholder={t("marketing.pixelPlaceholder")}
                     className="max-w-md"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-foreground">
-                    Access Token
-                  </label>
+                  <label className="text-sm font-medium text-foreground">{t("marketing.accessToken")}</label>
                   <Input
                     type="password"
                     required
@@ -227,40 +216,35 @@ export default function MarketingIntegration() {
                     onChange={(e) =>
                       setForm({ ...form, access_token: e.target.value })
                     }
-                    placeholder="Enter your Conversions API access token"
+                    placeholder={t("marketing.accessTokenPlaceholder")}
                     className="max-w-md"
                     autoComplete="off"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-foreground">
-                    Test Event Code{" "}
-                    <span className="text-muted-foreground font-normal">
-                      (optional)
-                    </span>
+                    {t("marketing.testEventCode")}{" "}
+                    <span className="text-muted-foreground font-normal">{t("optionalTag")}</span>
                   </label>
                   <Input
                     value={form.test_event_code}
                     onChange={(e) =>
                       setForm({ ...form, test_event_code: e.target.value })
                     }
-                    placeholder="e.g. TEST12345"
+                    placeholder={t("marketing.testEventPlaceholder")}
                     className="max-w-md"
                   />
                 </div>
               </>
             )}
             {hasFacebook && (
-              <p className="text-sm text-muted-foreground">
-                This provider is already connected. Disconnect the existing
-                integration first.
-              </p>
+              <p className="text-sm text-muted-foreground">{t("marketing.alreadyConnected")}</p>
             )}
             <div className="flex gap-2 pt-1">
               {!hasFacebook && (
                 <Button type="submit" size="sm" disabled={saving}>
                   <Save className="mr-1 size-3.5" />
-                  {saving ? "Connecting..." : "Connect"}
+                  {saving ? t("marketing.connecting") : t("marketing.connect")}
                 </Button>
               )}
               <Button
@@ -272,7 +256,7 @@ export default function MarketingIntegration() {
                   setError("");
                 }}
               >
-                Cancel
+                {t("cancel")}
               </Button>
             </div>
           </form>
@@ -285,9 +269,7 @@ export default function MarketingIntegration() {
         </div>
       ) : integrations.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            No marketing integrations connected yet.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("marketing.empty")}</p>
           {!showForm && (
             <Button
               size="sm"
@@ -296,7 +278,7 @@ export default function MarketingIntegration() {
               className="text-xs"
             >
               <Plus className="mr-1 size-3.5" />
-              Connect Integration
+              {t("marketing.connectCta")}
             </Button>
           )}
         </div>
@@ -322,33 +304,33 @@ export default function MarketingIntegration() {
                           : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                       )}
                     >
-                      {integration.is_active ? "Active" : "Inactive"}
+                      {integration.is_active ? t("active") : t("inactive")}
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
                     <span>
-                      Pixel:{" "}
+                      {t("marketing.pixelLabel")}{" "}
                       <code className="font-mono">
                         {integration.pixel_id || "---"}
                       </code>
                     </span>
                     <span>
-                      Token:{" "}
+                      {t("marketing.tokenLabel")}{" "}
                       <code className="font-mono">
                         {integration.access_token_masked || "---"}
                       </code>
                     </span>
                     {integration.test_event_code && (
                       <span>
-                        Test Code:{" "}
+                        {t("marketing.testCodeLabel")}{" "}
                         <code className="font-mono">
                           {integration.test_event_code}
                         </code>
                       </span>
                     )}
                     <span>
-                      Connected{" "}
-                      {new Date(integration.created_at).toLocaleDateString()}
+                      {t("marketing.connectedOn")}{" "}
+                      {formatIntegrationDate(integration.created_at)}
                     </span>
                   </div>
                 </div>
@@ -361,10 +343,10 @@ export default function MarketingIntegration() {
                     className="text-xs"
                   >
                     {togglingId === integration.public_id
-                      ? "..."
+                      ? t("marketing.ellipsis")
                       : integration.is_active
-                        ? "Deactivate"
-                        : "Activate"}
+                        ? t("marketing.deactivate")
+                        : t("marketing.activate")}
                   </Button>
                   <Button
                     size="sm"
@@ -374,8 +356,8 @@ export default function MarketingIntegration() {
                     className="border-destructive text-destructive hover:bg-destructive/10 text-xs"
                   >
                     {deletingId === integration.public_id
-                      ? "Removing..."
-                      : "Disconnect"}
+                      ? t("marketing.removing")
+                      : t("marketing.disconnect")}
                   </Button>
                 </div>
               </div>
@@ -383,11 +365,9 @@ export default function MarketingIntegration() {
               {/* Event toggles */}
               {integration.event_settings && (
                 <div className="border-t border-border pt-3">
-                  <p className="text-xs font-medium text-foreground mb-2">
-                    Event Tracking
-                  </p>
+                  <p className="text-xs font-medium text-foreground mb-2">{t("marketing.eventTracking")}</p>
                   <div className="flex flex-wrap gap-x-5 gap-y-2">
-                    {EVENT_LABELS.map(({ key, label }) => (
+                    {EVENT_LABEL_KEYS.map(({ key, labelKey }) => (
                       <label
                         key={key}
                         className="inline-flex items-center gap-2 text-xs text-muted-foreground cursor-pointer"
@@ -405,7 +385,7 @@ export default function MarketingIntegration() {
                           }
                           className="form-checkbox size-3.5"
                         />
-                        {label}
+                        {t(`marketing.${labelKey}` as never)}
                       </label>
                     ))}
                   </div>

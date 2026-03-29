@@ -1,6 +1,7 @@
 "use client";
 
 import type { Dispatch, FormEvent, SetStateAction } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
@@ -26,6 +27,7 @@ export default function AccountSection({
   accountMessage: SettingsMessage;
   onSubmit: (e: FormEvent) => void;
 }) {
+  const t = useTranslations("settings");
   return (
     <section
       id="panel-account"
@@ -44,27 +46,27 @@ export default function AccountSection({
         <SettingsSectionBody>
           <form onSubmit={onSubmit} className="w-full space-y-6">
           <div className="space-y-1">
-            <h2 className="text-lg font-medium text-foreground">Account</h2>
-            <p className="text-sm text-muted-foreground">Owner information for this store.</p>
+            <h2 className="text-lg font-medium text-foreground">{t("account.heading")}</h2>
+            <p className="text-sm text-muted-foreground">{t("account.subtitle")}</p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="flex flex-col gap-2">
               <label htmlFor="owner_name" className="text-sm font-medium leading-normal text-foreground">
-                Owner name
+                {t("account.ownerName")}
               </label>
               <Input
                 id="owner_name"
                 value={ownerName}
                 onChange={(e) => onOwnerNameChange(e.target.value)}
-                placeholder="e.g. John Doe"
+                placeholder={t("account.ownerNamePlaceholder")}
                 className="w-full"
               />
             </div>
 
             <div className="flex flex-col gap-2">
               <label htmlFor="owner_email" className="text-sm font-medium leading-normal text-foreground">
-                Owner email
+                {t("account.ownerEmail")}
               </label>
               <Input
                 id="owner_email"
@@ -74,9 +76,7 @@ export default function AccountSection({
                 tabIndex={-1}
                 className="w-full cursor-not-allowed bg-muted text-muted-foreground"
               />
-              <p className="text-xs text-muted-foreground">
-                Your email address cannot be changed from the dashboard. Contact support if you need to update it.
-              </p>
+              <p className="text-xs text-muted-foreground">{t("account.emailReadonlyHint")}</p>
             </div>
           </div>
 
@@ -91,7 +91,7 @@ export default function AccountSection({
           )}
 
           <Button type="submit" disabled={accountSaving}>
-            {accountSaving ? "Saving…" : "Save account settings"}
+            {accountSaving ? t("saving") : t("account.saveButton")}
           </Button>
           </form>
         </SettingsSectionBody>

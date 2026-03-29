@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { useRateLimitCooldown, extractRateLimitInfo } from "@/hooks/useRateLimit
 import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
 
 export default function SecuritySection({ hidden }: { hidden: boolean }) {
+  const t = useTranslations("settings");
   const [isEnabled, setIsEnabled] = useState(false);
   const [qrCode, setQrCode] = useState("");
   const [secret, setSecret] = useState("");
@@ -40,7 +42,7 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
       const { data } = await api.get<{ is_enabled: boolean }>("auth/2fa/status/");
       setIsEnabled(!!data.is_enabled);
     } catch {
-      setMessage("Failed to load 2FA status.");
+      setMessage(t("security.loadStatusFailed"));
     }
   }
 
@@ -51,9 +53,9 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
       const { data } = await api.get<{ qr_code: string; secret: string }>("auth/2fa/setup/");
       setQrCode(data.qr_code);
       setSecret(data.secret);
-      setMessage("Scan the QR code, then enter the OTP to enable 2FA.");
+      setMessage(t("security.setupScanHint"));
     } catch {
-      setMessage("Could not start 2FA setup.");
+      setMessage(t("security.setupStartFailed"));
     } finally {
       setLoading(false);
     }
@@ -68,9 +70,9 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
       setQrCode("");
       setSecret("");
       setSetupCode("");
-      setMessage("2FA enabled successfully.");
+      setMessage(t("security.enabledSuccess"));
     } catch {
-      setMessage("Invalid OTP code.");
+      setMessage(t("security.invalidOtp"));
     } finally {
       setLoading(false);
     }
@@ -81,14 +83,14 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
     setRecoveryMessage("");
     try {
       await api.post("auth/2fa/recovery/request/");
-      setRecoveryMessage("Recovery code sent to your email");
+      setRecoveryMessage(t("security.recoverySent"));
     } catch (err: unknown) {
       const info = extractRateLimitInfo(err);
       if (info) {
         recoveryCooldown.startCooldown(info.retryAfter);
         setRecoveryMessage("");
       } else {
-        setRecoveryMessage("Could not send recovery code. Try again later.");
+        setRecoveryMessage(t("security.recoverySendFailed"));
       }
     } finally {
       setRecoveryRequestLoading(false);
@@ -108,11 +110,9 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
       setDisablePassword("");
       setDisableCode("");
       setRecoveryMessage("");
-      toast.success(
-        data.detail ?? "2FA has been disabled successfully."
-      );
+      toast.success(data.detail ?? t("security.toastDisabledDetail"));
     } catch {
-      setRecoveryMessage("Invalid or expired recovery code.");
+      setRecoveryMessage(t("security.recoveryInvalid"));
     } finally {
       setRecoveryVerifyLoading(false);
     }
@@ -130,9 +130,9 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
       setDisablePassword("");
       setDisableCode("");
       setMessage("");
-      toast.success("2FA disabled. Confirmation email sent.");
+      toast.success(t("security.toastDisabledEmail"));
     } catch {
-      setMessage("Failed to disable 2FA. Check password and OTP code.");
+      setMessage(t("security.disableFailed"));
     } finally {
       setLoading(false);
     }
@@ -141,11 +141,11 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
   async function changePassword() {
     setPasswordMessage("");
     if (!currentPassword || !newPassword || !confirmNewPassword) {
-      setPasswordMessage("All password fields are required.");
+      setPasswordMessage(t("security.passwordAllRequired"));
       return;
     }
     if (newPassword !== confirmNewPassword) {
-      setPasswordMessage("New passwords do not match.");
+      setPasswordMessage(t("security.passwordMismatch"));
       return;
     }
 
@@ -169,9 +169,9 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
       setNewPassword("");
       setConfirmNewPassword("");
       setLogoutAllDevices(false);
-      setPasswordMessage(data.detail ?? "Password changed successfully.");
+      setPasswordMessage(data.detail ?? t("security.passwordChanged"));
     } catch {
-      setPasswordMessage("Failed to change password. Check your current password.");
+      setPasswordMessage(t("security.passwordChangeFailed"));
     } finally {
       setPasswordLoading(false);
     }
@@ -187,35 +187,33 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
     >
       <SettingsSectionBody gap="compact">
         <div className="space-y-1">
-          <h2 className="text-lg font-medium text-foreground">Security</h2>
-          <p className="text-sm text-muted-foreground">Manage your authenticator-based 2FA.</p>
+          <h2 className="text-lg font-medium text-foreground">{t("security.heading")}</h2>
+          <p className="text-sm text-muted-foreground">{t("security.subtitle")}</p>
         </div>
 
         <div className="space-y-4">
         <div className="space-y-3 rounded-lg border border-border p-4">
-          <h3 className="text-sm font-medium text-foreground">Change password</h3>
-          <p className="text-sm text-muted-foreground">
-            Update your password to keep your account secure.
-          </p>
+          <h3 className="text-sm font-medium text-foreground">{t("security.changePassword")}</h3>
+          <p className="text-sm text-muted-foreground">{t("security.changePasswordHint")}</p>
           <Input
             type="password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            placeholder="Current password"
+            placeholder={t("security.currentPassword")}
             autoComplete="current-password"
           />
           <Input
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="New password"
+            placeholder={t("security.newPassword")}
             autoComplete="new-password"
           />
           <Input
             type="password"
             value={confirmNewPassword}
             onChange={(e) => setConfirmNewPassword(e.target.value)}
-            placeholder="Confirm new password"
+            placeholder={t("security.confirmNewPassword")}
             autoComplete="new-password"
           />
           <label className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -225,38 +223,42 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
               onChange={(e) => setLogoutAllDevices(e.target.checked)}
               className="form-checkbox"
             />
-            <span>Log out from all other devices</span>
+            <span>{t("security.logoutAllDevices")}</span>
           </label>
           <Button type="button" onClick={changePassword} disabled={passwordLoading}>
-            {passwordLoading ? "Updating…" : "Change password"}
+            {passwordLoading ? t("security.updating") : t("security.updatePassword")}
           </Button>
           {passwordMessage ? (
             <p className="text-sm text-muted-foreground">{passwordMessage}</p>
           ) : null}
         </div>
         <div className="text-sm">
-          Status:{" "}
+          {t("security.statusLabel")}{" "}
           <span className={isEnabled ? "text-emerald-500" : "text-muted-foreground"}>
-            {isEnabled ? "2FA Enabled" : "2FA Disabled"}
+            {isEnabled ? t("security.twoFaEnabled") : t("security.twoFaDisabled")}
           </span>
         </div>
 
         {!isEnabled ? (
           <div className="space-y-3 rounded-lg border border-border p-4">
             <Button type="button" onClick={startSetup} disabled={loading}>
-              Enable 2FA
+              {t("security.enable2fa")}
             </Button>
-            {qrCode ? <img src={qrCode} alt="2FA QR Code" className="h-44 w-44 border border-border" /> : null}
-            {secret ? <p className="text-xs text-muted-foreground">Secret (shown once): {secret}</p> : null}
+            {qrCode ? <img src={qrCode} alt={t("security.qrAlt")} className="h-44 w-44 border border-border" /> : null}
+            {secret ? (
+              <p className="text-xs text-muted-foreground">
+                {t("security.secretOnce")} {secret}
+              </p>
+            ) : null}
             {qrCode ? (
               <div className="flex gap-2">
                 <Input
                   value={setupCode}
                   onChange={(e) => setSetupCode(e.target.value)}
-                  placeholder="Enter OTP from app"
+                  placeholder={t("security.otpPlaceholder")}
                 />
                 <Button type="button" onClick={verifySetup} disabled={loading}>
-                  Verify
+                  {t("security.verify")}
                 </Button>
               </div>
             ) : null}
@@ -264,33 +266,26 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
         ) : (
           <div className="space-y-6">
             <div className="space-y-3 rounded-lg border border-border p-4">
-              <p className="text-sm text-muted-foreground">
-                To disable 2FA, confirm with your password and current OTP.
-              </p>
+              <p className="text-sm text-muted-foreground">{t("security.disableHint")}</p>
               <Input
                 type="password"
                 value={disablePassword}
                 onChange={(e) => setDisablePassword(e.target.value)}
-                placeholder="Current password"
+                placeholder={t("security.currentPassword")}
               />
               <Input
                 value={disableCode}
                 onChange={(e) => setDisableCode(e.target.value)}
-                placeholder="Current OTP code"
+                placeholder={t("security.currentOtp")}
               />
               <Button type="button" variant="destructive" onClick={disable2FA} disabled={loading}>
-                Disable 2FA
+                {t("security.disable2fa")}
               </Button>
             </div>
 
             <div className="space-y-3 rounded-lg border border-border p-4">
-              <h3 className="text-sm font-medium text-foreground">
-                Can&apos;t access your 2FA device?
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                If you cannot access your authenticator device, you can request a recovery code via
-                email.
-              </p>
+              <h3 className="text-sm font-medium text-foreground">{t("security.recoveryHeading")}</h3>
+              <p className="text-sm text-muted-foreground">{t("security.recoveryBody")}</p>
               <Button
                 type="button"
                 variant="outline"
@@ -298,16 +293,16 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
                 disabled={recoveryRequestLoading || recoveryVerifyLoading || recoveryCooldown.isLimited}
               >
                 {recoveryCooldown.isLimited
-                  ? `Retry in ${recoveryCooldown.remaining}s`
+                  ? t("security.retryIn", { seconds: recoveryCooldown.remaining })
                   : recoveryRequestLoading
-                    ? "Sending…"
-                    : "Send recovery code"}
+                    ? t("security.sending")
+                    : t("security.sendRecovery")}
               </Button>
               <div className="space-y-2">
                 <Input
                   value={recoveryCode}
                   onChange={(e) => setRecoveryCode(e.target.value)}
-                  placeholder="Recovery code"
+                  placeholder={t("security.recoveryPlaceholder")}
                   autoComplete="one-time-code"
                 />
                 <Button
@@ -316,7 +311,7 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
                   onClick={verifyRecoveryAndDisable}
                   disabled={recoveryVerifyLoading || !recoveryCode.trim()}
                 >
-                  {recoveryVerifyLoading ? "Verifying…" : "Verify & Disable 2FA"}
+                  {recoveryVerifyLoading ? t("security.verifying") : t("security.verifyDisable")}
                 </Button>
               </div>
               {recoveryMessage ? (

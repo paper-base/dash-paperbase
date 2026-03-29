@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef } from "react";
+import { useTranslations } from "next-intl";
 import { SECTIONS, type SettingsSection } from "./settingsSections";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +18,7 @@ export function SettingsSectionNav({
   className?: string;
   variant?: "vertical" | "horizontal";
 }) {
+  const t = useTranslations("settings");
   return (
     <nav
       className={cn(
@@ -24,9 +26,9 @@ export function SettingsSectionNav({
         className
       )}
       role="tablist"
-      aria-label="Settings sections"
+      aria-label={t("navAria")}
     >
-      {SECTIONS.map(({ id, label, icon: Icon }) => (
+      {SECTIONS.map(({ id, labelKey, icon: Icon }) => (
         <button
           key={id}
           type="button"
@@ -53,7 +55,7 @@ export function SettingsSectionNav({
           )}
         >
           <Icon className="size-4 shrink-0" />
-          {label}
+          {t(labelKey)}
         </button>
       ))}
     </nav>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
@@ -42,6 +43,8 @@ function formatDate(value: string | null): string {
 
 export default function CtaPage() {
   const router = useRouter();
+  const tPages = useTranslations("pages");
+  const tCommon = useTranslations("common");
   const [ctas, setCtas] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | "new" | null>(null);
@@ -128,7 +131,7 @@ export default function CtaPage() {
   }
 
   async function handleDelete(publicId: string) {
-    if (!confirm("Delete this CTA?")) return;
+    if (!confirm(tPages("ctaConfirmDelete"))) return;
     try {
       await api.delete(`admin/notifications/${publicId}/`);
       setCtas((prev) => prev.filter((n) => n.public_id !== publicId));
@@ -153,21 +156,21 @@ export default function CtaPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              aria-label="Go back"
+              aria-label={tPages("ctaGoBackAria")}
               className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
             >
               <Undo2 className="h-4 w-4" />
             </button>
           </div>
           <h1 className="text-2xl font-medium text-foreground">
-            CTA banners ({ctas.length})
+            {tPages("ctaTitle", { count: ctas.length })}
           </h1>
         </div>
         <button
           onClick={openNew}
           className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
         >
-          Add CTA
+          {tPages("ctaAdd")}
         </button>
       </div>
 
@@ -177,11 +180,11 @@ export default function CtaPage() {
           className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4"
         >
           <p className="text-sm font-semibold text-primary">
-            {editing === "new" ? "New CTA" : "Edit CTA"}
+            {editing === "new" ? tPages("ctaNew") : tPages("ctaEdit")}
           </p>
           <Textarea
             required
-            placeholder="CTA text"
+            placeholder={tPages("ctaTextPlaceholder")}
             rows={2}
             value={form.cta_text}
             onChange={(e) => setForm({ ...form, cta_text: e.target.value })}
@@ -195,13 +198,13 @@ export default function CtaPage() {
               }
               className="text-sm"
             >
-              <option value="banner">Banner</option>
-              <option value="alert">Alert</option>
-              <option value="promo">Promotion</option>
+              <option value="banner">{tPages("ctaTypeBanner")}</option>
+              <option value="alert">{tPages("ctaTypeAlert")}</option>
+              <option value="promo">{tPages("ctaTypePromo")}</option>
             </Select>
             <Input
               type="number"
-              placeholder="Order"
+              placeholder={tPages("ctaPlaceholderOrder")}
               value={form.order}
               onChange={(e) => setForm({ ...form, order: e.target.value })}
               className="text-sm"
@@ -215,19 +218,19 @@ export default function CtaPage() {
                   setForm({ ...form, is_active: e.target.checked })
                 }
               />{" "}
-              Active
+              {tCommon("active")}
             </label>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Input
-              placeholder="Link URL (optional)"
+              placeholder={tPages("ctaLinkUrlOptional")}
               type="url"
               value={form.link}
               onChange={(e) => setForm({ ...form, link: e.target.value })}
               className="text-sm"
             />
             <Input
-              placeholder="Link text (optional)"
+              placeholder={tPages("ctaLinkTextOptional")}
               value={form.link_text}
               onChange={(e) =>
                 setForm({ ...form, link_text: e.target.value })
@@ -238,7 +241,7 @@ export default function CtaPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">
-                Start date (optional)
+                {tPages("ctaStartOptional")}
               </label>
               <Input
                 type="datetime-local"
@@ -251,7 +254,7 @@ export default function CtaPage() {
             </div>
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">
-                End date (optional)
+                {tPages("ctaEndOptional")}
               </label>
               <Input
                 type="datetime-local"
@@ -269,14 +272,14 @@ export default function CtaPage() {
               disabled={saving}
               className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              {saving ? "Saving..." : "Save CTA"}
+              {saving ? tCommon("saving") : tPages("ctaSave")}
             </button>
             <button
               type="button"
               onClick={() => setEditing(null)}
               className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-muted"
             >
-              Cancel
+              {tCommon("cancel")}
             </button>
           </div>
         </form>
@@ -286,21 +289,11 @@ export default function CtaPage() {
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/40">
-              <th className="th">
-                Text
-              </th>
-              <th className="th">
-                Type
-              </th>
-              <th className="th">
-                Active
-              </th>
-              <th className="th">
-                Schedule
-              </th>
-              <th className="th">
-                Actions
-              </th>
+              <th className="th">{tPages("ctaColText")}</th>
+              <th className="th">{tPages("ctaColType")}</th>
+              <th className="th">{tPages("ctaColActive")}</th>
+              <th className="th">{tPages("ctaColSchedule")}</th>
+              <th className="th">{tPages("ctaColActions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">
@@ -321,15 +314,15 @@ export default function CtaPage() {
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {n.is_active ? "Active" : "Inactive"}
+                    {n.is_active ? tCommon("active") : tCommon("inactive")}
                   </button>
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">
                   {n.start_date
                     ? `${formatDate(n.start_date)} - ${
-                        n.end_date ? formatDate(n.end_date) : "∞"
+                        n.end_date ? formatDate(n.end_date) : tPages("ctaScheduleInfinity")
                       }`
-                    : "Always"}
+                    : tPages("ctaScheduleAlways")}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
@@ -337,14 +330,14 @@ export default function CtaPage() {
                       onClick={() => openEdit(n)}
                       className="text-sm"
                     >
-                      Edit
+                      {tCommon("edit")}
                     </ClickableText>
                     <ClickableText
                       variant="destructive"
                       onClick={() => handleDelete(n.public_id)}
                       className="text-sm"
                     >
-                      Delete
+                      {tCommon("delete")}
                     </ClickableText>
                   </div>
                 </td>

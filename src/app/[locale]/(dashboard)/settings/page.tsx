@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Undo2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import useSettingsPageController from "./useSettingsPageController";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const tSettings = useTranslations("settings");
   const [activeSection, setActiveSection] = useState<SettingsSection>("store");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [tabStripWidth, setTabStripWidth] = useState<number | null>(null);
@@ -110,7 +112,9 @@ export default function SettingsPage() {
   } = controller;
 
   const activeSectionMeta = SECTIONS.find((s) => s.id === activeSection);
-  const activeLabel = activeSectionMeta?.label ?? "Settings";
+  const activeLabel = activeSectionMeta
+    ? tSettings(activeSectionMeta.labelKey)
+    : tSettings("title");
   const ActiveIcon = activeSectionMeta?.icon;
   const settingsShellStyle: CSSProperties | undefined =
     isLg && tabStripWidth != null ? { width: `${tabStripWidth}px` } : undefined;
@@ -126,7 +130,7 @@ export default function SettingsPage() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label="Go back"
+                aria-label={tSettings("goBackAria")}
                 onClick={() => router.back()}
                 className="shrink-0"
               >
@@ -134,11 +138,10 @@ export default function SettingsPage() {
               </Button>
             </div>
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Your control center for store owners. Manage your store identity, products, orders,
-                integrations, and more.
-              </p>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                {tSettings("title")}
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">{tSettings("subtitle")}</p>
             </div>
           </div>
         </header>
@@ -173,7 +176,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Desktop: horizontal nav at top */}
-        <div className="hidden lg:block" aria-label="Settings navigation">
+        <div className="hidden lg:block" aria-label={tSettings("navAria")}>
           <SettingsDesktopSectionNav
             ref={desktopTabNavRef}
             activeSection={activeSection}
@@ -261,7 +264,7 @@ export default function SettingsPage() {
             }
             onOpenDeleteConfirm={setDeleteConfirmOpen}
             storeDisplayName={deleteStoreDisplayName}
-            storeSubtitle={storeType.trim() ? storeType : "Current store"}
+            storeSubtitle={storeType.trim() ? storeType : tSettings("currentStoreFallback")}
             logoSrc={previewUrl}
           />
         </main>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
 import CourierIntegration from "./CourierIntegration";
 import MarketingIntegration from "./MarketingIntegration";
@@ -9,6 +10,7 @@ export default function IntegrationsSection({
 }: {
   hidden: boolean;
 }) {
+  const t = useTranslations("settings");
   return (
     <section
       id="panel-integrations"
@@ -19,10 +21,8 @@ export default function IntegrationsSection({
     >
       <SettingsSectionBody>
         <div className="space-y-1">
-          <h2 className="text-lg font-medium text-foreground">Integrations</h2>
-          <p className="text-sm text-muted-foreground">
-            Connect marketing and delivery tools to your store. More integrations are added over time.
-          </p>
+          <h2 className="text-lg font-medium text-foreground">{t("integrations.heading")}</h2>
+          <p className="text-sm text-muted-foreground">{t("integrations.subtitle")}</p>
         </div>
 
         <div className="space-y-6">

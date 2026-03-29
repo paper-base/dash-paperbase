@@ -1,5 +1,6 @@
- "use client";
+"use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useCallback, useRef, useState } from "react";
 import { useNotifications } from "@/context/NotificationContext";
@@ -16,6 +17,8 @@ function formatDateTime(value: string): string {
 }
 
 export default function NotificationsFeedPage() {
+  const tPages = useTranslations("pages");
+  const tCommon = useTranslations("common");
   const {
     notifications,
     unreadCount,
@@ -87,7 +90,10 @@ export default function NotificationsFeedPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-medium text-foreground">
-          Notifications {notifications.length > 0 ? `(${notifications.length})` : ""}
+          {tPages("notificationsFeedTitle")}
+          {notifications.length > 0
+            ? ` ${tPages("notificationsCountInParens", { count: notifications.length })}`
+            : ""}
         </h1>
         <Button
           variant="outline"
@@ -95,7 +101,7 @@ export default function NotificationsFeedPage() {
           onClick={markAllAsRead}
           disabled={unreadCount === 0 || notifications.length === 0}
         >
-          Mark all as read
+          {tPages("notificationsMarkAllRead")}
         </Button>
       </div>
 
@@ -110,7 +116,7 @@ export default function NotificationsFeedPage() {
       )}
 
       {!isLoading && !error && notifications.length === 0 && (
-        <p className="text-sm text-muted-foreground">You&apos;re all caught up. No notifications yet.</p>
+        <p className="text-sm text-muted-foreground">{tPages("notificationsEmpty")}</p>
       )}
 
       {!isLoading && !error && notifications.length > 0 && (
@@ -150,17 +156,17 @@ export default function NotificationsFeedPage() {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
               <div className="w-full max-w-sm rounded-lg bg-background p-4 shadow-lg">
                 <p className="mb-4 text-sm font-medium text-foreground">
-                  Manage notification
+                  {tPages("notificationsManageTitle")}
                 </p>
                 <div className="flex flex-col gap-2">
                   <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
-                    Delete this notification
+                    {tPages("notificationsDeleteThis")}
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleDeleteAll}>
-                    Select all &amp; delete
+                    {tPages("notificationsDeleteAll")}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={handleCloseActions}>
-                    Cancel
+                    {tCommon("cancel")}
                   </Button>
                 </div>
               </div>

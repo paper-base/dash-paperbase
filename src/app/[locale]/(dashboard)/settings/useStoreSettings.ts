@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import api from "@/lib/api";
 import { defaultBranding } from "@/context/BrandingContext";
 import { useAutoExpire } from "@/hooks/useAutoExpire";
@@ -21,6 +22,7 @@ interface UseStoreSettingsOptions {
 }
 
 export function useStoreSettings({ onSaveSuccess }: UseStoreSettingsOptions = {}) {
+  const t = useTranslations("settings");
   const [storeName, setStoreName] = useState(defaultBranding.admin_name);
   const [storeType, setStoreType] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -67,16 +69,19 @@ export function useStoreSettings({ onSaveSuccess }: UseStoreSettingsOptions = {}
         address,
       });
       if (!validation.success) {
-        setMessage({
-          type: "error",
-          text:
-            validation.errors.storeName ??
-            validation.errors.storeType ??
-            validation.errors.contactEmail ??
-            validation.errors.phone ??
-            validation.errors.address ??
-            "Please correct the highlighted fields.",
-        });
+        const e = validation.errors;
+        const text = e.storeName
+          ? t("store.validationStoreName")
+          : e.storeType
+            ? t("store.validationStoreType")
+            : e.contactEmail
+              ? t("store.validationContactEmail")
+              : e.phone
+                ? t("store.validationPhone")
+                : e.address
+                  ? t("store.validationGeneric")
+                  : t("store.validationGeneric");
+        setMessage({ type: "error", text });
         return;
       }
 
@@ -100,9 +105,9 @@ export function useStoreSettings({ onSaveSuccess }: UseStoreSettingsOptions = {}
       setClearLogo(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
 
-      setMessage({ type: "success", text: "Store settings saved." });
+      setMessage({ type: "success", text: t("store.saved") });
     } catch {
-      setMessage({ type: "error", text: "Failed to save store settings." });
+      setMessage({ type: "error", text: t("store.saveFailed") });
     } finally {
       setSaving(false);
     }

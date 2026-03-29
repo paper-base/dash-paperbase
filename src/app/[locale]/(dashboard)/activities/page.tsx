@@ -1,26 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Select } from "@/components/ui/select";
 import { useActivities } from "@/hooks/useActivities";
-
-const ENTITY_OPTIONS = [
-  { value: "", label: "All types" },
-  { value: "product", label: "Product" },
-  { value: "order", label: "Order" },
-  { value: "category", label: "Category" },
-  { value: "brand", label: "Brand" },
-  { value: "notification", label: "Notification" },
-  { value: "support_ticket", label: "Support ticket" },
-] as const;
-
-const ACTION_OPTIONS = [
-  { value: "", label: "All actions" },
-  { value: "create", label: "Create" },
-  { value: "update", label: "Update" },
-  { value: "delete", label: "Delete" },
-  { value: "custom", label: "Custom" },
-] as const;
 
 function formatDateTime(value: string): string {
   const d = new Date(value);
@@ -32,9 +15,36 @@ function formatDateTime(value: string): string {
 }
 
 export default function ActivitiesPage() {
+  const tPages = useTranslations("pages");
   const [page, setPage] = useState(1);
   const [entityType, setEntityType] = useState("");
   const [action, setAction] = useState("");
+
+  const entityOptions = useMemo(
+    () =>
+      [
+        { value: "", label: tPages("activitiesEntityAll") },
+        { value: "product", label: tPages("activitiesEntityProduct") },
+        { value: "order", label: tPages("activitiesEntityOrder") },
+        { value: "category", label: tPages("activitiesEntityCategory") },
+        { value: "brand", label: tPages("activitiesEntityBrand") },
+        { value: "notification", label: tPages("activitiesEntityNotification") },
+        { value: "support_ticket", label: tPages("activitiesEntitySupportTicket") },
+      ] as const,
+    [tPages],
+  );
+
+  const actionOptions = useMemo(
+    () =>
+      [
+        { value: "", label: tPages("activitiesActionAll") },
+        { value: "create", label: tPages("activitiesActionCreate") },
+        { value: "update", label: tPages("activitiesActionUpdate") },
+        { value: "delete", label: tPages("activitiesActionDelete") },
+        { value: "custom", label: tPages("activitiesActionCustom") },
+      ] as const,
+    [tPages],
+  );
 
   const filters = useMemo(
     () => ({
@@ -66,11 +76,10 @@ export default function ActivitiesPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-medium text-foreground">
-            Activities {count > 0 ? `(${count})` : ""}
+            {tPages("activitiesTitle")}
+            {count > 0 ? ` ${tPages("activitiesCountInParens", { count })}` : ""}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Admin actions across products, orders, support tickets, notifications and more.
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{tPages("activitiesSubtitle")}</p>
         </div>
       </div>
 
@@ -79,9 +88,9 @@ export default function ActivitiesPage() {
           value={entityType}
           onChange={(e) => onChangeType(e.target.value)}
           className="w-full sm:w-[220px]"
-          aria-label="Filter by type"
+          aria-label={tPages("activitiesFilterTypeAria")}
         >
-          {ENTITY_OPTIONS.map((opt) => (
+          {entityOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
@@ -92,9 +101,9 @@ export default function ActivitiesPage() {
           value={action}
           onChange={(e) => onChangeAction(e.target.value)}
           className="w-full sm:w-[180px]"
-          aria-label="Filter by action"
+          aria-label={tPages("activitiesFilterActionAria")}
         >
-          {ACTION_OPTIONS.map((opt) => (
+          {actionOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
@@ -109,7 +118,7 @@ export default function ActivitiesPage() {
       ) : error ? (
         <p className="text-sm text-destructive">{error}</p>
       ) : results.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No activities found.</p>
+        <p className="text-sm text-muted-foreground">{tPages("activitiesEmpty")}</p>
       ) : (
         <>
           <div className="overflow-hidden rounded-xl border border-dashed border-border bg-background">
@@ -159,15 +168,17 @@ export default function ActivitiesPage() {
               onClick={() => setPage((p) => p - 1)}
               className="btn-page"
             >
-              Previous
+              {tPages("supportTicketsPrevious")}
             </button>
-            <span className="text-sm text-muted-foreground">Page {page}</span>
+            <span className="text-sm text-muted-foreground">
+              {tPages("activitiesPage", { page })}
+            </span>
             <button
               disabled={!hasNext}
               onClick={() => setPage((p) => p + 1)}
               className="btn-page"
             >
-              Next
+              {tPages("supportTicketsNext")}
             </button>
           </div>
         </>

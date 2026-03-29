@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { DynamicFieldsPanel, type DynamicFieldsMessage } from "@/components/DynamicFieldsPanel";
 import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
 
@@ -12,6 +13,7 @@ export default function DynamicFieldsSection({
   message: DynamicFieldsMessage;
   onMessage: (msg: DynamicFieldsMessage) => void;
 }) {
+  const t = useTranslations("settings");
   return (
     <section
       id="panel-eav"
@@ -22,11 +24,8 @@ export default function DynamicFieldsSection({
     >
       <SettingsSectionBody>
         <div className="space-y-1">
-          <h2 className="text-lg font-medium text-foreground">Dynamic Fields</h2>
-          <p className="text-sm text-muted-foreground">
-            Define custom extra fields for products. They appear on product create and edit forms and are stored in
-            each product&apos;s extra data via the API.
-          </p>
+          <h2 className="text-lg font-medium text-foreground">{t("dynamicFields.heading")}</h2>
+          <p className="text-sm text-muted-foreground">{t("dynamicFields.subtitle")}</p>
         </div>
         <DynamicFieldsPanel message={message} onMessage={onMessage} />
       </SettingsSectionBody>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import {
   DndContext,
   closestCenter,
@@ -26,26 +27,24 @@ import { useExtraFieldsSchema } from "@/hooks/useExtraFieldsSchema";
 import type { ExtraFieldDefinition, ExtraFieldType } from "@/types/extra-fields";
 import { cn } from "@/lib/utils";
 
-const FIELD_TYPES: { value: ExtraFieldType; label: string }[] = [
-  { value: "text", label: "Text" },
-  { value: "number", label: "Number" },
-  { value: "boolean", label: "Boolean" },
-  { value: "dropdown", label: "Dropdown" },
+const FIELD_TYPES: { value: ExtraFieldType; labelKey: string }[] = [
+  { value: "text", labelKey: "fieldTypeText" },
+  { value: "number", labelKey: "fieldTypeNumber" },
+  { value: "boolean", labelKey: "fieldTypeBoolean" },
+  { value: "dropdown", labelKey: "fieldTypeDropdown" },
 ];
 
-const FIXED_PRODUCT_FIELDS: { key: string; label: string }[] = [
-  { key: "name", label: "Product Name" },
-  { key: "slug", label: "Slug" },
-  { key: "description", label: "Description" },
-  { key: "price", label: "Base Price" },
-  { key: "original_price", label: "Compare at Price" },
-  { key: "stock", label: "Stock" },
-  { key: "brand", label: "Brand" },
-  { key: "category", label: "Category" },
-  { key: "is_active", label: "Active" },
+const FIXED_PRODUCT_FIELDS: { key: string; labelKey: string }[] = [
+  { key: "name", labelKey: "fixedName" },
+  { key: "slug", labelKey: "fixedSlug" },
+  { key: "description", labelKey: "fixedDescription" },
+  { key: "price", labelKey: "fixedPrice" },
+  { key: "original_price", labelKey: "fixedComparePrice" },
+  { key: "stock", labelKey: "fixedStock" },
+  { key: "brand", labelKey: "fixedBrand" },
+  { key: "category", labelKey: "fixedCategory" },
+  { key: "is_active", labelKey: "fixedActive" },
 ];
-
-const FIELD_NAME_PLACEHOLDER = "e.g. color, size, warranty, material";
 
 const inputClass =
   "w-full rounded-lg bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0";
@@ -63,6 +62,8 @@ function SortableFieldItem({
   namesExceptThis: string[];
   onMessage: (msg: DynamicFieldsMessage) => void;
 }) {
+  const t = useTranslations("settings");
+  const tp = (key: string) => t(`dynamicFields.panel.${key}`);
   const {
     attributes,
     listeners,
@@ -83,7 +84,7 @@ function SortableFieldItem({
       (n) => n.toLowerCase().replace(/\s+/g, "_") === normalized
     );
     if (normalized && isDuplicate) {
-      onMessage({ type: "error", text: "Field name must be unique." });
+      onMessage({ type: "error", text: tp("errUniqueName") });
     }
     onUpdate(field.id, { name });
   };
@@ -121,7 +122,7 @@ function SortableFieldItem({
           className="mt-2 cursor-grab touch-none rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
           {...attributes}
           {...listeners}
-          aria-label="Drag to reorder"
+          aria-label={tp("dragReorderAria")}
         >
           <GripVertical className="size-4" />
         </button>
@@ -129,18 +130,18 @@ function SortableFieldItem({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Field Name
+                {tp("fieldName")}
               </label>
               <Input
                 value={field.name}
                 onChange={(e) => handleNameChange(e.target.value)}
-                placeholder={FIELD_NAME_PLACEHOLDER}
+                placeholder={tp("fieldNamePlaceholder")}
                 className={inputClass}
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Field Type
+                {tp("fieldType")}
               </label>
               <Select
                 value={field.fieldType}
@@ -151,9 +152,9 @@ function SortableFieldItem({
                 }
                 className={inputClass}
               >
-                {FIELD_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
+                {FIELD_TYPES.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {tp(opt.labelKey)}
                   </option>
                 ))}
               </Select>
@@ -162,7 +163,7 @@ function SortableFieldItem({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Default Value (optional)
+                {tp("defaultValue")}
               </label>
               <Input
                 value={field.defaultValue ?? ""}
@@ -171,20 +172,20 @@ function SortableFieldItem({
                     defaultValue: e.target.value || undefined,
                   })
                 }
-                placeholder="Optional default"
+                placeholder={tp("defaultPlaceholder")}
                 className={inputClass}
               />
             </div>
             {field.fieldType === "dropdown" && (
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                  Options (comma or newline separated)
+                  {tp("dropdownOptions")}
                 </label>
                 <Textarea
                   value={optionsInput}
                   onChange={(e) => handleOptionsChange(e.target.value)}
                   onBlur={handleOptionsBlur}
-                  placeholder="e.g. Red, Blue, Green"
+                  placeholder={tp("dropdownOptionsPlaceholder")}
                   rows={2}
                   className={inputClass}
                 />
@@ -201,7 +202,7 @@ function SortableFieldItem({
                 }
                 className="form-checkbox"
               />
-              <span className="text-muted-foreground">Required</span>
+              <span className="text-muted-foreground">{tp("required")}</span>
             </label>
             <Button
               type="button"
@@ -210,12 +211,12 @@ function SortableFieldItem({
               className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={() => {
                 onRemove(field.id);
-                onMessage({ type: "success", text: "Field removed." });
+                onMessage({ type: "success", text: tp("msgFieldRemoved") });
               }}
-              aria-label="Remove field"
+              aria-label={tp("removeFieldAria")}
             >
               <Trash2 className="size-4" />
-              Remove
+              {tp("remove")}
             </Button>
           </div>
         </div>
@@ -236,6 +237,8 @@ export function DynamicFieldsPanel({
   message: DynamicFieldsMessage;
   onMessage: (msg: DynamicFieldsMessage) => void;
 }) {
+  const t = useTranslations("settings");
+  const tp = useMemo(() => (key: string) => t(`dynamicFields.panel.${key}`), [t]);
   const {
     schema,
     addField,
@@ -262,19 +265,19 @@ export function DynamicFieldsPanel({
       const overIdx = schema.findIndex((f) => f.id === over.id);
       if (activeIdx === -1 || overIdx === -1) return;
       reorderFields(active.id as string, over.id as string, "product");
-      onMessage({ type: "success", text: "Order updated." });
+      onMessage({ type: "success", text: tp("msgOrderUpdated") });
     },
-    [schema, reorderFields, onMessage]
+    [schema, reorderFields, onMessage, tp]
   );
 
   const handleAddField = () => {
     const names = schema.map((f) => f.name.trim().toLowerCase());
     if (names.some((n) => !n)) {
-      onMessage({ type: "error", text: "Complete existing fields before adding new ones." });
+      onMessage({ type: "error", text: tp("msgCompleteFields") });
       return;
     }
     addField();
-    onMessage({ type: "success", text: "Field added. Configure it below." });
+    onMessage({ type: "success", text: tp("msgFieldAdded") });
   };
 
   const getNamesExcept = useCallback(
@@ -296,18 +299,18 @@ export function DynamicFieldsPanel({
     <div className="w-full space-y-6">
       <div className="rounded-xl border border-dashed border-border bg-muted/30 p-5">
         <h3 className="text-sm font-semibold text-foreground">
-          Fixed mandatory fields
+          {tp("fixedHeading")}
         </h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          These fields are always present on products and cannot be removed.
+          {tp("fixedHint")}
         </p>
         <div className="mt-4 flex flex-wrap gap-1.5 lg:flex-nowrap lg:overflow-x-auto lg:pb-1 [scrollbar-width:thin]">
-          {FIXED_PRODUCT_FIELDS.map(({ key, label }) => (
+          {FIXED_PRODUCT_FIELDS.map(({ key, labelKey }) => (
             <div
               key={key}
               className="flex shrink-0 items-center rounded-md border border-border/70 bg-background/80 px-2 py-1.5 text-xs shadow-sm transition-colors hover:border-border"
             >
-              <span className="font-medium text-foreground">{label}</span>
+              <span className="font-medium text-foreground">{tp(labelKey)}</span>
             </div>
           ))}
         </div>
@@ -315,11 +318,10 @@ export function DynamicFieldsPanel({
 
       <div>
         <h3 className="text-sm font-medium text-foreground">
-          Extra Fields (JSONB)
+          {tp("extraHeading")}
         </h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Define custom extra fields for products. They appear in product create and edit forms. Values are persisted
-          via the backend API on each product&apos;s <code className="rounded bg-muted px-1 text-[11px]">extra_data</code>.
+          {tp("extraHint")}
         </p>
 
         {message && (
@@ -337,7 +339,7 @@ export function DynamicFieldsPanel({
 
         {hasDuplicateNames && (
           <p className="mt-2 text-sm text-destructive">
-            Field names must be unique. Please fix duplicate names.
+            {tp("duplicateNames")}
           </p>
         )}
 
@@ -374,7 +376,7 @@ export function DynamicFieldsPanel({
             onClick={handleAddField}
           >
             <Plus className="size-4" />
-            Add field
+            {tp("addField")}
           </Button>
           {schema.length > 0 && (
             <Button
@@ -385,14 +387,14 @@ export function DynamicFieldsPanel({
               onClick={async () => {
                 const result = await save();
                 if (result.success) {
-                  onMessage({ type: "success", text: "Extra fields saved." });
+                  onMessage({ type: "success", text: tp("saved") });
                 } else {
-                  onMessage({ type: "error", text: result.error ?? "Failed to save." });
+                  onMessage({ type: "error", text: result.error ?? tp("saveFailed") });
                 }
               }}
             >
               <Save className="size-4" />
-              Save
+              {t("save")}
             </Button>
           )}
         </div>

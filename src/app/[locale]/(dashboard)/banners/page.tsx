@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Undo2, Plus } from "lucide-react";
 import { isAxiosError } from "axios";
@@ -36,6 +37,8 @@ function toDateTimeLocal(value: string | null): string {
 
 export default function BannersPage() {
   const router = useRouter();
+  const tPages = useTranslations("pages");
+  const tCommon = useTranslations("common");
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | "new" | null>(null);
@@ -116,7 +119,7 @@ export default function BannersPage() {
   }
 
   async function handleDelete(publicId: string) {
-    if (!confirm("Delete this banner?")) return;
+    if (!confirm(tPages("bannersConfirmDelete"))) return;
     try {
       await api.delete(`admin/banners/${publicId}/`);
       fetchData();
@@ -141,14 +144,14 @@ export default function BannersPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              aria-label="Go back"
+              aria-label={tPages("bannersGoBackAria")}
               className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
             >
               <Undo2 className="h-4 w-4" />
             </button>
           </div>
           <h1 className="text-2xl font-medium text-foreground">
-            Banners ({banners.length})
+            {tPages("bannersTitle", { count: banners.length })}
           </h1>
         </div>
         <button
@@ -157,7 +160,7 @@ export default function BannersPage() {
           className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
-          Add Banner
+          {tPages("bannersAdd")}
         </button>
       </div>
 
@@ -167,11 +170,11 @@ export default function BannersPage() {
           className="space-y-4 rounded-xl border border-border bg-card p-6"
         >
           <h2 className="text-lg font-medium">
-            {editing === "new" ? "New Banner" : "Edit Banner"}
+            {editing === "new" ? tPages("bannersNew") : tPages("bannersEdit")}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium">Title</label>
+              <label className="mb-1 block text-sm font-medium">{tPages("bannersLabelTitle")}</label>
               <Input
                 type="text"
                 value={form.title}
@@ -179,11 +182,13 @@ export default function BannersPage() {
                   setForm((f) => ({ ...f, title: e.target.value }))
                 }
                 className="text-sm"
-                placeholder="Optional"
+                placeholder={tCommon("optional")}
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Display order</label>
+              <label className="mb-1 block text-sm font-medium">
+                {tPages("bannersLabelDisplayOrder")}
+              </label>
               <Input
                 type="number"
                 min={0}
@@ -195,7 +200,7 @@ export default function BannersPage() {
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-sm font-medium">CTA text</label>
+              <label className="mb-1 block text-sm font-medium">{tPages("bannersLabelCtaText")}</label>
               <Input
                 type="text"
                 value={form.cta_text}
@@ -203,11 +208,11 @@ export default function BannersPage() {
                   setForm((f) => ({ ...f, cta_text: e.target.value }))
                 }
                 className="text-sm"
-                placeholder='e.g. "Shop now"'
+                placeholder={tPages("bannersCtaPlaceholder")}
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-sm font-medium">CTA link (URL)</label>
+              <label className="mb-1 block text-sm font-medium">{tPages("bannersLabelCtaLink")}</label>
               <Input
                 type="url"
                 value={form.cta_link}
@@ -215,11 +220,11 @@ export default function BannersPage() {
                   setForm((f) => ({ ...f, cta_link: e.target.value }))
                 }
                 className="text-sm"
-                placeholder="https://..."
+                placeholder={tPages("bannersUrlPlaceholder")}
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Start</label>
+              <label className="mb-1 block text-sm font-medium">{tPages("bannersLabelStart")}</label>
               <Input
                 type="datetime-local"
                 value={form.start_at}
@@ -230,7 +235,7 @@ export default function BannersPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">End</label>
+              <label className="mb-1 block text-sm font-medium">{tPages("bannersLabelEnd")}</label>
               <Input
                 type="datetime-local"
                 value={form.end_at}
@@ -241,7 +246,7 @@ export default function BannersPage() {
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-sm font-medium">Image</label>
+              <label className="mb-1 block text-sm font-medium">{tPages("bannersLabelImage")}</label>
               <input
                 type="file"
                 accept="image/*"
@@ -250,7 +255,7 @@ export default function BannersPage() {
               />
               {editing !== "new" && !imageFile && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Leave empty to keep current image
+                  {tPages("bannersKeepImageHint")}
                 </p>
               )}
             </div>
@@ -265,7 +270,7 @@ export default function BannersPage() {
                 }
               />
               <label htmlFor="is_active" className="text-sm">
-                Active
+                {tCommon("active")}
               </label>
             </div>
           </div>
@@ -275,14 +280,14 @@ export default function BannersPage() {
               disabled={saving || (editing === "new" && !imageFile)}
               className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              {saving ? "Saving..." : "Save"}
+              {saving ? tCommon("saving") : tCommon("save")}
             </button>
             <button
               type="button"
               onClick={() => setEditing(null)}
               className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
             >
-              Cancel
+              {tCommon("cancel")}
             </button>
           </div>
         </form>
@@ -292,13 +297,13 @@ export default function BannersPage() {
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/40">
-              <th className="th">Preview</th>
-              <th className="th">Title</th>
-              <th className="th">Order</th>
-              <th className="th">Start</th>
-              <th className="th">End</th>
-              <th className="th">Status</th>
-              <th className="th text-right">Actions</th>
+              <th className="th">{tPages("bannersColPreview")}</th>
+              <th className="th">{tPages("bannersColTitle")}</th>
+              <th className="th">{tPages("bannersColOrder")}</th>
+              <th className="th">{tPages("bannersColStart")}</th>
+              <th className="th">{tPages("bannersColEnd")}</th>
+              <th className="th">{tPages("bannersColStatus")}</th>
+              <th className="th text-right">{tPages("bannersColActions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">
@@ -334,7 +339,7 @@ export default function BannersPage() {
                         : "text-muted-foreground"
                     }
                   >
-                    {b.is_active ? "Active" : "Inactive"}
+                    {b.is_active ? tCommon("active") : tCommon("inactive")}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right">
@@ -342,14 +347,14 @@ export default function BannersPage() {
                     onClick={() => openEdit(b)}
                     className="mr-2 text-sm"
                   >
-                    Edit
+                    {tCommon("edit")}
                   </ClickableText>
                   <ClickableText
                     variant="destructive"
                     onClick={() => handleDelete(b.public_id)}
                     className="text-sm"
                   >
-                    Delete
+                    {tCommon("delete")}
                   </ClickableText>
                 </td>
               </tr>
@@ -360,7 +365,7 @@ export default function BannersPage() {
 
       {banners.length === 0 && !editing && (
         <div className="rounded-xl border border-dashed border-card-border bg-card py-12 text-center text-sm text-muted-foreground">
-          No banners yet. Click Add Banner to create one.
+          {tPages("bannersEmpty")}
         </div>
       )}
     </div>

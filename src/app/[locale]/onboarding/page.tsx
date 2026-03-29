@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import { useTranslations } from "next-intl";
 import { useOnboarding } from "./useOnboarding";
 import { StoreDetailsStep } from "./StoreDetailsStep";
 import { AppSelectionStep } from "./AppSelectionStep";
@@ -17,6 +18,7 @@ function LoadingSpinner() {
 }
 
 function OnboardingPageContent() {
+  const t = useTranslations("auth.onboarding");
   const {
     isAddMode,
     isReady,
@@ -39,10 +41,10 @@ function OnboardingPageContent() {
     <AuthPageShell containerClassName="max-w-xl space-y-4 sm:space-y-5">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          {isAddMode ? "Create a new store" : "Set up your store"}
+          {isAddMode ? t("titleNewStore") : t("titleSetup")}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {step === 1 ? "Step 1 of 2: Store details" : "Step 2 of 2: Choose apps"}
+          {step === 1 ? t("step1of2") : t("step2of2")}
         </p>
       </div>
 

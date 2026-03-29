@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Undo2, AlertTriangle } from "lucide-react";
 import { ClickableText } from "@/components/ui/clickable-text";
@@ -14,6 +15,7 @@ import type { Inventory, PaginatedResponse } from "@/types";
 
 export default function InventoryPage() {
   const router = useRouter();
+  const tPages = useTranslations("pages");
   const { page, filters, setFilter, setPage, clearFilters } = useFilters([
     "search",
     "stock",
@@ -86,19 +88,20 @@ export default function InventoryPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              aria-label="Go back"
+              aria-label={tPages("inventoryGoBackAria")}
               className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
             >
               <Undo2 className="h-4 w-4" />
             </button>
           </div>
           <div>
-            <h1 className="text-2xl font-medium text-foreground">Inventory</h1>
+            <h1 className="text-2xl font-medium text-foreground">{tPages("inventoryTitle")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Stock levels and SKU management. {lowStockCount > 0 && (
+              {tPages("inventorySubtitle")}{" "}
+              {lowStockCount > 0 && (
                 <span className="flex items-center gap-1 text-amber-600">
                   <AlertTriangle className="inline h-4 w-4" />
-                  {lowStockCount} low stock
+                  {tPages("inventoryLowStock", { count: lowStockCount })}
                 </span>
               )}
             </p>
@@ -110,35 +113,35 @@ export default function InventoryPage() {
         <Input
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search product / SKU / IDs"
+          placeholder={tPages("inventorySearchPlaceholder")}
           className="w-full md:w-72"
         />
         <FilterDropdown
           value={filters.stock}
           onChange={(value) => setFilter("stock", value)}
-          placeholder="Stock"
+          placeholder={tPages("inventoryFilterStock")}
           options={[
-            { value: "in_stock", label: "In stock" },
-            { value: "low_stock", label: "Low stock" },
-            { value: "out_of_stock", label: "Out of stock" },
+            { value: "in_stock", label: tPages("inventoryStockInStock") },
+            { value: "low_stock", label: tPages("inventoryStockLow") },
+            { value: "out_of_stock", label: tPages("inventoryStockOut") },
           ]}
         />
         <FilterDropdown
           value={filters.tracked}
           onChange={(value) => setFilter("tracked", value)}
-          placeholder="Tracking"
+          placeholder={tPages("inventoryFilterTracking")}
           options={[
-            { value: "tracked", label: "Tracked" },
-            { value: "untracked", label: "Untracked" },
+            { value: "tracked", label: tPages("inventoryTracked") },
+            { value: "untracked", label: tPages("inventoryUntracked") },
           ]}
         />
         <FilterDropdown
           value={filters.type}
           onChange={(value) => setFilter("type", value)}
-          placeholder="Record type"
+          placeholder={tPages("inventoryFilterRecordType")}
           options={[
-            { value: "product", label: "Product-level" },
-            { value: "variant", label: "Variant-level" },
+            { value: "product", label: tPages("inventoryTypeProduct") },
+            { value: "variant", label: tPages("inventoryTypeVariant") },
           ]}
         />
         <button
@@ -149,7 +152,7 @@ export default function InventoryPage() {
           }}
           className="h-9 rounded-md border border-border px-3 text-sm hover:bg-muted"
         >
-          Clear
+          {tPages("filtersClear")}
         </button>
       </FilterBar>
 
@@ -159,7 +162,7 @@ export default function InventoryPage() {
         </div>
       ) : inventory.length === 0 ? (
         <div className="rounded-xl border border-dashed border-card-border bg-card py-12 text-center text-sm text-muted-foreground">
-          No inventory records found. Products and variants will appear here when stock tracking is enabled.
+          {tPages("inventoryEmpty")}
         </div>
       ) : (
         <>
@@ -167,11 +170,11 @@ export default function InventoryPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/40">
-                  <th className="th">Product</th>
-                  <th className="th">Variant</th>
-                  <th className="th text-right">Qty</th>
-                  <th className="th text-right">Low threshold</th>
-                  <th className="th text-right">Adjust</th>
+                  <th className="th">{tPages("inventoryColProduct")}</th>
+                  <th className="th">{tPages("inventoryColVariant")}</th>
+                  <th className="th text-right">{tPages("inventoryColQty")}</th>
+                  <th className="th text-right">{tPages("inventoryColLowThreshold")}</th>
+                  <th className="th text-right">{tPages("inventoryColAdjust")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
@@ -205,7 +208,7 @@ export default function InventoryPage() {
                               [inv.public_id]: e.target.value,
                             }))
                           }
-                          placeholder="±"
+                          placeholder={tPages("inventoryAdjustPlaceholder")}
                           className="w-20 px-2 py-1 text-right text-sm"
                           size="sm"
                         />
@@ -224,7 +227,9 @@ export default function InventoryPage() {
                           }
                           className="rounded border border-border px-3 py-1 text-sm font-medium hover:bg-muted disabled:opacity-50"
                         >
-                          {adjusting === inv.public_id ? "..." : "Apply"}
+                          {adjusting === inv.public_id
+                            ? tPages("inventoryApplying")
+                            : tPages("inventoryApply")}
                         </button>
                       </div>
                     </td>
@@ -241,17 +246,17 @@ export default function InventoryPage() {
                 onClick={() => setPage(page - 1)}
                 className="btn-page"
               >
-                Previous
+                {tPages("supportTicketsPrevious")}
               </button>
               <span className="text-sm text-muted-foreground">
-                Page {page} ({count} total)
+                {tPages("inventoryPageLabel", { page, count })}
               </span>
               <button
                 disabled={!hasNext}
                 onClick={() => setPage(page + 1)}
                 className="btn-page"
               >
-                Next
+                {tPages("supportTicketsNext")}
               </button>
             </div>
           )}

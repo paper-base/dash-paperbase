@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import api from "@/lib/api";
 import { resolvePostAuthRoute } from "@/lib/subscription-access";
@@ -9,6 +10,7 @@ import {
   isDeleteStoreModalPhraseConfirmed,
   isDeleteStoreModalStoreNameConfirmed,
 } from "@/lib/validation";
+import { DELETION_STEPS_API } from "./deletionStepLabels";
 
 const DELETE_REQUEST_MIN_MS = 2500;
 
@@ -20,6 +22,7 @@ export type DeleteStatus = {
 
 export function useDeleteStore(ownerEmail: string, storeName: string) {
   const router = useRouter();
+  const t = useTranslations("settings");
 
   const [confirmPhrase, setConfirmPhrase] = useState("");
   const [confirmStoreName, setConfirmStoreName] = useState("");
@@ -38,13 +41,7 @@ export function useDeleteStore(ownerEmail: string, storeName: string) {
   const confirmMatches = phraseMatches && storeNameMatches;
   const inProgress = jobId != null;
 
-  const steps = [
-    "Removing orders...",
-    "Clearing customer data...",
-    "Deleting products...",
-    "Deleting analytics...",
-    "Finalizing...",
-  ];
+  const steps = [...DELETION_STEPS_API];
 
   useEffect(() => {
     if (!confirmOpen) return;
@@ -88,11 +85,11 @@ export function useDeleteStore(ownerEmail: string, storeName: string) {
 
         if (data.status === "failed") {
           if (intervalId != null) window.clearInterval(intervalId);
-          setRequestError(data.error_message || "Store deletion failed.");
+          setRequestError(data.error_message || t("deleteFlow.errDeletionFailed"));
         }
       } catch {
         if (cancelled) return;
-        setRequestError("Failed to fetch deletion status.");
+        setRequestError(t("deleteFlow.errStatusFetch"));
         if (intervalId != null) window.clearInterval(intervalId);
       }
     }
@@ -104,23 +101,23 @@ export function useDeleteStore(ownerEmail: string, storeName: string) {
       cancelled = true;
       if (intervalId != null) window.clearInterval(intervalId);
     };
-  }, [jobId, router]);
+  }, [jobId, router, t]);
 
   async function handleDeleteConfirmed() {
     const email = ownerEmail.trim();
     const name = storeName.trim();
     if (!email || !name) {
-      setRequestError("Store information is still loading. Please wait and try again.");
+      setRequestError(t("deleteFlow.errStoreLoading"));
       return;
     }
 
     if (!isDeleteStoreModalStoreNameConfirmed(confirmStoreName, name)) {
-      setRequestError("Type your store name exactly as shown above to confirm.");
+      setRequestError(t("deleteFlow.errTypeStoreName"));
       return;
     }
 
     if (!isDeleteStoreModalPhraseConfirmed(confirmPhrase)) {
-      setRequestError(`Type "${DELETE_STORE_CONFIRM_PHRASE}" exactly to confirm.`);
+      setRequestError(t("deleteFlow.errTypePhrase", { phrase: DELETE_STORE_CONFIRM_PHRASE }));
       return;
     }
 
@@ -166,7 +163,7 @@ export function useDeleteStore(ownerEmail: string, storeName: string) {
         err && typeof err === "object" && "response" in err
           ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? null
           : null;
-      setRequestError(msg || "Failed to start store deletion.");
+      setRequestError(msg || t("deleteFlow.errStartDeletion"));
     } finally {
       deleteInFlight.current = false;
       setSubmitting(false);

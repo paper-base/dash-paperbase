@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { useBranding } from "@/context/BrandingContext";
 import { useEnabledApps } from "@/hooks/useEnabledApps";
 import { useFeatures } from "@/hooks/useFeatures";
@@ -28,6 +29,7 @@ const defaultPrefs: NotificationPrefs = {
 };
 
 export default function useSettingsPageController() {
+  const t = useTranslations("settings");
   const { branding, isLoading, refetch } = useBranding();
   const enabledApps = useEnabledApps();
   const { hasFeature, loading: orderEmailFeatureLoading } = useFeatures();
@@ -41,7 +43,7 @@ export default function useSettingsPageController() {
     branding?.owner_email?.trim() || account.ownerEmail.trim();
   const deletePayloadStoreName =
     branding?.admin_name?.trim() || store.storeName.trim();
-  const deleteStoreDisplayName = deletePayloadStoreName || "this store";
+  const deleteStoreDisplayName = deletePayloadStoreName || t("deleteFlow.fallbackStoreName");
   const deleteStoreReady = Boolean(deletePayloadEmail && deletePayloadStoreName);
 
   const deleteStore = useDeleteStore(deletePayloadEmail, deletePayloadStoreName);

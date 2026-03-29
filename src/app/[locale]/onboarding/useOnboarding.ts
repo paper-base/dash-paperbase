@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
@@ -35,6 +36,8 @@ interface MeResponse {
 
 export function useOnboarding() {
   const router = useRouter();
+  const t = useTranslations("auth.onboarding");
+  const tPages = useTranslations("pages");
   const searchParams = useSearchParams();
   const isAddMode = searchParams.get("add") === "1";
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -130,7 +133,7 @@ export function useOnboarding() {
           validation.errors.owner_first_name ??
           validation.errors.owner_last_name ??
           validation.errors.owner_email ??
-          "Please correct the highlighted fields."
+          tPages("formFixHighlighted")
       );
       return;
     }
@@ -172,9 +175,9 @@ export function useOnboarding() {
       }>("auth/switch-store/", { store_public_id: store.public_id });
 
       if ("2fa_required" in switchData && switchData["2fa_required"] && switchData.challenge_public_id) {
-        const otpCode = window.prompt("Enter your 2FA code to activate this store:");
+        const otpCode = window.prompt(t("prompt2fa"));
         if (!otpCode) {
-          setError("2FA code is required to switch stores.");
+          setError(t("twoFaRequired"));
           return;
         }
         await verifyTwoFactorChallenge(switchData.challenge_public_id, otpCode);
@@ -199,7 +202,7 @@ export function useOnboarding() {
           ? (err as { response?: { data?: { detail?: string } } }).response
               ?.data?.detail
           : null;
-      setError(msg || "Failed to create store. Please try again.");
+      setError(msg || t("createStoreFailed"));
     } finally {
       setLoading(false);
     }

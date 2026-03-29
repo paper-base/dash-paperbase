@@ -125,7 +125,9 @@ export default function OrdersPage() {
     if (selectedIds.size === 0) return;
     if (
       !confirm(
-        `Confirm and send ${selectedIds.size} order(s) to courier? Each order will be set to confirmed (if needed), then dispatched.`
+        tPages("ordersBulkConfirmCourier", {
+          count: toLocaleDigits(String(selectedIds.size), locale),
+        })
       )
     )
       return;
@@ -140,17 +142,26 @@ export default function OrdersPage() {
         { order_public_ids: Array.from(selectedIds) }
       );
       const { summary, results } = data;
-      const failedMsgs = results.filter((r) => !r.ok).map((r) => `${r.public_id}: ${r.error || "failed"}`);
+      const failedMsgs = results
+        .filter((r) => !r.ok)
+        .map(
+          (r) =>
+            `${r.public_id}: ${r.error || tPages("ordersBulkDispatchRowFailed")}`
+        );
       if (summary.failed > 0) {
         alert(
-          `Done: ${summary.ok} succeeded, ${summary.failed} failed.\n${failedMsgs.slice(0, 8).join("\n")}${failedMsgs.length > 8 ? "\n…" : ""}`
+          tPages("ordersBulkDispatchSummary", {
+            ok: toLocaleDigits(String(summary.ok), locale),
+            failed: toLocaleDigits(String(summary.failed), locale),
+            details: `${failedMsgs.slice(0, 8).join("\n")}${failedMsgs.length > 8 ? "\n…" : ""}`,
+          })
         );
       }
       setSelectedIds(new Set());
       fetchOrders();
     } catch (err) {
       console.error(err);
-      alert("Bulk dispatch failed.");
+      alert(tPages("ordersBulkDispatchFailed"));
     } finally {
       setBulkDispatching(false);
     }
@@ -169,7 +180,7 @@ export default function OrdersPage() {
       );
     } catch (e) {
       console.error(e);
-      alert("Could not update order status.");
+      alert(tPages("orderDetailStatusUpdateFailed"));
     } finally {
       setStatusUpdatingId(null);
     }
@@ -186,7 +197,7 @@ export default function OrdersPage() {
         prev.map((o) => (o.public_id === order.public_id ? data : o))
       );
     } catch (err: unknown) {
-      alert(extractApiDetail(err, "Failed to send order to courier."));
+      alert(extractApiDetail(err, tPages("ordersSendToCourierErrorFallback")));
     } finally {
       setCourierSendingId(null);
     }
@@ -246,7 +257,9 @@ export default function OrdersPage() {
                 disabled={bulkDispatching}
                 className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted disabled:opacity-50"
               >
-                {bulkDispatching ? "Sending…" : "Confirm & Send to Courier"}
+                {bulkDispatching
+                  ? tPages("ordersSending")
+                  : tPages("ordersConfirmSendCourier")}
               </button>
               <button
                 onClick={handleDeleteSelected}
@@ -277,7 +290,7 @@ export default function OrdersPage() {
           placeholder={tPages("filtersStatus")}
           options={ORDER_STATUS_OPTIONS.map((s) => ({
             value: s,
-            label: formatOrderStatusLabel(s),
+            label: formatOrderStatusLabel(s, (key) => tPages(key)),
           }))}
         />
         <FilterDropdown
@@ -324,16 +337,16 @@ export default function OrdersPage() {
                       checked={allSelected}
                       onChange={toggleSelectAll}
                       className="form-checkbox"
-                      aria-label="Select all orders on this page"
+                      aria-label={tPages("ordersListSelectAllAria")}
                     />
                   </th>
-                  <th className="th">Order #</th>
-                  <th className="th">Customer</th>
-                  <th className="th">Phone</th>
-                  <th className="th">Status</th>
-                  <th className="th">Total</th>
+                  <th className="th">{tPages("ordersListColOrderNumber")}</th>
+                  <th className="th">{tPages("ordersListColCustomer")}</th>
+                  <th className="th">{tPages("ordersListColPhone")}</th>
+                  <th className="th">{tPages("filtersStatus")}</th>
+                  <th className="th">{tPages("ordersListColTotal")}</th>
                   <th className="th">{tPages("ordersListConsignmentId")}</th>
-                  <th className="th">Date</th>
+                  <th className="th">{tPages("ordersListColDate")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
@@ -345,7 +358,9 @@ export default function OrdersPage() {
                         checked={selectedIds.has(order.public_id)}
                         onChange={() => toggleSelect(order.public_id)}
                         className="form-checkbox"
-                        aria-label={`Select order ${order.order_number}`}
+                        aria-label={tPages("ordersListSelectOrderAria", {
+                          orderNumber: order.order_number,
+                        })}
                       />
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -373,11 +388,13 @@ export default function OrdersPage() {
                         onChange={(e) =>
                           handleRowStatusChange(order, e.target.value)
                         }
-                        aria-label={`Status for order ${order.order_number}`}
+                        aria-label={tPages("ordersListStatusForOrderAria", {
+                          orderNumber: order.order_number,
+                        })}
                       >
                         {ORDER_STATUS_OPTIONS.map((s) => (
                           <option key={s} value={s}>
-                            {formatOrderStatusLabel(s)}
+                            {formatOrderStatusLabel(s, (key) => tPages(key))}
                           </option>
                         ))}
                       </Select>
@@ -394,12 +411,14 @@ export default function OrdersPage() {
                           className="h-8 gap-1 px-2.5 text-xs"
                           disabled={courierSendingId === order.public_id}
                           onClick={() => handleSendToCourierRow(order)}
-                          aria-label={`Send order ${order.order_number} to courier`}
+                          aria-label={tPages("ordersListSendCourierAria", {
+                            orderNumber: order.order_number,
+                          })}
                         >
                           <Truck className="size-3.5 shrink-0" />
                           {courierSendingId === order.public_id
-                            ? "Sending…"
-                            : "Send to Courier"}
+                            ? tPages("ordersSending")
+                            : tPages("ordersSendToCourier")}
                         </Button>
                       ) : (
                         <span className="block truncate" title={courierCell(order)}>
@@ -422,15 +441,19 @@ export default function OrdersPage() {
               onClick={() => setPage(page - 1)}
               className="btn-page"
             >
-              Previous
+              {tPages("supportTicketsPrevious")}
             </button>
-            <span className="text-sm text-muted-foreground">Page {page}</span>
+            <span className="text-sm text-muted-foreground">
+              {tPages("supportTicketsPageLabel", {
+                page: toLocaleDigits(String(page), locale),
+              })}
+            </span>
             <button
               disabled={!hasNext}
               onClick={() => setPage(page + 1)}
               className="btn-page"
             >
-              Next
+              {tPages("supportTicketsNext")}
             </button>
           </div>
         </>

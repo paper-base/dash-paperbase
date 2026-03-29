@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import api from "@/lib/api";
 import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
@@ -12,6 +13,7 @@ interface MeSubscription {
 }
 
 export default function BillingSection({ hidden }: { hidden: boolean }) {
+  const t = useTranslations("settings");
   const [subscription, setSubscription] = useState<MeSubscription | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -36,15 +38,15 @@ export default function BillingSection({ hidden }: { hidden: boolean }) {
     };
   }, [hidden]);
 
-  const planLabel = loading ? "Loading…" : subscription?.plan ?? "—";
+  const planLabel = loading ? t("billing.loading") : subscription?.plan ?? t("billing.dash");
   const statusLabel = loading
-    ? "…"
+    ? t("billing.dash")
     : subscription == null
-      ? "—"
+      ? t("billing.dash")
       : subscription.active
-        ? "Active"
-        : "Inactive";
-  const endLabel = loading ? "…" : subscription?.end_date ?? "—";
+        ? t("billing.statusActive")
+        : t("billing.statusInactive");
+  const endLabel = loading ? t("billing.dash") : subscription?.end_date ?? t("billing.dash");
 
   return (
     <section
@@ -56,23 +58,23 @@ export default function BillingSection({ hidden }: { hidden: boolean }) {
     >
       <SettingsSectionBody gap="compact">
         <div className="space-y-1">
-          <h2 className="text-lg font-medium text-foreground">Billing & Plan</h2>
-          <p className="text-sm text-muted-foreground">Current plan and subscription period from your account.</p>
+          <h2 className="text-lg font-medium text-foreground">{t("billing.heading")}</h2>
+          <p className="text-sm text-muted-foreground">{t("billing.subtitle")}</p>
         </div>
 
         <div className="space-y-4">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-foreground">Current Plan</label>
+          <label className="text-sm font-medium text-foreground">{t("billing.currentPlan")}</label>
           <Input value={planLabel} readOnly className="bg-muted/50" />
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-foreground">Subscription status</label>
+          <label className="text-sm font-medium text-foreground">{t("billing.subscriptionStatus")}</label>
           <Input value={statusLabel} readOnly className="bg-muted/50" />
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-foreground">Current period ends</label>
+          <label className="text-sm font-medium text-foreground">{t("billing.periodEnds")}</label>
           <Input value={endLabel} readOnly className="bg-muted/50" />
         </div>
         </div>

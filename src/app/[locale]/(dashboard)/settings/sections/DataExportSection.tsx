@@ -1,6 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Archive, Package, Store, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -135,6 +136,7 @@ export default function DataExportSection({
   /** Store logo URL for preview, or null for placeholder. */
   logoSrc: string | null;
 }) {
+  const t = useTranslations("settings");
   return (
     <section
       id="panel-data"
@@ -145,44 +147,42 @@ export default function DataExportSection({
     >
       <SettingsSectionBody>
         <div className="space-y-1">
-          <h2 className="text-lg font-medium text-foreground">Data & Export</h2>
-          <p className="text-sm text-muted-foreground">
-            Export products, orders, backup your data, or delete your store.
-          </p>
+          <h2 className="text-lg font-medium text-foreground">{t("dataExport.heading")}</h2>
+          <p className="text-sm text-muted-foreground">{t("dataExport.subtitle")}</p>
         </div>
 
         <div className="space-y-6">
         <ExportOptionCard
           variant="products"
           icon={Package}
-          title="Export Products"
-          description="Download your catalog, variants, images metadata, and inventory as CSV or JSON for spreadsheets or migrations."
-          previewTitle="CSV / JSON"
-          previewSubtitle="Structured export of your product catalog"
-          inputPlaceholder="CSV / JSON — coming soon"
-          buttonLabel="Export products"
+          title={t("dataExport.exportProductsTitle")}
+          description={t("dataExport.exportProductsDesc")}
+          previewTitle={t("dataExport.exportProductsPreviewTitle")}
+          previewSubtitle={t("dataExport.exportProductsPreviewSubtitle")}
+          inputPlaceholder={t("dataExport.exportProductsPlaceholder")}
+          buttonLabel={t("dataExport.exportProductsButton")}
         />
 
         <ExportOptionCard
           variant="orders"
           icon={ClipboardList}
-          title="Export Orders"
-          description="Export order history, line items, payment status, and fulfillment data for accounting or analysis."
-          previewTitle="Order export"
-          previewSubtitle="Includes orders and customer references"
-          inputPlaceholder="Download order data — coming soon"
-          buttonLabel="Export orders"
+          title={t("dataExport.exportOrdersTitle")}
+          description={t("dataExport.exportOrdersDesc")}
+          previewTitle={t("dataExport.exportOrdersPreviewTitle")}
+          previewSubtitle={t("dataExport.exportOrdersPreviewSubtitle")}
+          inputPlaceholder={t("dataExport.exportOrdersPlaceholder")}
+          buttonLabel={t("dataExport.exportOrdersButton")}
         />
 
         <ExportOptionCard
           variant="backup"
           icon={Archive}
-          title="Backup Download"
-          description="Create a full store snapshot including settings and data for disaster recovery or migration."
-          previewTitle="Full store backup"
-          previewSubtitle="Complete snapshot of store data"
-          inputPlaceholder="Full store backup — coming soon"
-          buttonLabel="Download backup"
+          title={t("dataExport.backupTitle")}
+          description={t("dataExport.backupDesc")}
+          previewTitle={t("dataExport.backupPreviewTitle")}
+          previewSubtitle={t("dataExport.backupPreviewSubtitle")}
+          inputPlaceholder={t("dataExport.backupPlaceholder")}
+          buttonLabel={t("dataExport.backupButton")}
         />
 
         <div
@@ -192,11 +192,8 @@ export default function DataExportSection({
           )}
         >
           <div className="p-5 md:p-6">
-            <h3 className="text-base font-semibold text-foreground">Delete Store</h3>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              Permanently delete this store and all products, orders, customers, API keys, integrations,
-              and settings. This action cannot be undone.
-            </p>
+            <h3 className="text-base font-semibold text-foreground">{t("dataExport.deleteTitle")}</h3>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("dataExport.deleteDesc")}</p>
           </div>
 
           <div className="border-t border-border/80 bg-muted/20 px-5 py-4 md:px-6">
@@ -232,7 +229,7 @@ export default function DataExportSection({
               onClick={() => onOpenDeleteConfirm(true)}
               disabled={deleteStoreDisabled}
             >
-              Delete Store
+              {t("dataExport.deleteButton")}
             </Button>
           </div>
         </div>

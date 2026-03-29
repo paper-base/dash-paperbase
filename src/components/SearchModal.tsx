@@ -119,9 +119,10 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
         />
         <Dialog.Content
           className={cn(
-            "fixed z-50 flex flex-col overflow-hidden bg-background p-0 gap-0",
-            "inset-0 rounded-none border-0 shadow-none",
-            "md:inset-auto md:left-1/2 md:top-[35%] md:w-full md:max-w-xl md:-translate-x-1/2 md:-translate-y-1/2",
+            "fixed z-50 flex min-h-0 flex-col overflow-hidden bg-background p-0 gap-0",
+            "inset-0 rounded-none border-0 shadow-none max-h-[100dvh]",
+            /* Desktop: viewport-centered; fixed height prevents size/position shift while results load */
+            "md:inset-auto md:left-1/2 md:top-1/2 md:h-[min(560px,85vh)] md:w-full md:max-w-xl md:-translate-x-1/2 md:-translate-y-1/2",
             "md:rounded-lg md:border md:border-border md:shadow-lg",
             "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
             "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
@@ -131,7 +132,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
           <Dialog.Title className="sr-only">Search</Dialog.Title>
 
           {/* Mobile: X on top row, search box full width on next row */}
-          <div className="flex flex-col md:hidden">
+          <div className="flex shrink-0 flex-col md:hidden">
             <div className="flex justify-end p-4 pb-0">
               <Button
                 variant="ghost"
@@ -159,7 +160,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
           </div>
 
           {/* Desktop: single row with icon left, input, esc */}
-          <div className="hidden items-center gap-2 border-b border-border px-3 py-2 md:flex">
+          <div className="hidden shrink-0 items-center gap-2 border-b border-border px-3 py-2 md:flex">
             <Search className="size-4 shrink-0 text-muted-foreground" />
             <Input
               placeholder={tSidebar("searchPlaceholder")}
@@ -173,7 +174,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
             </kbd>
           </div>
 
-          <div className="min-h-[240px] flex-1 overflow-y-auto px-4 py-4 md:px-3">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-3">
             {!query.trim() ? (
               <div className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">
                 {tSidebar("searchStartHint")}

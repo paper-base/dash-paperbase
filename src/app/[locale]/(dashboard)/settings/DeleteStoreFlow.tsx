@@ -1,6 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
+import { useTranslations } from "next-intl";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { DELETE_STORE_CONFIRM_PHRASE } from "@/lib/validation";
 import { cn } from "@/lib/utils";
+import { translateDeletionStep } from "./deletionStepLabels";
 
 type DeleteStatus = {
   status: string;
@@ -60,6 +62,7 @@ export default function DeleteStoreFlow({
   storeDisplayName: string;
   onCloseDeletion: () => void;
 }) {
+  const t = useTranslations("settings");
   function handleDialogOpenChange(next: boolean) {
     if (!next) {
       if (deleteRequestSubmitting) return;
@@ -70,7 +73,7 @@ export default function DeleteStoreFlow({
   }
 
   function stepDisplay(step: string) {
-    return step;
+    return translateDeletionStep(step, (key) => t(key as never));
   }
 
   return (
@@ -90,10 +93,9 @@ export default function DeleteStoreFlow({
           }}
         >
           <DialogHeader className="gap-1 border-b border-border p-4 sm:gap-1.5 sm:p-6">
-            <DialogTitle className="text-sm font-semibold sm:text-base">Delete Store</DialogTitle>
+            <DialogTitle className="text-sm font-semibold sm:text-base">{t("deleteFlow.dialogTitle")}</DialogTitle>
             <DialogDescription className="text-xs leading-snug text-muted-foreground sm:text-sm sm:leading-normal">
-              This will permanently delete the store and associated data including products, orders, customers,
-              and analytics.
+              {t("deleteFlow.dialogDescription")}
             </DialogDescription>
           </DialogHeader>
 
@@ -103,7 +105,7 @@ export default function DeleteStoreFlow({
                 htmlFor="delete-store-confirm-name"
                 className="text-xs leading-snug text-foreground sm:text-sm sm:leading-normal"
               >
-                To confirm, type{" "}
+                {t("deleteFlow.confirmTypeName")}{" "}
                 <span className="break-words font-semibold text-foreground">
                   {expectedStoreName || storeDisplayName}
                 </span>
@@ -124,7 +126,7 @@ export default function DeleteStoreFlow({
                 htmlFor="delete-store-confirm-phrase"
                 className="text-xs leading-snug text-foreground sm:text-sm sm:leading-normal"
               >
-                To confirm, type{" "}
+                {t("deleteFlow.confirmTypePhrase")}{" "}
                 <span className="font-semibold text-foreground">{DELETE_STORE_CONFIRM_PHRASE}</span>
               </label>
               <Input
@@ -144,7 +146,7 @@ export default function DeleteStoreFlow({
             >
               <AlertCircle className="size-4 shrink-0 sm:size-5" aria-hidden />
               <p className="leading-snug">
-                Deleting <span className="font-semibold">{storeDisplayName}</span> cannot be undone.
+                {t("deleteFlow.warningUndone", { name: storeDisplayName })}
               </p>
             </div>
 
@@ -164,7 +166,7 @@ export default function DeleteStoreFlow({
               onClick={() => onDeleteConfirmOpenChange(false)}
               disabled={deleteRequestSubmitting}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button
               type="button"
@@ -177,10 +179,10 @@ export default function DeleteStoreFlow({
               {deleteRequestSubmitting ? (
                 <>
                   <Loader2 className="size-3.5 animate-spin sm:size-4" aria-hidden />
-                  Deleting...
+                  {t("deleteFlow.deleting")}
                 </>
               ) : (
-                "Delete Store"
+                t("deleteFlow.dialogTitle")
               )}
             </Button>
           </DialogFooter>
@@ -193,12 +195,14 @@ export default function DeleteStoreFlow({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">
-                  {deleteSuccessDisplayed ? "Store deleted" : "Deleting your store"}
+                  {deleteSuccessDisplayed
+                    ? t("deleteFlow.overlaySuccessTitle")
+                    : t("deleteFlow.overlayDeletingTitle")}
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {deleteSuccessDisplayed
-                    ? "Your store has been permanently deleted."
-                    : "Please keep this page open until deletion finishes."}
+                    ? t("deleteFlow.overlaySuccessBody")
+                    : t("deleteFlow.overlayWaitBody")}
                 </p>
               </div>
             </div>
@@ -247,7 +251,7 @@ export default function DeleteStoreFlow({
                 <p className="text-sm text-destructive">{deleteRequestError}</p>
                 <div className="mt-4 flex justify-end">
                   <Button type="button" variant="outline" onClick={onCloseDeletion}>
-                    Close
+                    {t("close")}
                   </Button>
                 </div>
               </div>

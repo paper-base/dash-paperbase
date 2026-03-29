@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { StoreFormData } from "./useOnboarding";
@@ -20,6 +21,8 @@ export function StoreDetailsStep({
   onFieldChange,
   onSubmit,
 }: StoreDetailsStepProps) {
+  const t = useTranslations("auth.onboarding");
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {error && (
@@ -30,7 +33,7 @@ export function StoreDetailsStep({
 
       <div className="form-field">
         <label htmlFor="name" className="field-label">
-          Store name <span className="text-destructive">*</span>
+          {t("storeName")} <span className="text-destructive">*</span>
         </label>
         <Input
           id="name"
@@ -48,7 +51,7 @@ export function StoreDetailsStep({
 
       <div className="form-field">
         <label htmlFor="store_type" className="field-label">
-          Store type
+          {t("storeType")}
         </label>
         <Input
           id="store_type"
@@ -62,13 +65,13 @@ export function StoreDetailsStep({
         {fieldErrors.store_type && (
           <p className="text-xs text-destructive">{fieldErrors.store_type}</p>
         )}
-        <p className="text-xs text-muted-foreground">Max 4 words. Optional.</p>
+        <p className="text-xs text-muted-foreground">{t("storeTypeHint")}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="form-field">
           <label htmlFor="owner_first_name" className="field-label">
-            First name <span className="text-destructive">*</span>
+            {t("firstName")} <span className="text-destructive">*</span>
           </label>
           <Input
             id="owner_first_name"
@@ -85,7 +88,7 @@ export function StoreDetailsStep({
         </div>
         <div className="form-field">
           <label htmlFor="owner_last_name" className="field-label">
-            Last name <span className="text-destructive">*</span>
+            {t("lastName")} <span className="text-destructive">*</span>
           </label>
           <Input
             id="owner_last_name"
@@ -104,7 +107,7 @@ export function StoreDetailsStep({
 
       <div className="form-field">
         <label htmlFor="owner_email" className="field-label">
-          Owner email <span className="text-destructive">*</span>
+          {t("ownerEmail")} <span className="text-destructive">*</span>
         </label>
         <Input
           id="owner_email"
@@ -123,7 +126,7 @@ export function StoreDetailsStep({
 
       <div className="form-field">
         <label htmlFor="contact_email" className="field-label">
-          Store email
+          {t("storeEmail")}
         </label>
         <Input
           id="contact_email"
@@ -140,7 +143,7 @@ export function StoreDetailsStep({
 
       <div className="form-field">
         <label htmlFor="phone" className="field-label">
-          Store phone
+          {t("storePhone")}
         </label>
         <Input
           id="phone"
@@ -157,7 +160,7 @@ export function StoreDetailsStep({
 
       <div className="form-field">
         <label htmlFor="address" className="field-label">
-          Address
+          {t("address")}
         </label>
         <textarea
           id="address"
@@ -174,7 +177,7 @@ export function StoreDetailsStep({
       </div>
 
       <Button type="submit" className="mt-2 w-full">
-        Continue
+        {t("continue")}
       </Button>
     </form>
   );

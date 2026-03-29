@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Truck, Plus, X } from "lucide-react";
 import api from "@/lib/api";
 import { formatAdminApiErrorFromAxios } from "@/lib/admin-api-error";
+import { formatIntegrationDate } from "../formatIntegrationDate";
 import type { Courier, PaginatedResponse } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +21,7 @@ const emptyForm: ConnectForm = {
 };
 
 export default function CourierIntegration() {
+  const t = useTranslations("settings");
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -60,19 +63,14 @@ export default function CourierIntegration() {
       setForm({ ...emptyForm });
       fetchCouriers();
     } catch (err: unknown) {
-      setError(
-        formatAdminApiErrorFromAxios(
-          err,
-          "Failed to save courier settings. Check the form and try again.",
-        ),
-      );
+      setError(formatAdminApiErrorFromAxios(err, t("courier.saveFailed")));
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete(publicId: string) {
-    if (!confirm("Disconnect this courier?")) return;
+    if (!confirm(t("courier.confirmDisconnect"))) return;
     setDeletingId(publicId);
     try {
       await api.delete(`admin/couriers/${publicId}/`);
@@ -103,9 +101,7 @@ export default function CourierIntegration() {
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Truck className="size-5 text-muted-foreground" />
-          <h3 className="text-sm font-semibold text-foreground">
-            Courier Integration
-          </h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("courier.heading")}</h3>
         </div>
         {!showForm && couriers.length > 0 && (
           <Button
@@ -115,22 +111,16 @@ export default function CourierIntegration() {
             className="text-xs"
           >
             <Plus className="mr-1 size-3.5" />
-            Add
+            {t("add")}
           </Button>
         )}
       </div>
-      <p className="mb-4 text-xs text-muted-foreground">
-        Connect <strong>Steadfast (Packzy)</strong> to send orders from the dashboard.
-        Credentials are stored in Akkho only until you dispatch. You need the{" "}
-        <strong>API key</strong> and <strong>secret key</strong> from the Packzy portal.
-      </p>
+      <p className="mb-4 text-xs text-muted-foreground">{t("courier.intro")}</p>
 
       {showForm && (
         <div className="mb-4 rounded-lg border border-border bg-background p-4">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-medium text-foreground">
-              Connect Steadfast
-            </span>
+            <span className="text-sm font-medium text-foreground">{t("courier.connectTitle")}</span>
             <button
               type="button"
               onClick={() => {
@@ -149,9 +139,7 @@ export default function CourierIntegration() {
               </div>
             )}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground">
-                API Key
-              </label>
+              <label className="text-sm font-medium text-foreground">{t("courier.apiKey")}</label>
               <Input
                 type="password"
                 required
@@ -159,15 +147,13 @@ export default function CourierIntegration() {
                 onChange={(e) =>
                   setForm({ ...form, api_key: e.target.value })
                 }
-                placeholder="Packzy API key"
+                placeholder={t("courier.apiKeyPlaceholder")}
                 className="max-w-md"
                 autoComplete="off"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground">
-                Secret Key
-              </label>
+              <label className="text-sm font-medium text-foreground">{t("courier.secretKey")}</label>
               <Input
                 type="password"
                 required
@@ -175,14 +161,14 @@ export default function CourierIntegration() {
                 onChange={(e) =>
                   setForm({ ...form, secret_key: e.target.value })
                 }
-                placeholder="Packzy secret key"
+                placeholder={t("courier.secretKeyPlaceholder")}
                 className="max-w-md"
                 autoComplete="off"
               />
             </div>
             <div className="flex gap-2 pt-1">
               <Button type="submit" size="sm" disabled={saving}>
-                {saving ? "Connecting..." : "Connect"}
+                {saving ? t("courier.connecting") : t("courier.connect")}
               </Button>
               <Button
                 type="button"
@@ -193,7 +179,7 @@ export default function CourierIntegration() {
                   setError("");
                 }}
               >
-                Cancel
+                {t("cancel")}
               </Button>
             </div>
           </form>
@@ -206,9 +192,7 @@ export default function CourierIntegration() {
         </div>
       ) : couriers.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            No courier connected yet.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("courier.empty")}</p>
           {!showForm && (
             <Button
               size="sm"
@@ -217,7 +201,7 @@ export default function CourierIntegration() {
               className="text-xs"
             >
               <Plus className="mr-1 size-3.5" />
-              Connect Steadfast
+              {t("courier.connectCta")}
             </Button>
           )}
         </div>
@@ -230,9 +214,7 @@ export default function CourierIntegration() {
             >
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium capitalize text-foreground">
-                    Steadfast
-                  </span>
+                  <span className="text-sm font-medium capitalize text-foreground">{t("courier.providerName")}</span>
                   <span
                     className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                       c.is_active
@@ -240,24 +222,24 @@ export default function CourierIntegration() {
                         : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                     }`}
                   >
-                    {c.is_active ? "Active" : "Inactive"}
+                    {c.is_active ? t("active") : t("inactive")}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
                   <span>
-                    API Key:{" "}
+                    {t("courier.apiKeyLabel")}{" "}
                     <code className="font-mono">
                       {c.api_key_masked || "---"}
                     </code>
                   </span>
                   {c.secret_key_masked && (
                     <span>
-                      Secret:{" "}
+                      {t("courier.secretLabel")}{" "}
                       <code className="font-mono">{c.secret_key_masked}</code>
                     </span>
                   )}
                   <span>
-                    Connected {new Date(c.created_at).toLocaleDateString()}
+                    {t("courier.connectedOn")} {formatIntegrationDate(c.created_at)}
                   </span>
                 </div>
               </div>
@@ -270,10 +252,10 @@ export default function CourierIntegration() {
                   className="text-xs"
                 >
                   {togglingId === c.public_id
-                    ? "..."
+                    ? t("courier.ellipsis")
                     : c.is_active
-                      ? "Deactivate"
-                      : "Activate"}
+                      ? t("courier.deactivate")
+                      : t("courier.activate")}
                 </Button>
                 <Button
                   size="sm"
@@ -282,7 +264,7 @@ export default function CourierIntegration() {
                   onClick={() => handleDelete(c.public_id)}
                   className="border-destructive text-xs text-destructive hover:bg-destructive/10"
                 >
-                  {deletingId === c.public_id ? "Removing..." : "Disconnect"}
+                  {deletingId === c.public_id ? t("courier.removing") : t("courier.disconnect")}
                 </Button>
               </div>
             </div>

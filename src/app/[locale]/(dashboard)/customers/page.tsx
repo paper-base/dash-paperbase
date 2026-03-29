@@ -24,6 +24,7 @@ export default function CustomersPage() {
   const locale = useLocale();
   const tNav = useTranslations("nav");
   const tPages = useTranslations("pages");
+  const tCommon = useTranslations("common");
   const { page, filters, setFilter, setPage, clearFilters } = useFilters([
     "joined_date",
     "search",
@@ -137,12 +138,12 @@ export default function CustomersPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/40">
-                      <th className="th">Email</th>
-                      <th className="th">Username</th>
-                      <th className="th">Phone</th>
-                      <th className="th">Marketing</th>
-                      <th className="th">Total Orders</th>
-                      <th className="th">Joined</th>
+                      <th className="th">{tPages("customersListColEmail")}</th>
+                      <th className="th">{tPages("customersListColUsername")}</th>
+                      <th className="th">{tPages("customersListColPhone")}</th>
+                      <th className="th">{tPages("customersListColMarketing")}</th>
+                      <th className="th">{tPages("customersListColTotalOrders")}</th>
+                      <th className="th">{tPages("customersListColJoined")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
@@ -170,7 +171,7 @@ export default function CustomersPage() {
                           {c.phone || "—"}
                         </td>
                         <td className="px-4 py-3">
-                          {c.marketing_opt_in ? "Yes" : "No"}
+                          {c.marketing_opt_in ? tCommon("yes") : tCommon("no")}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
                           {c.total_orders ?? 0}
@@ -195,15 +196,19 @@ export default function CustomersPage() {
                 onClick={() => setPage(page - 1)}
                 className="btn-page"
               >
-                Previous
+                {tPages("supportTicketsPrevious")}
               </button>
-              <span className="text-sm text-muted-foreground">Page {page}</span>
+              <span className="text-sm text-muted-foreground">
+                {tPages("supportTicketsPageLabel", {
+                  page: toLocaleDigits(String(page), locale),
+                })}
+              </span>
               <button
                 disabled={!hasNext}
                 onClick={() => setPage(page + 1)}
                 className="btn-page"
               >
-                Next
+                {tPages("supportTicketsNext")}
               </button>
             </div>
           )}

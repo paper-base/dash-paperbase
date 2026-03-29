@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { ChevronDown, ChevronRight, Undo2 } from "lucide-react";
 import api from "@/lib/api";
@@ -42,6 +43,7 @@ function CategoryTreeRows({
   onEdit,
   onDelete,
   onAddChild,
+  labels,
 }: {
   nodes: AdminCategoryTreeNode[];
   depth: number;
@@ -50,6 +52,13 @@ function CategoryTreeRows({
   onEdit: (n: AdminCategoryTreeNode) => void;
   onDelete: (id: string) => void;
   onAddChild: (parentId: string) => void;
+  labels: {
+    addChild: string;
+    edit: string;
+    delete: string;
+    active: string;
+    inactive: string;
+  };
 }) {
   return (
     <>
@@ -89,7 +98,7 @@ function CategoryTreeRows({
               <td className="px-4 py-3 text-foreground">{node.product_count}</td>
               <td className="px-4 py-3 text-foreground">{node.order}</td>
               <td className="px-4 py-3">
-                <ActiveBadge active={node.is_active} />
+                <ActiveBadge active={node.is_active} activeLabel={labels.active} inactiveLabel={labels.inactive} />
               </td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-2">
@@ -97,17 +106,17 @@ function CategoryTreeRows({
                     onClick={() => onAddChild(node.public_id)}
                     className="text-sm"
                   >
-                    Add child
+                    {labels.addChild}
                   </ClickableText>
                   <ClickableText onClick={() => onEdit(node)} className="text-sm">
-                    Edit
+                    {labels.edit}
                   </ClickableText>
                   <ClickableText
                     variant="destructive"
                     onClick={() => onDelete(node.public_id)}
                     className="text-sm"
                   >
-                    Delete
+                    {labels.delete}
                   </ClickableText>
                 </div>
               </td>
@@ -121,6 +130,7 @@ function CategoryTreeRows({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onAddChild={onAddChild}
+                labels={labels}
               />
             ) : null}
           </Fragment>
@@ -132,6 +142,15 @@ function CategoryTreeRows({
 
 export default function CategoriesPage() {
   const router = useRouter();
+  const tPages = useTranslations("pages");
+  const tCommon = useTranslations("common");
+  const treeLabels = {
+    addChild: tPages("categoriesAddChild"),
+    edit: tCommon("edit"),
+    delete: tCommon("delete"),
+    active: tCommon("active"),
+    inactive: tCommon("inactive"),
+  };
   const [tree, setTree] = useState<AdminCategoryTreeNode[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [loading, setLoading] = useState(true);
@@ -242,11 +261,7 @@ export default function CategoriesPage() {
   }
 
   async function deleteCategory(publicId: string) {
-    if (
-      !confirm(
-        "Delete this category? Subcategories are removed with it (database cascade)."
-      )
-    ) {
+    if (!confirm(tPages("categoriesConfirmDelete"))) {
       return;
     }
     try {
@@ -267,11 +282,11 @@ export default function CategoriesPage() {
 
   const formTitle =
     mode === "edit"
-      ? "Edit category"
+      ? tPages("categoriesEditCategory")
       : mode === "new_child"
-        ? "New subcategory"
+        ? tPages("categoriesNewSubcategory")
         : mode === "new_root"
-          ? "New root category"
+          ? tPages("categoriesNewRoot")
           : "";
 
   return (
@@ -281,13 +296,13 @@ export default function CategoriesPage() {
           <button
             type="button"
             onClick={() => router.back()}
-            aria-label="Go back"
+            aria-label={tPages("categoriesGoBackAria")}
             className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
           >
             <Undo2 className="h-4 w-4" />
           </button>
         </div>
-        <h1 className="text-2xl font-medium text-foreground">Categories</h1>
+        <h1 className="text-2xl font-medium text-foreground">{tPages("categoriesTitle")}</h1>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -296,7 +311,7 @@ export default function CategoriesPage() {
           onClick={openNewRoot}
           className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
-          Add root category
+          {tPages("categoriesAddRoot")}
         </button>
         {mode !== "closed" ? (
           <button
@@ -304,7 +319,7 @@ export default function CategoriesPage() {
             onClick={() => setMode("closed")}
             className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-muted"
           >
-            Cancel form
+            {tPages("categoriesCancelForm")}
           </button>
         ) : null}
       </div>
@@ -318,19 +333,19 @@ export default function CategoriesPage() {
           <div className="grid grid-cols-2 gap-3">
             <Input
               required
-              placeholder="Name"
+              placeholder={tPages("categoriesPlaceholderName")}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
             <Input
               required
-              placeholder="Slug"
+              placeholder={tPages("categoriesPlaceholderSlug")}
               value={form.slug}
               onChange={(e) => setForm({ ...form, slug: e.target.value })}
             />
           </div>
           <Input
-            placeholder="Description"
+            placeholder={tPages("categoriesPlaceholderDescription")}
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
@@ -340,7 +355,7 @@ export default function CategoriesPage() {
               onChange={(e) => setForm({ ...form, parent: e.target.value })}
               disabled={mode === "new_child"}
             >
-              <option value="">Root level (no parent)</option>
+              <option value="">{tPages("categoriesParentRoot")}</option>
               {parentOptions.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
@@ -349,7 +364,7 @@ export default function CategoriesPage() {
             </Select>
             <Input
               type="number"
-              placeholder="Order"
+              placeholder={tPages("categoriesPlaceholderOrder")}
               value={form.order}
               onChange={(e) => setForm({ ...form, order: e.target.value })}
             />
@@ -370,7 +385,7 @@ export default function CategoriesPage() {
                 }
                 className="form-checkbox"
               />{" "}
-              Active
+              {tPages("categoriesActiveLabel")}
             </label>
           </div>
           <div className="flex gap-2">
@@ -379,7 +394,7 @@ export default function CategoriesPage() {
               disabled={saving}
               className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              {saving ? "Saving…" : "Save"}
+              {saving ? tCommon("saving") : tCommon("save")}
             </button>
           </div>
         </form>
@@ -387,19 +402,21 @@ export default function CategoriesPage() {
 
       <section>
         <h2 className="mb-4 text-lg font-medium text-foreground">
-          Category tree ({flattenCategoryOptions(tree).length} categories)
+          {tPages("categoriesTreeHeading", {
+            count: flattenCategoryOptions(tree).length,
+          })}
         </h2>
         <div className="overflow-x-auto rounded-xl border border-dashed border-card-border bg-card">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/40">
-                <th className="th">Name</th>
-                <th className="th">Slug</th>
-                <th className="th">Children</th>
-                <th className="th">Products</th>
-                <th className="th">Order</th>
-                <th className="th">Status</th>
-                <th className="th">Actions</th>
+                <th className="th">{tPages("categoriesColName")}</th>
+                <th className="th">{tPages("categoriesColSlug")}</th>
+                <th className="th">{tPages("categoriesColChildren")}</th>
+                <th className="th">{tPages("categoriesColProducts")}</th>
+                <th className="th">{tPages("categoriesColOrder")}</th>
+                <th className="th">{tPages("categoriesColStatus")}</th>
+                <th className="th">{tPages("categoriesColActions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
@@ -409,7 +426,7 @@ export default function CategoriesPage() {
                     colSpan={7}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
-                    No categories yet. Add a root category to get started.
+                    {tPages("categoriesEmpty")}
                   </td>
                 </tr>
               ) : (
@@ -421,6 +438,7 @@ export default function CategoriesPage() {
                   onEdit={openEdit}
                   onDelete={deleteCategory}
                   onAddChild={openNewChild}
+                  labels={treeLabels}
                 />
               )}
             </tbody>
@@ -431,7 +449,15 @@ export default function CategoriesPage() {
   );
 }
 
-function ActiveBadge({ active }: { active: boolean }) {
+function ActiveBadge({
+  active,
+  activeLabel,
+  inactiveLabel,
+}: {
+  active: boolean;
+  activeLabel: string;
+  inactiveLabel: string;
+}) {
   return (
     <span
       className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -440,7 +466,7 @@ function ActiveBadge({ active }: { active: boolean }) {
           : "bg-muted text-muted-foreground"
       }`}
     >
-      {active ? "Active" : "Inactive"}
+      {active ? activeLabel : inactiveLabel}
     </span>
   );
 }

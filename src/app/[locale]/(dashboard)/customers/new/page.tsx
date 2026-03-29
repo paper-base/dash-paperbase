@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Undo2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,8 @@ function Field({
 
 export default function NewCustomerPage() {
   const router = useRouter();
+  const tPages = useTranslations("pages");
+  const tCommon = useTranslations("common");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -50,9 +53,9 @@ export default function NewCustomerPage() {
     setSuccessMessage("");
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
-      setSuccessMessage("Backend integration coming soon. Data stored locally.");
+      setSuccessMessage(tPages("customerNewSuccess"));
     } catch {
-      setError("Something went wrong.");
+      setError(tPages("customerNewError"));
     } finally {
       setSaving(false);
     }
@@ -67,7 +70,7 @@ export default function NewCustomerPage() {
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Back to customers"
+              aria-label={tPages("customerNewBackAria")}
               onClick={() => router.back()}
               className="shrink-0"
             >
@@ -75,7 +78,7 @@ export default function NewCustomerPage() {
             </Button>
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Add Customer
+            {tPages("customerNewTitle")}
           </h1>
         </div>
       </div>
@@ -102,24 +105,22 @@ export default function NewCustomerPage() {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="text-base font-semibold text-foreground">
-              Customer Information
+              {tPages("customerNewInfoTitle")}
             </CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Basic customer details. Backend integration coming soon.
-            </p>
+            <p className="text-xs text-muted-foreground">{tPages("customerNewInfoHint")}</p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Field label="Name" required>
+            <Field label={tPages("customerNewName")} required>
               <Input
                 type="text"
                 required
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Customer name"
+                placeholder={tPages("customerNewNamePlaceholder")}
                 className={fieldControlClass}
               />
             </Field>
-            <Field label="Email" required>
+            <Field label={tPages("customerNewEmail")} required>
               <Input
                 type="email"
                 required
@@ -129,7 +130,7 @@ export default function NewCustomerPage() {
                 className={fieldControlClass}
               />
             </Field>
-            <Field label="Phone" required>
+            <Field label={tPages("customerNewPhone")} required>
               <Input
                 type="tel"
                 required
@@ -139,12 +140,12 @@ export default function NewCustomerPage() {
                 className={fieldControlClass}
               />
             </Field>
-            <Field label="Address">
+            <Field label={tPages("customerNewAddress")}>
               <Textarea
                 rows={3}
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
-                placeholder="Full address"
+                placeholder={tPages("customerNewAddressPlaceholder")}
                 className={fieldControlClass}
               />
             </Field>
@@ -157,11 +158,11 @@ export default function NewCustomerPage() {
             variant="outline"
             onClick={() => router.back()}
           >
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button type="submit" disabled={saving} className="gap-2">
             <Plus className="size-4" />
-            {saving ? "Saving..." : "Add Customer"}
+            {saving ? tCommon("saving") : tPages("customerNewTitle")}
           </Button>
         </div>
       </form>

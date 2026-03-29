@@ -31,6 +31,7 @@ export default function ProductsPage() {
   const locale = useLocale();
   const tNav = useTranslations("nav");
   const tPages = useTranslations("pages");
+  const tCommon = useTranslations("common");
   const { currencySymbol } = useBranding();
   const { page, filters, setFilter, setPage, clearFilters } = useFilters([
     "status",
@@ -265,8 +266,8 @@ export default function ProductsPage() {
           onChange={(value) => setFilter("status", value)}
           placeholder={tPages("filtersStatus")}
           options={[
-            { value: "active", label: "Active" },
-            { value: "inactive", label: "Inactive" },
+            { value: "active", label: tCommon("active") },
+            { value: "inactive", label: tCommon("inactive") },
           ]}
         />
         <FilterDropdown
@@ -274,9 +275,9 @@ export default function ProductsPage() {
           onChange={(value) => setFilter("stock", value)}
           placeholder={tPages("filtersStock")}
           options={[
-            { value: "in_stock", label: "In stock" },
-            { value: "low_stock", label: "Low stock" },
-            { value: "out_of_stock", label: "Out of stock" },
+            { value: "in_stock", label: tPages("inventoryStockInStock") },
+            { value: "low_stock", label: tPages("inventoryStockLow") },
+            { value: "out_of_stock", label: tPages("inventoryStockOut") },
           ]}
         />
         <FilterDropdown
@@ -311,12 +312,12 @@ export default function ProductsPage() {
         <FilterDropdown
           value={filters.ordering}
           onChange={(value) => setFilter("ordering", value)}
-          placeholder="Sort"
+          placeholder={tPages("productsListSortPlaceholder")}
           options={[
-            { value: "newest", label: "Newest" },
-            { value: "price_asc", label: "Price: Low to High" },
-            { value: "price_desc", label: "Price: High to Low" },
-            { value: "popularity", label: "Popularity" },
+            { value: "newest", label: tPages("productsListSortNewest") },
+            { value: "price_asc", label: tPages("productsListSortPriceAsc") },
+            { value: "price_desc", label: tPages("productsListSortPriceDesc") },
+            { value: "popularity", label: tPages("productsListSortPopularity") },
           ]}
         />
         <button
@@ -350,16 +351,16 @@ export default function ProductsPage() {
                         checked={allSelected}
                         onChange={toggleSelectAll}
                         className="form-checkbox"
-                        aria-label="Select all products on this page"
+                        aria-label={tPages("productsListSelectAllAria")}
                       />
                     )}
                   </th>
-                  <th className="th">Product</th>
-                  <th className="th">Brand</th>
-                  <th className="th">Category</th>
-                  <th className="th">Price</th>
-                  <th className="th">Stock</th>
-                  <th className="th">Status</th>
+                  <th className="th">{tPages("productsListColProduct")}</th>
+                  <th className="th">{tPages("productsListColBrand")}</th>
+                  <th className="th">{tPages("productsListColCategory")}</th>
+                  <th className="th">{tPages("productsListColPrice")}</th>
+                  <th className="th">{tPages("productsListColStock")}</th>
+                  <th className="th">{tPages("productsListColStatus")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
@@ -373,7 +374,9 @@ export default function ProductsPage() {
                           onChange={() => toggleSelect(product.public_id)}
                           onClick={(e) => e.stopPropagation()}
                           className="form-checkbox"
-                          aria-label={`Select ${product.name}`}
+                          aria-label={tPages("productsListSelectRowAria", {
+                            name: product.name,
+                          })}
                         />
                       )}
                     </td>
@@ -409,9 +412,14 @@ export default function ProductsPage() {
                           <ClickableText
                             href={`/variants?product_public_id=${encodeURIComponent(product.public_id)}`}
                             className="text-xs underline-offset-2"
-                            title="Stock lives on each variant (SKUs)."
+                            title={tPages("productsListVariantStockTitle")}
                           >
-                            {product.variant_count} variants — manage
+                            {tPages("productsListVariantsManage", {
+                              count: toLocaleDigits(
+                                String(product.variant_count),
+                                locale
+                              ),
+                            })}
                           </ClickableText>
                         </div>
                       ) : (
@@ -421,7 +429,9 @@ export default function ProductsPage() {
                               ? "text-destructive"
                               : "text-foreground"
                           }`}
-                          title="Stock updates are managed from Inventory."
+                          title={tPages(
+                            "productsListStockManagedFromInventoryTitle"
+                          )}
                         >
                           {product.total_stock ?? product.available_quantity ?? 0}
                         </span>
@@ -437,7 +447,7 @@ export default function ProductsPage() {
                         disabled={updatingId === product.public_id}
                       >
                         <ComboboxInput
-                          placeholder="Status"
+                          placeholder={tPages("productsListStatusPlaceholder")}
                           showClear={false}
                           className="w-[110px]"
                           inputClassName={`cursor-pointer caret-transparent text-xs font-semibold capitalize ${
@@ -450,12 +460,12 @@ export default function ProductsPage() {
                           <ComboboxList>
                             <ComboboxItem value="active">
                               <span className="text-xs font-medium capitalize">
-                                Active
+                                {tCommon("active")}
                               </span>
                             </ComboboxItem>
                             <ComboboxItem value="inactive">
                               <span className="text-xs font-medium capitalize">
-                                Inactive
+                                {tCommon("inactive")}
                               </span>
                             </ComboboxItem>
                           </ComboboxList>
@@ -474,15 +484,19 @@ export default function ProductsPage() {
               onClick={() => setPage(page - 1)}
               className="btn-page"
             >
-              Previous
+              {tPages("supportTicketsPrevious")}
             </button>
-            <span className="text-sm text-muted-foreground">Page {page}</span>
+            <span className="text-sm text-muted-foreground">
+              {tPages("supportTicketsPageLabel", {
+                page: toLocaleDigits(String(page), locale),
+              })}
+            </span>
             <button
               disabled={!hasNext}
               onClick={() => setPage(page + 1)}
               className="btn-page"
             >
-              Next
+              {tPages("supportTicketsNext")}
             </button>
           </div>
         </>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { Undo2, Check, Plus, X } from "lucide-react";
 import api from "@/lib/api";
@@ -26,6 +27,8 @@ const MAX_IMAGES = MAX_PRODUCT_IMAGES;
 
 export default function NewProductPage() {
   const router = useRouter();
+  const tPages = useTranslations("pages");
+  const tCommon = useTranslations("common");
   const [categoryTree, setCategoryTree] = useState<AdminCategoryTreeNode[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -133,7 +136,7 @@ export default function NewProductPage() {
         formValidation.errors.name ??
           formValidation.errors.price ??
           formValidation.errors.category ??
-          "Please correct the highlighted fields."
+          tPages("formFixHighlighted")
       );
       return;
     }
@@ -142,7 +145,7 @@ export default function NewProductPage() {
     const extraErrors = validateRequiredExtraFields(schemaWithNames, extraFields);
     if (Object.keys(extraErrors).length > 0) {
       setExtraFieldsErrors(extraErrors);
-      setError("Please fill in all required extra fields.");
+      setError(tPages("productFillExtraFields"));
       return;
     }
     setExtraFieldsErrors({});
@@ -190,8 +193,8 @@ export default function NewProductPage() {
             ? Array.isArray((message as { slug: unknown }).slug)
               ? (message as { slug: string[] }).slug[0]
               : String((message as { slug: unknown }).slug)
-            : "Failed to create product.";
-      setError(text || "Failed to create product.");
+            : tPages("productCreateFailed");
+      setError(text || tPages("productCreateFailed"));
     } finally {
       setSaving(false);
     }
@@ -209,7 +212,7 @@ export default function NewProductPage() {
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Back to products"
+              aria-label={tPages("productBackAria")}
               onClick={() => router.back()}
               className="shrink-0"
             >
@@ -217,13 +220,13 @@ export default function NewProductPage() {
             </Button>
           </div>
           <h1 className="text-2xl font-semibold text-foreground tracking-tight">
-            Add New Product
+            {tPages("productNewTitle")}
           </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button type="submit" form="product-form" disabled={saving} className="gap-2">
             <Check className="size-4" />
-            {saving ? "Saving..." : "Add Product"}
+            {saving ? tPages("productSavingButton") : tPages("productAddProduct")}
           </Button>
         </div>
       </div>
@@ -248,17 +251,17 @@ export default function NewProductPage() {
           <Card className="shadow-sm">
             <CardHeader>
               <CardTitle className="text-base font-semibold text-foreground">
-                General Information
+                {tPages("productGeneralInformation")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Field label="Product name" required>
+              <Field label={tPages("productNameLabel")} required>
                 <Input
                   type="text"
                   required
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="e.g. Wireless Earbuds Pro"
+                  placeholder={tPages("productNamePlaceholder")}
                   className={fieldControlClass}
                 />
                 <div className="mt-1.5 flex items-center gap-2">
@@ -266,11 +269,13 @@ export default function NewProductPage() {
                     className="text-xs text-muted-foreground"
                     aria-describedby={slugUsesFallback ? "slug-warning" : undefined}
                   >
-                    Slug:{" "}
+                    {tPages("productSlugPrefix")}{" "}
                     <span className="font-mono">{resolvedSlug || baseSlug || "—"}</span>
                   </p>
                   {slugChecking && (
-                    <span className="text-xs text-muted-foreground">Checking…</span>
+                    <span className="text-xs text-muted-foreground">
+                      {tPages("productSlugChecking")}
+                    </span>
                   )}
                 </div>
                 {slugUsesFallback && baseSlug && (
@@ -278,27 +283,27 @@ export default function NewProductPage() {
                     id="slug-warning"
                     className="mt-1 inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300"
                   >
-                    A similar slug already exists. Using an alternative for SEO.
+                    {tPages("productSlugFallbackWarning")}
                   </p>
                 )}
               </Field>
-              <Field label="Description">
+              <Field label={tPages("productDescription")}>
                 <Textarea
                   rows={4}
                   value={form.description}
                   onChange={(e) =>
                     setForm({ ...form, description: e.target.value })
                   }
-                  placeholder="Describe your product..."
+                  placeholder={tPages("productDescriptionPlaceholder")}
                   className={fieldControlClass}
                 />
               </Field>
-              <Field label="Brand">
+              <Field label={tPages("productBrand")}>
                 <Input
                   type="text"
                   value={form.brand}
                   onChange={(e) => setForm({ ...form, brand: e.target.value })}
-                  placeholder="Brand name"
+                  placeholder={tPages("productBrandPlaceholder")}
                   className={fieldControlClass}
                 />
               </Field>
@@ -309,12 +314,12 @@ export default function NewProductPage() {
           <Card className="shadow-sm">
             <CardHeader>
               <CardTitle className="text-base font-semibold text-foreground">
-                Pricing and Stock
+                {tPages("productPricingStock")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Base price" required>
+                <Field label={tPages("productBasePrice")} required>
                   <Input
                     type="number"
                     step="0.01"
@@ -327,7 +332,7 @@ export default function NewProductPage() {
                     className={`font-numbers ${fieldControlClass}`}
                   />
                 </Field>
-                <Field label="Compare at (original price)">
+                <Field label={tPages("productCompareAt")}>
                   <Input
                     type="number"
                     step="0.01"
@@ -335,11 +340,11 @@ export default function NewProductPage() {
                     onChange={(e) =>
                       setForm({ ...form, original_price: e.target.value })
                     }
-                    placeholder="Optional"
+                    placeholder={tCommon("optional")}
                     className={`font-numbers ${fieldControlClass}`}
                   />
                 </Field>
-                <Field label="Stock">
+                <Field label={tPages("productStock")}>
                   <Input
                     type="number"
                     min={0}
@@ -349,7 +354,7 @@ export default function NewProductPage() {
                     }
                     className={`font-numbers ${fieldControlClass}`}
                     disabled
-                    title="Initial stock must be set from Inventory after product creation."
+                    title={tPages("productStockNewTitle")}
                   />
                 </Field>
               </div>
@@ -361,10 +366,10 @@ export default function NewProductPage() {
             <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle className="text-base font-semibold text-foreground">
-                  Extra Fields
+                  {tPages("productExtraFields")}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  Custom fields defined in Settings → Dynamic Fields.
+                  {tPages("productExtraFieldsHintNew")}
                 </p>
               </CardHeader>
               <CardContent>
@@ -385,10 +390,10 @@ export default function NewProductPage() {
           <Card className="shadow-sm">
             <CardHeader>
               <CardTitle className="text-base font-semibold text-foreground">
-                Upload Image
+                {tPages("productUploadImage")}
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                {MAX_IMAGES} images max. The first image is always the main product image; add it before adding more. Click a thumbnail to show it in the preview.
+                {tPages("productUploadHintNew", { max: MAX_IMAGES })}
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -396,14 +401,14 @@ export default function NewProductPage() {
                 {bigPreviewUrl ? (
                   <img
                     src={bigPreviewUrl}
-                    alt="Preview"
+                    alt={tPages("productPreviewAlt")}
                     className="h-full w-full object-cover"
                   />
                 ) : (
                   <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 text-muted-foreground transition-colors hover:text-foreground">
                     <Plus className="size-10" />
                     <span className="text-sm font-medium">
-                      Click to upload main image
+                      {tPages("productClickUploadMain")}
                     </span>
                     <input
                       type="file"
@@ -445,13 +450,13 @@ export default function NewProductPage() {
                   }}
                   className="w-full"
                 >
-                  Remove selected image
+                  {tPages("productRemoveSelectedImage")}
                 </Button>
               )}
               <div
                 className="mt-3 flex gap-2 overflow-x-auto pb-3 -mx-1 px-1 sm:overflow-visible sm:flex-wrap sm:pb-0 sm:mx-0 sm:px-0"
                 role="list"
-                aria-label="Product images"
+                aria-label={tPages("productImagesAria")}
               >
                 {Array.from({ length: MAX_IMAGES }, (_, i) => (
                   <div
@@ -468,11 +473,11 @@ export default function NewProductPage() {
                           type="button"
                           className="block h-full w-full focus:outline-none focus:ring-0"
                           onClick={() => setSelectedImageIndex(i)}
-                          aria-label={`Show image ${i + 1} in preview`}
+                          aria-label={tPages("productShowImageInPreview", { n: i + 1 })}
                         >
                           <img
                             src={imagePreviews[i]!}
-                            alt={`Thumbnail ${i + 1}`}
+                            alt={tPages("productThumbnailN", { n: i + 1 })}
                             className="h-full w-full object-cover"
                           />
                         </button>
@@ -493,7 +498,7 @@ export default function NewProductPage() {
                             }
                           }}
                           className="absolute right-1 top-1 rounded-full bg-destructive/90 p-0.5 text-primary-foreground hover:bg-destructive"
-                          aria-label={`Remove image ${i + 1}`}
+                          aria-label={tPages("productRemoveImageN", { n: i + 1 })}
                         >
                           <X className="size-3" />
                         </button>
@@ -503,7 +508,9 @@ export default function NewProductPage() {
                         className={`flex h-full w-full cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground ${
                           i > 0 && !hasMainImage ? "cursor-not-allowed opacity-50" : ""
                         }`}
-                        title={i > 0 && !hasMainImage ? "Add main image first" : undefined}
+                        title={
+                          i > 0 && !hasMainImage ? tPages("productAddMainFirst") : undefined
+                        }
                       >
                         <Plus className="size-5" />
                         <input
@@ -536,11 +543,11 @@ export default function NewProductPage() {
           <Card className="shadow-sm">
             <CardHeader>
               <CardTitle className="text-base font-semibold text-foreground">
-                Category
+                {tPages("productCategoryCard")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Field label="Category" required>
+              <Field label={tPages("productCategoryLabel")} required>
                 <Select
                   required
                   value={form.category}
@@ -549,7 +556,7 @@ export default function NewProductPage() {
                   }
                   className={fieldControlClass}
                 >
-                  <option value="">Select category…</option>
+                  <option value="">{tPages("productSelectCategory")}</option>
                   {categorySelectOptions.map((c) => (
                     <option key={c.value} value={c.value}>
                       {c.label}
@@ -560,7 +567,7 @@ export default function NewProductPage() {
               <Button variant="outline" className="w-full gap-2" asChild>
                 <Link href="/categories">
                   <Plus className="size-4" />
-                  Add category
+                  {tPages("productAddCategory")}
                 </Link>
               </Button>
             </CardContent>

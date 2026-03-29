@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { Undo2, Plus } from "lucide-react";
@@ -73,6 +74,8 @@ const emptyForm = (attrs: ProductAttributeAdmin[]): VariantForm => {
 };
 
 export default function VariantsPage() {
+  const tPages = useTranslations("pages");
+  const tCommon = useTranslations("common");
   const searchParams = useSearchParams();
   const productFromQuery =
     searchParams.get("product_public_id")?.trim() ||
@@ -105,11 +108,11 @@ export default function VariantsPage() {
       setProducts(prods);
       setAttributes(attrs);
     } catch {
-      setError("Could not load products or attributes.");
+      setError(tPages("variantsLoadMetaFailed"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tPages]);
 
   useEffect(() => {
     loadMeta();
@@ -140,11 +143,11 @@ export default function VariantsPage() {
       setVariants(acc);
     } catch {
       setVariants([]);
-      setError("Could not load variants for this product.");
+      setError(tPages("variantsLoadVariantsFailed"));
     } finally {
       setVariantsLoading(false);
     }
-  }, [productId]);
+  }, [productId, tPages]);
 
   useEffect(() => {
     loadVariants();
@@ -231,7 +234,7 @@ export default function VariantsPage() {
           }
           if (parts.length) return parts.join(" | ");
         }
-        return "Save failed";
+        return tPages("variantsSaveFailed");
       };
       setError(msgFromData(data));
     } finally {
@@ -240,13 +243,13 @@ export default function VariantsPage() {
   }
 
   async function deleteVariant(v: ProductVariant) {
-    if (!confirm(`Delete variant SKU "${v.sku}"?`)) return;
+    if (!confirm(tPages("variantsConfirmDeleteSku", { sku: v.sku }))) return;
     try {
       await api.delete(`admin/product-variants/${v.public_id}/`);
       await loadVariants();
       await loadMeta();
     } catch {
-      setError("Delete failed.");
+      setError(tPages("variantsDeleteFailed"));
     }
   }
 
@@ -263,7 +266,7 @@ export default function VariantsPage() {
       );
       await loadMeta();
     } catch {
-      setError("Could not update active status.");
+      setError(tPages("variantsStatusUpdateFailed"));
       await loadVariants();
     } finally {
       setTogglingVariantId(null);
@@ -278,7 +281,7 @@ export default function VariantsPage() {
 
   if (loading && products.length === 0) {
     return (
-      <div className="text-sm text-muted-foreground">Loading catalog…</div>
+      <div className="text-sm text-muted-foreground">{tPages("variantsLoadingCatalog")}</div>
     );
   }
 
@@ -286,19 +289,21 @@ export default function VariantsPage() {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-medium tracking-tight text-foreground">Variants</h1>
+          <h1 className="text-2xl font-medium tracking-tight text-foreground">
+            {tPages("variantsTitle")}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            SKUs and options per product. Define option types under{" "}
+            {tPages("variantsSubtitleBefore")}{" "}
             <ClickableText href="/product-attributes" className="underline-offset-2">
-              Catalog → Attributes
+              {tPages("variantsSubtitleLink")}
             </ClickableText>
-            .
+            {tPages("variantsSubtitleAfter")}
           </p>
         </div>
         <Button variant="outline" size="sm" asChild>
           <Link href="/products">
             <Undo2 className="mr-2 size-4" />
-            Back to products
+            {tPages("variantsBackProducts")}
           </Link>
         </Button>
       </header>
@@ -311,7 +316,7 @@ export default function VariantsPage() {
 
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle className="text-base">Product</CardTitle>
+          <CardTitle className="text-base">{tPages("variantsProductCard")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Select
@@ -322,7 +327,7 @@ export default function VariantsPage() {
               closePanel();
             }}
           >
-            <option value="">Select a product…</option>
+            <option value="">{tPages("variantsSelectProduct")}</option>
             {products.map((p) => (
               <option key={p.public_id} value={p.public_id}>
                 {p.name}
@@ -331,14 +336,10 @@ export default function VariantsPage() {
           </Select>
           {selectedProduct ? (
             <p className="text-xs text-muted-foreground">
-              Base price:{" "}
+              {tPages("variantsBasePrice")}{" "}
               <span className="font-numbers text-foreground">{selectedProduct.price}</span>
               {selectedProduct.variant_count != null ? (
-                <>
-                  {" "}
-                  · {selectedProduct.variant_count} variant
-                  {selectedProduct.variant_count === 1 ? "" : "s"}
-                </>
+                <> {tPages("variantsVariantCount", { count: selectedProduct.variant_count })}</>
               ) : null}
             </p>
           ) : null}
@@ -348,10 +349,10 @@ export default function VariantsPage() {
       {productId ? (
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-lg font-medium text-foreground">SKUs</h2>
+            <h2 className="text-lg font-medium text-foreground">{tPages("variantsSkusHeading")}</h2>
             <Button type="button" size="sm" onClick={openNew} disabled={editing !== null}>
               <Plus className="mr-2 size-4" />
-              Add variant
+              {tPages("variantsAddVariant")}
             </Button>
           </div>
 
@@ -359,24 +360,26 @@ export default function VariantsPage() {
             <Card className="border-primary/30 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-base">
-                  {editing === "new" ? "New variant" : "Edit variant"}
+                  {editing === "new" ? tPages("variantsNewVariant") : tPages("variantsEditVariant")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={saveVariant} className="flex flex-col gap-6">
                   <div className="flex flex-col gap-4">
                     <label className="flex flex-col gap-2">
-                      <span className="text-xs font-medium text-muted-foreground">SKU</span>
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {tPages("variantsSkuLabel")}
+                      </span>
                       <Input
                         className="w-full text-sm"
                         value={form.sku}
                         onChange={(e) => setForm({ ...form, sku: e.target.value })}
-                        placeholder="Leave empty to auto-generate"
+                        placeholder={tPages("variantsSkuPlaceholder")}
                       />
                     </label>
                     <label className="flex flex-col gap-2">
                       <span className="text-xs font-medium text-muted-foreground">
-                        Price override (optional)
+                        {tPages("variantsPriceOverride")}
                       </span>
                       <Input
                         type="number"
@@ -384,7 +387,7 @@ export default function VariantsPage() {
                         className="w-full max-w-xs font-numbers text-sm"
                         value={form.price_override}
                         onChange={(e) => setForm({ ...form, price_override: e.target.value })}
-                        placeholder="Uses product base price if empty"
+                        placeholder={tPages("variantsPriceOverridePlaceholder")}
                       />
                     </label>
                   </div>
@@ -392,7 +395,7 @@ export default function VariantsPage() {
                   {attributes.length > 0 ? (
                     <div className="flex flex-col gap-4">
                       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Options (at most one per type)
+                        {tPages("variantsOptionsHeading")}
                       </p>
                       <div className="grid gap-4 sm:grid-cols-2">
                         {attributes.map((a) => (
@@ -410,7 +413,7 @@ export default function VariantsPage() {
                                 })
                               }
                             >
-                              <option value="">— None —</option>
+                              <option value="">{tPages("variantsOptionNone")}</option>
                               {a.values.map((v) => (
                                 <option key={v.public_id} value={v.public_id}>
                                   {v.value}
@@ -423,17 +426,17 @@ export default function VariantsPage() {
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      No attributes yet. Add some under{" "}
+                      {tPages("variantsNoAttributes")}{" "}
                       <ClickableText href="/product-attributes" className="underline-offset-2">
-                        Attributes
+                        {tPages("variantsNoAttributesLink")}
                       </ClickableText>{" "}
-                      to tag variants (e.g. Color, Size).
+                      {tPages("variantsNoAttributesAfter")}
                     </p>
                   )}
 
                   <div className="flex flex-col gap-2">
                     <span className="text-xs font-medium text-muted-foreground">
-                      Availability
+                      {tPages("variantsAvailability")}
                     </span>
                     <label className="flex cursor-pointer items-center gap-2">
                       <input
@@ -442,16 +445,16 @@ export default function VariantsPage() {
                         onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
                         className="form-checkbox"
                       />
-                      <span className="text-sm text-foreground">Active</span>
+                      <span className="text-sm text-foreground">{tCommon("active")}</span>
                     </label>
                   </div>
 
                   <div className="flex flex-wrap gap-3">
                     <Button type="submit" disabled={saving}>
-                      {saving ? "Saving…" : "Save"}
+                      {saving ? tCommon("saving") : tCommon("save")}
                     </Button>
                     <Button type="button" variant="outline" onClick={closePanel}>
-                      Cancel
+                      {tCommon("cancel")}
                     </Button>
                   </div>
                 </form>
@@ -460,22 +463,24 @@ export default function VariantsPage() {
           ) : null}
 
           {variantsLoading ? (
-            <p className="text-sm text-muted-foreground">Loading variants…</p>
+            <p className="text-sm text-muted-foreground">{tPages("variantsLoadingVariants")}</p>
           ) : variants.length === 0 ? (
             <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              No variants yet. Add a SKU to sell this product with options.
+              {tPages("variantsEmpty")}
             </p>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-border">
               <table className="w-full min-w-[640px] text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/40 text-left text-muted-foreground">
-                    <th className="px-4 py-3 font-medium">SKU</th>
-                    <th className="px-4 py-3 font-medium">Options</th>
-                    <th className="px-4 py-3 font-medium">Price</th>
-                    <th className="px-4 py-3 font-medium">Stock</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 font-medium whitespace-nowrap">Action</th>
+                    <th className="px-4 py-3 font-medium">{tPages("variantsColSku")}</th>
+                    <th className="px-4 py-3 font-medium">{tPages("variantsColOptions")}</th>
+                    <th className="px-4 py-3 font-medium">{tPages("variantsColPrice")}</th>
+                    <th className="px-4 py-3 font-medium">{tPages("variantsColStock")}</th>
+                    <th className="px-4 py-3 font-medium">{tPages("variantsColStatus")}</th>
+                    <th className="px-4 py-3 font-medium whitespace-nowrap">
+                      {tPages("variantsColAction")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -483,7 +488,7 @@ export default function VariantsPage() {
                     <tr key={v.public_id} className="border-b border-border last:border-0">
                       <td className="px-4 py-3">
                         <ClickableText
-                          aria-label={`Edit variant ${v.sku}`}
+                          aria-label={tPages("variantsEditVariantAria", { sku: v.sku })}
                           disabled={editing !== null}
                           onClick={() => openEdit(v)}
                           className="max-w-full whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"
@@ -512,7 +517,7 @@ export default function VariantsPage() {
                           }
                         >
                           <ComboboxInput
-                            placeholder="Status"
+                            placeholder={tPages("variantsStatusPlaceholder")}
                             showClear={false}
                             className="w-[110px]"
                             inputClassName={`cursor-pointer caret-transparent text-xs font-semibold capitalize ${
@@ -525,12 +530,12 @@ export default function VariantsPage() {
                             <ComboboxList>
                               <ComboboxItem value="active">
                                 <span className="text-xs font-medium capitalize">
-                                  Active
+                                  {tCommon("active")}
                                 </span>
                               </ComboboxItem>
                               <ComboboxItem value="inactive">
                                 <span className="text-xs font-medium capitalize">
-                                  Inactive
+                                  {tCommon("inactive")}
                                 </span>
                               </ComboboxItem>
                             </ComboboxList>
@@ -546,7 +551,7 @@ export default function VariantsPage() {
                           disabled={editing !== null}
                           onClick={() => deleteVariant(v)}
                         >
-                          Delete
+                          {tCommon("delete")}
                         </Button>
                       </td>
                     </tr>
@@ -557,7 +562,7 @@ export default function VariantsPage() {
           )}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">Choose a product to manage its variants.</p>
+        <p className="text-sm text-muted-foreground">{tPages("variantsChooseProduct")}</p>
       )}
     </div>
   );
