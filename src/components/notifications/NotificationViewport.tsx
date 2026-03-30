@@ -9,7 +9,6 @@ export function NotificationViewport() {
       closeButton={false}
       expand
       duration={5000}
-      pauseWhenPageIsHidden
       visibleToasts={4}
       gap={12}
       containerAriaLabel="Notifications"
