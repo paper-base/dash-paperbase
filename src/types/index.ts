@@ -289,6 +289,8 @@ export interface Inventory {
   product_name: string;
   variant_public_id: string | null;
   variant_sku: string | null;
+  /** Attribute option lines, same format as variants list (e.g. "Color: Red"). */
+  option_labels: string[];
   quantity: number;
   low_stock_threshold: number;
   is_tracked: boolean;

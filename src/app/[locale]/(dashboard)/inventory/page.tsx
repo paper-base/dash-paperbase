@@ -172,6 +172,7 @@ export default function InventoryPage() {
                 <tr className="border-b border-border bg-muted/40">
                   <th className="th">{tPages("inventoryColProduct")}</th>
                   <th className="th">{tPages("inventoryColVariant")}</th>
+                  <th className="th">{tPages("inventoryColOptions")}</th>
                   <th className="th text-right">{tPages("inventoryColQty")}</th>
                   <th className="th text-right">{tPages("inventoryColLowThreshold")}</th>
                   <th className="th text-right">{tPages("inventoryColAdjust")}</th>
@@ -190,6 +191,11 @@ export default function InventoryPage() {
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {inv.variant_sku || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {inv.option_labels?.length
+                        ? inv.option_labels.join(" · ")
+                        : "—"}
                     </td>
                     <td className="px-4 py-3 text-right font-medium">
                       {inv.quantity}

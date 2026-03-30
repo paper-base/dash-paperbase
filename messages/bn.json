@@ -401,6 +401,7 @@
     "inventoryEmpty": "কোনো ইনভেন্টরি রেকর্ড নেই। স্টক ট্র্যাকিং চালু হলে পণ্য ও ভেরিয়েন্ট এখানে দেখাবে।",
     "inventoryColProduct": "পণ্য",
     "inventoryColVariant": "ভেরিয়েন্ট",
+    "inventoryColOptions": "অপশন",
     "inventoryColQty": "পরিমাণ",
     "inventoryColLowThreshold": "নিম্ন সীমা",
     "inventoryColAdjust": "সমন্বয়",

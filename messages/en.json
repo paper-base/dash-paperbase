@@ -401,6 +401,7 @@
     "inventoryEmpty": "No inventory records found. Products and variants will appear here when stock tracking is enabled.",
     "inventoryColProduct": "Product",
     "inventoryColVariant": "Variant",
+    "inventoryColOptions": "Options",
     "inventoryColQty": "Qty",
     "inventoryColLowThreshold": "Low threshold",
     "inventoryColAdjust": "Adjust",
