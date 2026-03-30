@@ -27,9 +27,9 @@ interface NotificationState {
 
 const NotificationContext = createContext<NotificationState | undefined>(undefined);
 
-const STORAGE_KEY = "gadzillabd_notification_read_ids";
-const PREFS_KEY = "gadzillabd_notification_prefs";
-const DELETED_KEY = "gadzillabd_notification_deleted_ids";
+const STORAGE_KEY = "akkho_notification_read_ids";
+const PREFS_KEY = "akkho_notification_prefs";
+const DELETED_KEY = "akkho_notification_deleted_ids";
 
 type NotificationPrefs = {
   orders: boolean;

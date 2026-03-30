@@ -4,7 +4,7 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 /* ============================================
-   FONT FACES - Futura PT (from gadzillabd-frontend)
+   FONT FACES - Futura PT
    ============================================ */
 @font-face {
   font-family: 'Futura PT';

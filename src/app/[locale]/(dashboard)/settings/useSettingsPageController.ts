@@ -12,7 +12,7 @@ import { useStoreSettings } from "./useStoreSettings";
 import { useDeleteStore } from "./useDeleteStore";
 import type { DynamicFieldsMessage } from "@/components/DynamicFieldsPanel";
 
-const NOTIFICATION_PREFS_KEY = "gadzillabd_notification_prefs";
+const NOTIFICATION_PREFS_KEY = "akkho_notification_prefs";
 
 type NotificationPrefs = {
   orders: boolean;
