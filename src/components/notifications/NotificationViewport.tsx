@@ -5,16 +5,24 @@ import { Toaster } from "sonner";
 export function NotificationViewport() {
   return (
     <Toaster
-      position="top-center"
-      closeButton
+      position="bottom-right"
+      closeButton={false}
       expand
+      duration={5000}
+      pauseWhenPageIsHidden
       visibleToasts={4}
-      offset={16}
-      gap={10}
+      gap={12}
+      containerAriaLabel="Notifications"
+      style={{
+        zIndex: 70,
+        bottom: "2rem",
+        right:
+          "calc((max(0px, calc(100vw - var(--dashboard-main-left-inset) - var(--dashboard-content-max-width))) / 2) + var(--dashboard-content-inline-padding))",
+      }}
       toastOptions={{
         classNames: {
           toast:
-            "group w-[min(92vw,32rem)] border-none bg-transparent p-0 shadow-none transition-all duration-300 ease-out",
+            "group w-[min(92vw,26rem)] sm:w-[26rem] border-none bg-transparent p-0 shadow-none transition-all duration-300 ease-out",
         },
       }}
     />

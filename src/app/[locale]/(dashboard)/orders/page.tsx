@@ -187,9 +187,10 @@ export default function OrdersPage() {
 
   async function handleDeleteSelected() {
     if (selectedIds.size === 0) return;
+    const deletedCount = selectedIds.size;
     const ok = await notify.confirm({
       title: tPages("confirmDeleteOrders", {
-        count: toLocaleDigits(String(selectedIds.size), locale),
+        count: toLocaleDigits(String(deletedCount), locale),
       }),
       level: "destructive",
     });
@@ -202,7 +203,7 @@ export default function OrdersPage() {
       setSelectedIds(new Set());
       notify.warning(
         tPages("ordersDeletedSuccess", {
-          count: selectedForBulk.length,
+          count: deletedCount,
         })
       );
       fetchOrders();

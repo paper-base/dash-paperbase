@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
-import { History } from "lucide-react";
+import { BookOpenText, History } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { BrandingProvider } from "@/context/BrandingContext";
 import { SearchModalProvider } from "@/context/SearchModalContext";
@@ -80,6 +80,17 @@ export default function DashboardLayoutClient({
     router.replace("/onboarding");
   }, [shouldRedirectToOnboarding, router]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncDashboardInset = () => {
+      const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+      root.style.setProperty("--dashboard-main-left-inset", isDesktop ? (collapsed ? "4rem" : "18rem") : "0rem");
+    };
+    syncDashboardInset();
+    window.addEventListener("resize", syncDashboardInset);
+    return () => window.removeEventListener("resize", syncDashboardInset);
+  }, [collapsed]);
+
   if (isLoading || !isAuthenticated || !subChecked || shouldRedirectToOnboarding) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -154,6 +165,20 @@ export default function DashboardLayoutClient({
                         <History className="size-5" />
                       </Button>
                     </Link>
+                    <a
+                      href="https://docs.paperbase.me"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Documentation"
+                        className="shrink-0 text-muted-foreground hover:text-foreground"
+                      >
+                        <BookOpenText className="size-5" />
+                      </Button>
+                    </a>
                     <NotificationDropdown />
                   </div>
                 </div>

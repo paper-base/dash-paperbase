@@ -77,6 +77,9 @@
   :root {
     /* Header height: sidebar nav bar + announcement banner (pixel-perfect alignment) */
     --header-height: 64px;
+    --dashboard-content-max-width: 88rem;
+    --dashboard-content-inline-padding: 1rem;
+    --dashboard-main-left-inset: 0rem;
   }
 
   :root,
@@ -165,6 +168,18 @@
     --text-primary: hsl(var(--foreground));
     --text-secondary: hsl(var(--muted-foreground));
     --border-color: hsl(var(--border));
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --dashboard-content-inline-padding: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --dashboard-content-inline-padding: 2rem;
   }
 }
 

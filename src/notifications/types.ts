@@ -47,4 +47,10 @@ export type NotifyOptions = {
   durationMs?: number;
   dedupeKey?: string;
   surface?: NotificationSurface;
+  title?: MessageDescriptor;
+  action?: {
+    label: MessageDescriptor;
+    onClick: () => void;
+  };
+  persistent?: boolean;
 };

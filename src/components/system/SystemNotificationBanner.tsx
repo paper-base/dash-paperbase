@@ -84,17 +84,17 @@ export default function SystemNotificationBanner({
       >
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-foreground">
+            <p className="text-sm font-semibold text-foreground">
               {notification.title}
             </p>
-            <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">
+            <p className="mt-1 line-clamp-3 text-sm text-muted-foreground">
               {notification.message}
             </p>
             {ctaText && ctaTarget && (
               <Button
                 type="button"
                 variant="link"
-                className="mt-1 h-auto p-0 text-xs text-primary underline decoration-primary underline-offset-2"
+                className="mt-1 h-auto p-0 text-sm text-primary underline decoration-primary underline-offset-2"
                 onClick={() => {
                   if (ctaTarget.kind === "internal") {
                     router.push(ctaTarget.path);
