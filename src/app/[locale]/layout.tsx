@@ -14,8 +14,8 @@ export function generateStaticParams() {
 }
 
 export const metadata: Metadata = {
-  title: "Akkho",
-  description: "Akkho dashboard",
+  title: "Paperbase",
+  description: "Paperbase dashboard",
 };
 
 export default async function LocaleLayout({

@@ -5,7 +5,7 @@
     "toggleAria": "ভাষা পরিবর্তন করুন"
   },
   "documentTitle": {
-    "brand": "Akkho",
+    "brand": "Paperbase",
     "dashboard": "ড্যাশবোর্ড",
     "settings": "সেটিংস",
     "customers": "গ্রাহক",
@@ -48,7 +48,7 @@
     "close": "বন্ধ",
     "termsOfService": "সেবার শর্তাবলী",
     "privacyPolicy": "গোপনীয়তা নীতি",
-    "copyrightBrand": "© ২০২৬ Akkho",
+    "copyrightBrand": "© ২০২৬ Paperbase",
     "active": "সক্রিয়",
     "inactive": "নিষ্ক্রিয়",
     "add": "যোগ করুন",
@@ -1159,7 +1159,7 @@
     },
     "courier": {
       "heading": "কুরিয়ার ইন্টিগ্রেশন",
-      "intro": "ড্যাশবোর্ড থেকে অর্ডার পাঠাতে Steadfast (Packzy) সংযুক্ত করুন। ডিসপ্যাচ না হওয়া পর্যন্ত ক্রেডেনশিয়াল শুধু Akkho-তে থাকে। Packzy পোর্টাল থেকে API কী ও সিক্রেট কী লাগবে।",
+      "intro": "ড্যাশবোর্ড থেকে অর্ডার পাঠাতে Steadfast (Packzy) সংযুক্ত করুন। ডিসপ্যাচ না হওয়া পর্যন্ত ক্রেডেনশিয়াল শুধু Paperbase-তে থাকে। Packzy পোর্টাল থেকে API কী ও সিক্রেট কী লাগবে।",
       "connectTitle": "Steadfast সংযুক্ত করুন",
       "apiKey": "API কী",
       "apiKeyPlaceholder": "Packzy API কী",

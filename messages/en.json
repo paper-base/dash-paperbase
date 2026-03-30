@@ -5,7 +5,7 @@
     "toggleAria": "Switch language"
   },
   "documentTitle": {
-    "brand": "Akkho",
+    "brand": "Paperbase",
     "dashboard": "Dashboard",
     "settings": "Settings",
     "customers": "Customers",
@@ -48,7 +48,7 @@
     "close": "Close",
     "termsOfService": "Terms of Service",
     "privacyPolicy": "Privacy Policy",
-    "copyrightBrand": "© 2026 Akkho",
+    "copyrightBrand": "© 2026 Paperbase",
     "active": "Active",
     "inactive": "Inactive",
     "add": "Add",
@@ -1159,7 +1159,7 @@
     },
     "courier": {
       "heading": "Courier Integration",
-      "intro": "Connect Steadfast (Packzy) to send orders from the dashboard. Credentials are stored in Akkho only until you dispatch. You need the API key and secret key from the Packzy portal.",
+      "intro": "Connect Steadfast (Packzy) to send orders from the dashboard. Credentials are stored in Paperbase only until you dispatch. You need the API key and secret key from the Packzy portal.",
       "connectTitle": "Connect Steadfast",
       "apiKey": "API Key",
       "apiKeyPlaceholder": "Packzy API key",

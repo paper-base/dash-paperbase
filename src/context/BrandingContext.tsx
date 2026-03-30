@@ -23,7 +23,7 @@ interface BrandingState {
 const defaultBranding: Branding = {
   public_id: "",
   logo_url: null,
-  admin_name: "Akkho",
+  admin_name: "Paperbase",
   owner_name: "",
   owner_email: "",
   currency_symbol: "৳",

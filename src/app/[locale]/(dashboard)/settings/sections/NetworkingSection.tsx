@@ -44,7 +44,7 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
   const [newKeyName, setNewKeyName] = useState("");
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const API_BASE_URL = "https://api.akkho.com/api/v1/";
+  const API_BASE_URL = "https://api.paperbase.me/api/v1/";
 
   const load = useCallback(async () => {
     try {
