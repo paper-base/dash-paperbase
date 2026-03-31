@@ -147,6 +147,8 @@ export default function useSettingsPageController() {
     });
   }
 
+  const isLoading = !isHydrated || branding === null;
+
   // ── Compose & return ───────────────────────────────────────────────────────
   return {
     isLoading,
