@@ -6,11 +6,14 @@ import { Link } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   resendVerificationEmail,
   verifyEmailFromLink,
 } from "@/lib/auth-email";
 import { useRateLimitCooldown, extractRateLimitInfo } from "@/hooks/useRateLimitCooldown";
+import { useMinDelayLoading } from "@/hooks/useMinDelayLoading";
 import {
   PENDING_VERIFICATION_EMAIL_KEY,
   clearPendingVerificationEmail,
@@ -64,7 +67,7 @@ export default function VerifyEmailContent() {
 
   const [pendingEmail, setPendingEmail] = useState("");
   const [emailInput, setEmailInput] = useState("");
-  const [resendLoading, setResendLoading] = useState(false);
+  const { loading: resendLoading, runWithLoading } = useMinDelayLoading();
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendError, setResendError] = useState("");
   const cooldown = useRateLimitCooldown();
@@ -137,10 +140,11 @@ export default function VerifyEmailContent() {
     setPendingEmail(resendEmail);
     setResendError("");
     setResendSuccess(false);
-    setResendLoading(true);
     try {
-      await resendVerificationEmail(resendEmail);
-      setResendSuccess(true);
+      await runWithLoading(async () => {
+        await resendVerificationEmail(resendEmail);
+        setResendSuccess(true);
+      });
     } catch (err: unknown) {
       const info = extractRateLimitInfo(err);
       if (info) {
@@ -149,8 +153,6 @@ export default function VerifyEmailContent() {
       } else {
         setResendError(extractMessage(err, t("genericError")));
       }
-    } finally {
-      setResendLoading(false);
     }
   }
 
@@ -158,7 +160,10 @@ export default function VerifyEmailContent() {
     if (linkStatus === "loading" || linkStatus === "idle") {
       return (
         <div className="mx-auto w-11/12 max-w-sm text-center text-sm text-muted-foreground sm:w-full">
-          {t("verifying")}
+          <div className="inline-flex items-center gap-2">
+            <Spinner />
+            <span>{t("verifying")}</span>
+          </div>
         </div>
       );
     }
@@ -243,18 +248,18 @@ export default function VerifyEmailContent() {
           </div>
         ) : null}
 
-        <Button
+        <LoadingButton
           type="button"
           className="mt-2 w-full"
-          disabled={resendLoading || cooldown.isLimited}
+          disabled={cooldown.isLimited}
+          isLoading={resendLoading}
+          loadingText={t("sending")}
           onClick={handleResend}
         >
           {cooldown.isLimited
             ? tCommon("retryInSeconds", { seconds: cooldown.remaining })
-            : resendLoading
-              ? t("sending")
-              : t("resendEmail")}
-        </Button>
+            : t("resendEmail")}
+        </LoadingButton>
       </div>
 
       <p className="text-center text-sm text-muted-foreground">

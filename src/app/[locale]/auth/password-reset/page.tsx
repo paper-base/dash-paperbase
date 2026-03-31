@@ -5,10 +5,11 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { requestPasswordReset } from "@/lib/auth-email";
 import { useRateLimitCooldown, extractRateLimitInfo } from "@/hooks/useRateLimitCooldown";
+import { useMinDelayLoading } from "@/hooks/useMinDelayLoading";
 import { emailSchema } from "@/lib/validation";
 
 export default function PasswordResetRequestPage() {
@@ -18,7 +19,7 @@ export default function PasswordResetRequestPage() {
   const [email, setEmail] = useState("");
   const [logoutAllDevices, setLogoutAllDevices] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { loading, runWithLoading } = useMinDelayLoading();
   const cooldown = useRateLimitCooldown();
 
   async function handleSubmit(e: FormEvent) {
@@ -29,10 +30,11 @@ export default function PasswordResetRequestPage() {
       setError(parsed.error.issues[0]?.message ?? t("invalidEmail"));
       return;
     }
-    setLoading(true);
     try {
-      await requestPasswordReset(parsed.data, logoutAllDevices);
-      router.push("/auth/password-reset/sent");
+      await runWithLoading(async () => {
+        await requestPasswordReset(parsed.data, logoutAllDevices);
+        router.push("/auth/password-reset/sent");
+      });
     } catch (err: unknown) {
       const info = extractRateLimitInfo(err);
       if (info) {
@@ -41,21 +43,17 @@ export default function PasswordResetRequestPage() {
       } else {
         setError(t("sendFailed"));
       }
-    } finally {
-      setLoading(false);
     }
   }
 
   return (
-    <AuthPageShell>
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          {t("title")}
-        </h1>
-        <p className="text-sm leading-relaxed text-muted-foreground">{t("subtitle")}</p>
-      </div>
+    <AuthPageShell headline={t("headline")} description={t("description")}>
 
-      <form onSubmit={handleSubmit} className="mx-auto w-11/12 max-w-sm space-y-6 sm:w-full">
+      <form
+        onSubmit={handleSubmit}
+        className="mx-auto w-11/12 max-w-sm space-y-6 sm:w-full"
+        aria-busy={loading}
+      >
         {error ? (
           <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {error}
@@ -84,13 +82,17 @@ export default function PasswordResetRequestPage() {
           />
           <span>{t("logoutAllDevices")}</span>
         </label>
-        <Button type="submit" className="mt-2 w-full" disabled={loading || cooldown.isLimited}>
+        <LoadingButton
+          type="submit"
+          className="mt-2 w-full"
+          isLoading={loading}
+          loadingText={t("sendResetLinkLoading")}
+          disabled={cooldown.isLimited}
+        >
           {cooldown.isLimited
             ? tCommon("retryInSeconds", { seconds: cooldown.remaining })
-            : loading
-              ? tCommon("pleaseWait")
-              : t("sendResetLink")}
-        </Button>
+            : t("sendResetLink")}
+        </LoadingButton>
       </form>
 
       <p className="text-center text-sm text-muted-foreground">

@@ -11,7 +11,9 @@ interface StoreDetailsStepProps {
     key: K,
     value: StoreFormData[K]
   ) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  loading: boolean;
+  onNext: () => void;
+  onBack: () => void;
 }
 
 export function StoreDetailsStep({
@@ -19,12 +21,15 @@ export function StoreDetailsStep({
   error,
   fieldErrors,
   onFieldChange,
-  onSubmit,
+  loading,
+  onNext,
+  onBack,
 }: StoreDetailsStepProps) {
   const t = useTranslations("auth.onboarding");
+  const tCommon = useTranslations("common");
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <div className="space-y-4">
       {error && (
         <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
@@ -68,62 +73,6 @@ export function StoreDetailsStep({
         <p className="text-xs text-muted-foreground">{t("storeTypeHint")}</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="form-field">
-          <label htmlFor="owner_first_name" className="field-label">
-            {t("firstName")} <span className="text-destructive">*</span>
-          </label>
-          <Input
-            id="owner_first_name"
-            type="text"
-            required
-            value={formData.owner_first_name}
-            onChange={(e) => onFieldChange("owner_first_name", e.target.value)}
-            placeholder="e.g. John"
-            aria-invalid={!!fieldErrors.owner_first_name}
-          />
-          {fieldErrors.owner_first_name && (
-            <p className="text-xs text-destructive">{fieldErrors.owner_first_name}</p>
-          )}
-        </div>
-        <div className="form-field">
-          <label htmlFor="owner_last_name" className="field-label">
-            {t("lastName")} <span className="text-destructive">*</span>
-          </label>
-          <Input
-            id="owner_last_name"
-            type="text"
-            required
-            value={formData.owner_last_name}
-            onChange={(e) => onFieldChange("owner_last_name", e.target.value)}
-            placeholder="e.g. Doe"
-            aria-invalid={!!fieldErrors.owner_last_name}
-          />
-          {fieldErrors.owner_last_name && (
-            <p className="text-xs text-destructive">{fieldErrors.owner_last_name}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="form-field">
-        <label htmlFor="owner_email" className="field-label">
-          {t("ownerEmail")} <span className="text-destructive">*</span>
-        </label>
-        <Input
-          id="owner_email"
-          type="email"
-          required
-          readOnly
-          value={formData.owner_email}
-          placeholder="owner@example.com"
-          className="cursor-not-allowed opacity-70"
-          aria-invalid={!!fieldErrors.owner_email}
-        />
-        {fieldErrors.owner_email && (
-          <p className="text-xs text-destructive">{fieldErrors.owner_email}</p>
-        )}
-      </div>
-
       <div className="form-field">
         <label htmlFor="contact_email" className="field-label">
           {t("storeEmail")}
@@ -141,44 +90,14 @@ export function StoreDetailsStep({
         )}
       </div>
 
-      <div className="form-field">
-        <label htmlFor="phone" className="field-label">
-          {t("storePhone")}
-        </label>
-        <Input
-          id="phone"
-          type="tel"
-          value={formData.phone}
-          onChange={(e) => onFieldChange("phone", e.target.value)}
-          placeholder="+1 234 567 8900"
-          aria-invalid={!!fieldErrors.phone}
-        />
-        {fieldErrors.phone && (
-          <p className="text-xs text-destructive">{fieldErrors.phone}</p>
-        )}
+      <div className="flex gap-2">
+        <Button type="button" variant="outline" onClick={onBack} className="flex-1" disabled={loading}>
+          {tCommon("back")}
+        </Button>
+        <Button type="button" className="flex-1" onClick={onNext} disabled={loading}>
+          {loading ? t("continuing") : t("continue")}
+        </Button>
       </div>
-
-      <div className="form-field">
-        <label htmlFor="address" className="field-label">
-          {t("address")}
-        </label>
-        <textarea
-          id="address"
-          rows={2}
-          value={formData.address}
-          onChange={(e) => onFieldChange("address", e.target.value)}
-          className="input resize-none"
-          placeholder="123 Main St, City, Country"
-          aria-invalid={!!fieldErrors.address}
-        />
-        {fieldErrors.address && (
-          <p className="text-xs text-destructive">{fieldErrors.address}</p>
-        )}
-      </div>
-
-      <Button type="submit" className="mt-2 w-full">
-        {t("continue")}
-      </Button>
-    </form>
+    </div>
   );
 }

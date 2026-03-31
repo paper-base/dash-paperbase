@@ -8,14 +8,7 @@ export default async function PasswordResetSuccessPage() {
   const t = await getTranslations("auth.passwordReset");
 
   return (
-    <AuthPageShell>
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          {t("successTitle")}
-        </h1>
-        <p className="text-sm leading-relaxed text-muted-foreground">{t("successBody")}</p>
-      </div>
-
+    <AuthPageShell headline={t("successTitle")} description={t("successBody")}>
       <div className="mx-auto w-11/12 max-w-sm space-y-6 sm:w-full">
         <Button asChild className="mt-2 w-full">
           <Link href="/login">{t("loginButton")}</Link>

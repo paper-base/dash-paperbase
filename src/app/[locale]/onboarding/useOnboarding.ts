@@ -26,6 +26,7 @@ export interface StoreFormData {
 }
 
 type StoreFormErrors = Partial<Record<keyof StoreFormData, string>>;
+export type OnboardingStep = 1 | 2 | 3 | 4 | 5;
 
 interface MeResponse {
   active_store_public_id: string | null;
@@ -41,10 +42,11 @@ export function useOnboarding() {
   const tPages = useTranslations("pages");
   const searchParams = useSearchParams();
   const isAddMode = searchParams.get("add") === "1";
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, authHydrated } = useAuth();
 
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<OnboardingStep>(1);
   const [loading, setLoading] = useState(false);
+  const [stepLoading, setStepLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<StoreFormErrors>({});
@@ -65,6 +67,7 @@ export function useOnboarding() {
   );
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (authLoading) return;
     if (!isAuthenticated) {
       router.replace("/login");
@@ -90,7 +93,7 @@ export function useOnboarding() {
       }
     }
     checkStore();
-  }, [isAuthenticated, authLoading, router, isAddMode]);
+  }, [isAuthenticated, authLoading, authHydrated, router, isAddMode]);
 
   function updateField<K extends keyof StoreFormData>(
     key: K,
@@ -117,34 +120,67 @@ export function useOnboarding() {
     });
   }
 
-  function handleStep1Submit(e: React.FormEvent) {
-    e.preventDefault();
-    const validation = parseValidation(storeCreateSchema, formData);
-    if (!validation.success) {
-      const nextFieldErrors: StoreFormErrors = {};
-      for (const key of Object.keys(validation.errors) as Array<keyof StoreFormData>) {
-        if (validation.errors[key]) {
-          nextFieldErrors[key] = validation.errors[key];
-        }
-      }
-      setFieldErrors(nextFieldErrors);
-      setError(
-        validation.errors.name ??
-          validation.errors.store_type ??
-          validation.errors.owner_first_name ??
-          validation.errors.owner_last_name ??
-          validation.errors.owner_email ??
-          tPages("formFixHighlighted")
-      );
-      return;
+  const STEP_FIELDS: Record<2 | 3 | 4, Array<keyof StoreFormData>> = {
+    2: ["owner_first_name", "owner_last_name"],
+    3: ["name", "store_type", "contact_email"],
+    4: ["owner_email", "phone", "address"],
+  };
+  const STEP_SCHEMAS = {
+    2: storeCreateSchema.pick({ owner_first_name: true, owner_last_name: true }),
+    3: storeCreateSchema.pick({ name: true, store_type: true, contact_email: true }),
+    4: storeCreateSchema.pick({ owner_email: true, phone: true, address: true }),
+  } as const;
+
+  function validateCurrentStep(currentStep: OnboardingStep): boolean {
+    if (currentStep === 1 || currentStep === 5) return true;
+
+    const validation = parseValidation(STEP_SCHEMAS[currentStep], formData);
+    if (validation.success) {
+      setFieldErrors({});
+      setError("");
+      return true;
     }
-    setFieldErrors({});
-    setError("");
-    setStep(2);
+
+    const stepFields = STEP_FIELDS[currentStep];
+    const nextFieldErrors: StoreFormErrors = {};
+
+    for (const key of stepFields) {
+      if (validation.errors[key]) {
+        nextFieldErrors[key] = validation.errors[key];
+      }
+    }
+
+    setFieldErrors(nextFieldErrors);
+    setError(
+      stepFields.map((key) => validation.errors[key]).find(Boolean) ??
+        tPages("formFixHighlighted")
+    );
+    return false;
   }
 
-  async function handleStep2Submit(e: React.FormEvent) {
+  async function nextStep() {
+    if (step === 5 || stepLoading || loading) return;
+    if (!validateCurrentStep(step)) return;
+
+    setStepLoading(true);
+    setError("");
+    await new Promise((resolve) => setTimeout(resolve, 220));
+    setStep((prev) => (prev < 5 ? ((prev + 1) as OnboardingStep) : prev));
+    setStepLoading(false);
+  }
+
+  async function prevStep() {
+    if (step === 1 || stepLoading || loading) return;
+    setStepLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 180));
+    setStep((prev) => (prev > 1 ? ((prev - 1) as OnboardingStep) : prev));
+    setStepLoading(false);
+  }
+
+  async function submitFinalStep(e: React.FormEvent) {
     e.preventDefault();
+    if (stepLoading || loading) return;
+    if (!validateCurrentStep(4)) return;
     setError("");
     setLoading(true);
     try {
@@ -214,17 +250,18 @@ export function useOnboarding() {
 
   return {
     isAddMode,
-    isReady: !authLoading && !checking,
+    isReady: authHydrated && !authLoading && !checking,
     step,
     loading,
+    stepLoading,
     error,
     fieldErrors,
     formData,
     selectedApps,
     updateField,
     toggleApp,
-    handleStep1Submit,
-    handleStep2Submit,
-    goBack: () => setStep(1),
+    nextStep,
+    prevStep,
+    submitFinalStep,
   };
 }

@@ -289,6 +289,7 @@ select {
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   color: var(--text-primary);
+  -webkit-text-fill-color: var(--text-primary);
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -296,6 +297,8 @@ select {
 .input:focus {
   border-color: hsl(var(--ring));
   box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+  color: var(--text-primary);
+  -webkit-text-fill-color: var(--text-primary);
 }
 
 .input::placeholder {
@@ -373,7 +376,7 @@ select {
 
   /* Native checkbox / radio — single token-based style */
   .form-checkbox {
-    @apply h-4 w-4 shrink-0 cursor-pointer rounded border border-border bg-background text-primary accent-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring;
+    @apply h-5 w-5 shrink-0 cursor-pointer rounded-[3px] border-2 border-border bg-background text-primary accent-ring focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:h-4 md:w-4;
   }
 
   .form-radio {

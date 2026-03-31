@@ -5,6 +5,7 @@ import {
   applyThemePreference,
   CORE_THEME_STORAGE_KEY,
   getStoredThemePreference,
+  persistThemePreference,
   subscribeToSystemThemeChanges,
   type ThemePreference,
 } from "@/lib/theme";
@@ -20,6 +21,7 @@ export function ThemeSync() {
     if (typeof window === "undefined") return;
 
     let pref: ThemePreference = getInitialPreference();
+    persistThemePreference(pref);
     applyThemePreference(pref);
     let cleanupSystem: (() => void) | null = null;
 

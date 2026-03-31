@@ -16,7 +16,7 @@ export default function OnboardingLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, authHydrated } = useAuth();
   const [subGate, setSubGate] = useState<SubGate>("idle");
 
   useEffect(() => {
@@ -54,9 +54,9 @@ export default function OnboardingLayout({
     };
   }, [isAuthenticated, authLoading, router]);
 
-  if (authLoading) {
+  if (!authHydrated || authLoading) {
     return (
-      <AuthPageShell>
+      <AuthPageShell appName="">
         <div className="mx-auto flex w-full max-w-sm items-center justify-center py-6 sm:py-8">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
@@ -66,7 +66,7 @@ export default function OnboardingLayout({
 
   if (isAuthenticated && (subGate === "idle" || subGate === "pending")) {
     return (
-      <AuthPageShell>
+      <AuthPageShell appName="">
         <div className="mx-auto flex w-full max-w-sm items-center justify-center py-6 sm:py-8">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>

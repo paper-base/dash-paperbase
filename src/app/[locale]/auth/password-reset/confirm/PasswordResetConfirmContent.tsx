@@ -7,6 +7,8 @@ import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { useMinDelayLoading } from "@/hooks/useMinDelayLoading";
 import { confirmPasswordReset } from "@/lib/auth-email";
 import { parseValidation, passwordResetConfirmSchema } from "@/lib/validation";
 
@@ -34,7 +36,6 @@ export default function PasswordResetConfirmContent() {
   const t = useTranslations("auth.passwordReset");
   const tSignup = useTranslations("auth.signup");
   const tPages = useTranslations("pages");
-  const tCommon = useTranslations("common");
   const searchParams = useSearchParams();
   const uid = searchParams.get("uid") ?? "";
   const token = searchParams.get("token") ?? "";
@@ -48,7 +49,7 @@ export default function PasswordResetConfirmContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { loading, runWithLoading } = useMinDelayLoading();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -69,20 +70,19 @@ export default function PasswordResetConfirmContent() {
       );
       return;
     }
-    setLoading(true);
     try {
-      await confirmPasswordReset({
-        uid,
-        token,
-        new_password: validation.data.newPassword,
-        new_password_confirm: validation.data.newPasswordConfirm,
-        logout_all_devices: logoutAllDevices,
+      await runWithLoading(async () => {
+        await confirmPasswordReset({
+          uid,
+          token,
+          new_password: validation.data.newPassword,
+          new_password_confirm: validation.data.newPasswordConfirm,
+          logout_all_devices: logoutAllDevices,
+        });
+        router.push("/auth/password-reset/success");
       });
-      router.push("/auth/password-reset/success");
     } catch (err: unknown) {
       setError(extractMessage(err, t("genericError")));
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -117,6 +117,7 @@ export default function PasswordResetConfirmContent() {
       <form
         onSubmit={handleSubmit}
         className="mx-auto w-11/12 max-w-sm space-y-6 sm:w-full"
+        aria-busy={loading}
       >
         {error ? (
           <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -186,9 +187,14 @@ export default function PasswordResetConfirmContent() {
           />
           <span>{t("logoutAllDevices")}</span>
         </label>
-        <Button type="submit" className="mt-2 w-full" disabled={loading}>
-          {loading ? tCommon("pleaseWait") : t("resetPassword")}
-        </Button>
+        <LoadingButton
+          type="submit"
+          className="mt-2 w-full"
+          isLoading={loading}
+          loadingText={t("resetPasswordLoading")}
+        >
+          {t("resetPassword")}
+        </LoadingButton>
       </form>
     </div>
   );

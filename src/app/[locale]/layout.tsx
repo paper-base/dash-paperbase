@@ -10,10 +10,6 @@ import { ThemeSync } from "@/components/ThemeSync";
 import { NotificationProvider } from "@/notifications";
 import { NotificationViewport } from "@/components/notifications/NotificationViewport";
 
-export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
-}
-
 export const metadata: Metadata = {
   title: "Paperbase",
   description: "Paperbase dashboard",

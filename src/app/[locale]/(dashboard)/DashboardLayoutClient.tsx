@@ -58,12 +58,17 @@ export default function DashboardLayoutClient({
     subscription?.active === true &&
     isEligiblePlan &&
     storeCount === 0;
+  const authCheckReady = authHydrated && !isLoading;
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    // Wait for client auth hydration before deciding user is unauthenticated.
+    // Without this guard, refresh can momentarily see `isAuthenticated=false`
+    // and incorrectly trigger a hard logout.
+    if (!authCheckReady) return;
+    if (!isAuthenticated) {
       logout();
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, authCheckReady]);
 
   useEffect(() => {
     if (!shouldRedirectToOnboarding) return;

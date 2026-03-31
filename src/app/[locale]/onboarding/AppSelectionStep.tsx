@@ -1,8 +1,10 @@
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { OPTIONAL_APP_IDS, APP_CONFIG, type AppConfig } from "@/config/apps";
+import type { StoreFormData } from "./useOnboarding";
 
 interface AppSelectionStepProps {
+  formData: StoreFormData;
   selectedApps: Set<string>;
   loading: boolean;
   error: string;
@@ -12,6 +14,7 @@ interface AppSelectionStepProps {
 }
 
 export function AppSelectionStep({
+  formData,
   selectedApps,
   loading,
   error,
@@ -31,6 +34,22 @@ export function AppSelectionStep({
       )}
 
       <p className="text-sm text-muted-foreground">{t("appsIntro")}</p>
+
+      <div className="rounded-lg border border-border/60 bg-muted/20 p-3 text-sm">
+        <p className="mb-2 font-medium text-foreground">{t("reviewHeading")}</p>
+        <div className="space-y-1 text-muted-foreground">
+          <p>
+            <span className="text-foreground">{t("storeName")}:</span> {formData.name}
+          </p>
+          <p>
+            <span className="text-foreground">{t("ownerName")}:</span> {formData.owner_first_name}{" "}
+            {formData.owner_last_name}
+          </p>
+          <p>
+            <span className="text-foreground">{t("ownerEmail")}:</span> {formData.owner_email}
+          </p>
+        </div>
+      </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
         {OPTIONAL_APP_IDS.map((id) => {
@@ -82,7 +101,7 @@ export function AppSelectionStep({
           disabled={loading}
           className="flex-1"
         >
-          {loading ? t("creatingStore") : t("createStore")}
+          {loading ? t("creatingStore") : t("confirmAndCreate")}
         </Button>
       </div>
     </form>

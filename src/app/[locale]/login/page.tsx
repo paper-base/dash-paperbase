@@ -6,23 +6,26 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { AuthPageShell } from "@/components/auth/AuthPageShell";
+import { useMinDelayLoading } from "@/hooks/useMinDelayLoading";
 import { loginSchema, parseValidation } from "@/lib/validation";
 import { resolvePostAuthRoute } from "@/lib/subscription-access";
 
 export default function LoginPage() {
   const router = useRouter();
   const t = useTranslations("auth.login");
-  const tCommon = useTranslations("common");
   const tLayout = useTranslations("dashboardLayout");
   const { login, pendingTwoFactor, verifyTwoFactorChallenge } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const { loading, runWithLoading } = useMinDelayLoading();
+  const forgotPasswordLabel = t("forgotPassword");
+  const noAccountLabel = t("noAccount");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -36,17 +39,18 @@ export default function LoginPage() {
       );
       return;
     }
-    setLoading(true);
     try {
-      const result = await login(validation.data.email, validation.data.password);
-      if (!("2fa_required" in result)) {
-        const next = await resolvePostAuthRoute();
-        if (next.ok) {
-          router.push(next.path);
-        } else {
-          setError(tLayout("subscriptionVerifyBody"));
+      await runWithLoading(async () => {
+        const result = await login(validation.data.email, validation.data.password);
+        if (!("2fa_required" in result)) {
+          const next = await resolvePostAuthRoute();
+          if (next.ok) {
+            router.push(next.path);
+          } else {
+            setError(tLayout("subscriptionVerifyBody"));
+          }
         }
-      }
+      });
     } catch (err: unknown) {
       const data =
         err && typeof err === "object" && "response" in err
@@ -59,8 +63,6 @@ export default function LoginPage() {
         return;
       }
       setError(t("invalidCredentials"));
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -68,18 +70,19 @@ export default function LoginPage() {
     e.preventDefault();
     if (!pendingTwoFactor) return;
     setError("");
-    setLoading(true);
     try {
-      await verifyTwoFactorChallenge(
-        pendingTwoFactor.challenge_public_id,
-        otpCode
-      );
-      const next = await resolvePostAuthRoute();
-      if (next.ok) {
-        router.push(next.path);
-      } else {
-        setError(tLayout("subscriptionVerifyBody"));
-      }
+      await runWithLoading(async () => {
+        await verifyTwoFactorChallenge(
+          pendingTwoFactor.challenge_public_id,
+          otpCode
+        );
+        const next = await resolvePostAuthRoute();
+        if (next.ok) {
+          router.push(next.path);
+        } else {
+          setError(tLayout("subscriptionVerifyBody"));
+        }
+      });
     } catch (err: unknown) {
       const data =
         err && typeof err === "object" && "response" in err
@@ -90,28 +93,21 @@ export default function LoginPage() {
         return;
       }
       setError(t("invalidOtp"));
-    } finally {
-      setLoading(false);
     }
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-muted/30 px-4 py-6">
-      <main className="flex flex-1 items-center justify-center">
-        <div className="w-full max-w-md space-y-8 sm:space-y-10">
-          <div className="space-y-2 text-center">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              {t("title")}
-            </h1>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {t("welcome")}
-            </p>
-          </div>
+    <AuthPageShell
+      headline={pendingTwoFactor ? t("twoFactorHeadline") : t("headline")}
+      description={pendingTwoFactor ? t("twoFactorDescription") : t("description")}
+      containerClassName="space-y-8 sm:space-y-10"
+    >
 
-          <form
+      <form
             onSubmit={pendingTwoFactor ? handleOtpSubmit : handleSubmit}
             className="mx-auto w-11/12 max-w-sm space-y-6 sm:w-full"
-          >
+            aria-busy={loading}
+      >
           {error && (
             <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
@@ -180,7 +176,10 @@ export default function LoginPage() {
                   href="/auth/password-reset"
                   className="font-medium text-foreground underline-offset-4 hover:underline"
                 >
-                  {t("forgotPassword")}
+                  {forgotPasswordLabel.replace("?", "")}
+                  {forgotPasswordLabel.includes("?") ? (
+                    <span className="font-sans">?</span>
+                  ) : null}
                 </Link>
               </div>
             </>
@@ -202,48 +201,28 @@ export default function LoginPage() {
             </div>
           )}
 
-            <Button type="submit" disabled={loading} className="mt-2 w-full">
-              {loading
-                ? tCommon("pleaseWait")
-                : pendingTwoFactor
-                  ? t("verifyCode")
-                  : t("loginButton")}
-            </Button>
-          </form>
+            <LoadingButton
+              type="submit"
+              isLoading={loading}
+              loadingText={
+                pendingTwoFactor ? t("verifyCodeLoading") : t("loginLoading")
+              }
+              className="mt-2 w-full"
+            >
+              {pendingTwoFactor ? t("verifyCode") : t("loginButton")}
+            </LoadingButton>
+      </form>
 
-          <p className="text-center text-sm text-muted-foreground">
-            {t("noAccount")}{" "}
-            <Link
-              href="/signup"
-              className="font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              {t("signUp")}
-            </Link>
-          </p>
-        </div>
-      </main>
-
-      <footer className="pb-3 pt-4">
-        <div className="mx-auto w-full max-w-sm text-center">
-          <p className="text-xs text-muted-foreground sm:whitespace-nowrap">
-            <Link
-              href="/terms-of-service"
-              className="underline-offset-4 hover:underline"
-            >
-              {tCommon("termsOfService")}
-            </Link>{" "}
-            <span aria-hidden>•</span>{" "}
-            <Link
-              href="/privacy-policy"
-              className="underline-offset-4 hover:underline"
-            >
-              {tCommon("privacyPolicy")}
-            </Link>{" "}
-            <span aria-hidden>•</span>{" "}
-            <span>{tCommon("copyrightBrand")}</span>
-          </p>
-        </div>
-      </footer>
-    </div>
+      <p className="text-center text-sm text-muted-foreground">
+        {noAccountLabel.replace("?", "")}
+        {noAccountLabel.includes("?") ? <span className="font-sans">?</span> : null}{" "}
+        <Link
+          href="/signup"
+          className="font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          {t("signUp")}
+        </Link>
+      </p>
+    </AuthPageShell>
   );
 }

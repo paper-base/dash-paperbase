@@ -6,12 +6,18 @@ interface AuthPageShellProps {
   children: ReactNode;
   className?: string;
   containerClassName?: string;
+  appName?: string;
+  headline?: string;
+  description?: string;
 }
 
 export function AuthPageShell({
   children,
   className,
   containerClassName,
+  appName = "Paperbase",
+  headline,
+  description,
 }: AuthPageShellProps) {
   return (
     <div
@@ -23,13 +29,31 @@ export function AuthPageShell({
       <main className="flex flex-1 items-center justify-center">
         <div
           className={cn(
-            "w-full max-w-md space-y-8 sm:space-y-10",
+            "w-full max-w-[30rem] space-y-8",
             containerClassName
           )}
         >
+          <div className="space-y-3 text-center">
+            {appName ? (
+              <p className="text-base font-semibold tracking-wide text-foreground/80">{appName}</p>
+            ) : null}
+            {headline ? (
+              <h1 className="mx-auto max-w-[32ch] text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                {headline}
+              </h1>
+            ) : null}
+            {description ? (
+              <p className="mx-auto max-w-[32ch] text-sm leading-relaxed text-muted-foreground">
+                {description}
+              </p>
+            ) : null}
+          </div>
           {children}
         </div>
       </main>
+      <footer className="pb-4 text-center text-xs text-muted-foreground/90 sm:pb-6">
+        Terms of Service • Privacy Policy • © 2026 Paperbase
+      </footer>
     </div>
   );
 }

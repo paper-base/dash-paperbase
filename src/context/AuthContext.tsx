@@ -57,10 +57,7 @@ interface AuthState {
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return !!localStorage.getItem("access_token");
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pendingTwoFactor, setPendingTwoFactor] = useState<PendingTwoFactorResponse | null>(null);
   const [isLoading] = useState(false);
   const [authHydrated, setAuthHydrated] = useState(false);
@@ -87,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setAuthHydrated(true);
+    setIsAuthenticated(!!localStorage.getItem("access_token"));
   }, []);
 
   useEffect(() => {
