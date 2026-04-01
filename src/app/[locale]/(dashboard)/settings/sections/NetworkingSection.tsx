@@ -26,11 +26,16 @@ type APIKeyCreateResponse = {
   api_key: string;
 };
 
+/** Hide legacy auto-created keys from store onboarding (no longer created server-side). */
+const LEGACY_AUTO_KEY_NAME = "Bootstrap Public";
+
 function extractRows(data: unknown): APIKeyRow[] {
-  if (Array.isArray(data)) return (data as APIKeyRow[]).filter((row) => !row.revoked_at);
+  const active = (row: APIKeyRow) =>
+    !row.revoked_at && row.name !== LEGACY_AUTO_KEY_NAME;
+  if (Array.isArray(data)) return (data as APIKeyRow[]).filter(active);
   if (data && typeof data === "object" && "results" in data) {
     const r = (data as { results?: APIKeyRow[] }).results;
-    return Array.isArray(r) ? r.filter((row) => !row.revoked_at) : [];
+    return Array.isArray(r) ? r.filter(active) : [];
   }
   return [];
 }

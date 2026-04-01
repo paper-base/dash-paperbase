@@ -1007,7 +1007,7 @@
     },
     "networking": {
       "heading": "Networking",
-      "subtitle": "Use API keys to authenticate tenant API and WebSocket requests.",
+      "subtitle": "Create API keys here to authenticate tenant API and WebSocket requests. Keys are not created automatically when you create a store.",
       "apiBaseUrl": "API Base URL",
       "loadError": "Could not load API keys.",
       "defaultKeyName": "Default key",
@@ -1027,7 +1027,7 @@
       "statusActive": "Active",
       "regenerate": "Regenerate",
       "deleteKeyAria": "Delete API key",
-      "noKeys": "No API keys yet.",
+      "noKeys": "No API keys yet. Create one below before using the storefront or headless API.",
       "createHeading": "Create API key",
       "namePlaceholder": "e.g. Frontend",
       "createButton": "Create Key"

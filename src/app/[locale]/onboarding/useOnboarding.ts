@@ -28,6 +28,9 @@ export interface StoreFormData {
 type StoreFormErrors = Partial<Record<keyof StoreFormData, string>>;
 export type OnboardingStep = 1 | 2 | 3 | 4 | 5;
 
+/** POST /stores/ — no api_key; keys are created in Settings → Networking. */
+type StoreCreateResponse = { public_id: string };
+
 interface MeResponse {
   active_store_public_id: string | null;
   email?: string;
@@ -191,7 +194,7 @@ export function useOnboarding() {
       for (const id of OPTIONAL_APP_IDS) {
         modules_enabled[id] = selectedApps.has(id);
       }
-      const { data: store } = await api.post("stores/", {
+      const { data: store } = await api.post<StoreCreateResponse>("stores/", {
         name: formData.name.trim(),
         store_type: formData.store_type.trim() || undefined,
         owner_first_name: formData.owner_first_name.trim(),
