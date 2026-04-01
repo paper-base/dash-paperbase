@@ -82,7 +82,10 @@ function ComboboxInput({
         render={
           <InputGroupInput
             disabled={disabled}
-            className={cn("cursor-pointer caret-transparent", inputClassName)}
+            className={cn(
+              "cursor-pointer caret-transparent placeholder:font-normal",
+              inputClassName
+            )}
           />
         }
         {...rest}
@@ -304,7 +307,10 @@ function ComboboxChipsInput({
   return (
     <ComboboxPrimitive.Input
       data-slot="combobox-chip-input"
-      className={cn("min-w-16 flex-1 outline-none", className)}
+      className={cn(
+        "min-w-16 flex-1 outline-none placeholder:text-muted-foreground placeholder:font-normal placeholder:[-webkit-text-fill-color:hsl(var(--muted-foreground))]",
+        className
+      )}
       {...props}
     />
   )

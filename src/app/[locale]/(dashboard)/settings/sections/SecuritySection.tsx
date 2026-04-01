@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { SettingsActionDialog } from "@/components/settings/SettingsActionDialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
@@ -10,8 +11,11 @@ import { useRateLimitCooldown, extractRateLimitInfo } from "@/hooks/useRateLimit
 import { notify } from "@/notifications";
 import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
 
+type SecurityModal = "password" | "enable" | "disable" | "recovery" | null;
+
 export default function SecuritySection({ hidden }: { hidden: boolean }) {
   const t = useTranslations("settings");
+  const [openModal, setOpenModal] = useState<SecurityModal>(null);
   const [isEnabled, setIsEnabled] = useState(false);
   const [qrCode, setQrCode] = useState("");
   const [secret, setSecret] = useState("");
@@ -22,7 +26,9 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
   const [recoveryRequestLoading, setRecoveryRequestLoading] = useState(false);
   const [recoveryVerifyLoading, setRecoveryVerifyLoading] = useState(false);
   const [recoveryMessage, setRecoveryMessage] = useState("");
-  const [message, setMessage] = useState("");
+  const [statusLoadError, setStatusLoadError] = useState("");
+  const [enableModalMessage, setEnableModalMessage] = useState("");
+  const [disableModalMessage, setDisableModalMessage] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -37,25 +43,57 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
     void loadStatus();
   }, [hidden]);
 
+  function clearPasswordModal() {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setLogoutAllDevices(false);
+    setPasswordMessage("");
+    setPasswordLoading(false);
+  }
+
+  function clearEnableModal() {
+    setQrCode("");
+    setSecret("");
+    setSetupCode("");
+    setEnableModalMessage("");
+    setLoading(false);
+  }
+
+  function clearDisableModal() {
+    setDisablePassword("");
+    setDisableCode("");
+    setDisableModalMessage("");
+    setLoading(false);
+  }
+
+  function clearRecoveryModal() {
+    setRecoveryCode("");
+    setRecoveryMessage("");
+    setRecoveryRequestLoading(false);
+    setRecoveryVerifyLoading(false);
+  }
+
   async function loadStatus() {
     try {
       const { data } = await api.get<{ is_enabled: boolean }>("auth/2fa/status/");
       setIsEnabled(!!data.is_enabled);
+      setStatusLoadError("");
     } catch {
-      setMessage(t("security.loadStatusFailed"));
+      setStatusLoadError(t("security.loadStatusFailed"));
     }
   }
 
   async function startSetup() {
     setLoading(true);
-    setMessage("");
+    setEnableModalMessage("");
     try {
       const { data } = await api.get<{ qr_code: string; secret: string }>("auth/2fa/setup/");
       setQrCode(data.qr_code);
       setSecret(data.secret);
-      setMessage(t("security.setupScanHint"));
+      setEnableModalMessage(t("security.setupScanHint"));
     } catch {
-      setMessage(t("security.setupStartFailed"));
+      setEnableModalMessage(t("security.setupStartFailed"));
     } finally {
       setLoading(false);
     }
@@ -63,16 +101,17 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
 
   async function verifySetup() {
     setLoading(true);
-    setMessage("");
+    setEnableModalMessage("");
     try {
       await api.post("auth/2fa/verify/", { code: setupCode });
       setIsEnabled(true);
       setQrCode("");
       setSecret("");
       setSetupCode("");
-      setMessage(t("security.enabledSuccess"));
+      setOpenModal(null);
+      notify.success(t("security.enabledSuccess"));
     } catch {
-      setMessage(t("security.invalidOtp"));
+      setEnableModalMessage(t("security.invalidOtp"));
     } finally {
       setLoading(false);
     }
@@ -110,6 +149,7 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
       setDisablePassword("");
       setDisableCode("");
       setRecoveryMessage("");
+      setOpenModal(null);
       notify.success(data.detail ?? t("security.toastDisabledDetail"));
     } catch {
       setRecoveryMessage(t("security.recoveryInvalid"));
@@ -120,7 +160,7 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
 
   async function disable2FA() {
     setLoading(true);
-    setMessage("");
+    setDisableModalMessage("");
     try {
       await api.post("auth/2fa/disable/", {
         password: disablePassword,
@@ -129,10 +169,10 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
       setIsEnabled(false);
       setDisablePassword("");
       setDisableCode("");
-      setMessage("");
+      setOpenModal(null);
       notify.success(t("security.toastDisabledEmail"));
     } catch {
-      setMessage(t("security.disableFailed"));
+      setDisableModalMessage(t("security.disableFailed"));
     } finally {
       setLoading(false);
     }
@@ -165,11 +205,9 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
         localStorage.setItem("access_token", data.access);
         localStorage.setItem("refresh_token", data.refresh);
       }
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmNewPassword("");
-      setLogoutAllDevices(false);
-      setPasswordMessage(data.detail ?? t("security.passwordChanged"));
+      clearPasswordModal();
+      setOpenModal(null);
+      notify.success(data.detail ?? t("security.passwordChanged"));
     } catch {
       setPasswordMessage(t("security.passwordChangeFailed"));
     } finally {
@@ -192,9 +230,52 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
         </div>
 
         <div className="space-y-4">
-        <div className="space-y-3 rounded-lg border border-border p-4">
-          <h3 className="text-sm font-medium text-foreground">{t("security.changePassword")}</h3>
-          <p className="text-sm text-muted-foreground">{t("security.changePasswordHint")}</p>
+          <div className="text-sm">
+            <span className="text-muted-foreground">{t("security.twoFactorLabel")}: </span>
+            <span className={isEnabled ? "text-emerald-500" : "text-muted-foreground"}>
+              {isEnabled ? t("security.twoFactorOn") : t("security.twoFactorOff")}
+            </span>
+          </div>
+          {statusLoadError ? (
+            <p className="text-sm text-destructive" role="alert">
+              {statusLoadError}
+            </p>
+          ) : null}
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <Button type="button" variant="outline" onClick={() => setOpenModal("password")}>
+              {t("security.changePassword")}
+            </Button>
+            {!isEnabled ? (
+              <Button type="button" variant="outline" onClick={() => setOpenModal("enable")}>
+                {t("security.enable2fa")}
+              </Button>
+            ) : (
+              <>
+                <Button type="button" variant="outline" onClick={() => setOpenModal("disable")}>
+                  {t("security.disable2fa")}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setOpenModal("recovery")}>
+                  {t("security.recoveryHeading")}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </SettingsSectionBody>
+
+      <SettingsActionDialog
+        open={openModal === "password"}
+        onOpenChange={(next) => {
+          if (!next) {
+            setOpenModal(null);
+            clearPasswordModal();
+          }
+        }}
+        title={t("security.modalChangePasswordTitle")}
+        description={t("security.modalChangePasswordDescription")}
+      >
+        <div className="space-y-3">
           <Input
             type="password"
             value={currentPassword}
@@ -225,105 +306,158 @@ export default function SecuritySection({ hidden }: { hidden: boolean }) {
             />
             <span>{t("security.logoutAllDevices")}</span>
           </label>
-          <Button type="button" onClick={changePassword} disabled={passwordLoading}>
+          {passwordMessage ? (
+            <p className="text-sm text-muted-foreground" role="status">
+              {passwordMessage}
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            className="w-full sm:w-auto"
+            onClick={changePassword}
+            disabled={passwordLoading}
+          >
             {passwordLoading ? t("security.updating") : t("security.updatePassword")}
           </Button>
-          {passwordMessage ? (
-            <p className="text-sm text-muted-foreground">{passwordMessage}</p>
-          ) : null}
         </div>
-        <div className="text-sm">
-          {t("security.statusLabel")}{" "}
-          <span className={isEnabled ? "text-emerald-500" : "text-muted-foreground"}>
-            {isEnabled ? t("security.twoFaEnabled") : t("security.twoFaDisabled")}
-          </span>
-        </div>
+      </SettingsActionDialog>
 
-        {!isEnabled ? (
-          <div className="space-y-3 rounded-lg border border-border p-4">
-            <Button type="button" onClick={startSetup} disabled={loading}>
-              {t("security.enable2fa")}
-            </Button>
-            {qrCode ? <img src={qrCode} alt={t("security.qrAlt")} className="h-44 w-44 border border-border" /> : null}
-            {secret ? (
-              <p className="text-xs text-muted-foreground">
-                {t("security.secretOnce")} {secret}
-              </p>
-            ) : null}
-            {qrCode ? (
-              <div className="flex gap-2">
+      <SettingsActionDialog
+        open={openModal === "enable"}
+        onOpenChange={(next) => {
+          if (!next) {
+            setOpenModal(null);
+            clearEnableModal();
+          }
+        }}
+        title={t("security.modalEnable2faTitle")}
+        description={t("security.modalEnable2faDescription")}
+      >
+        <div className="space-y-4">
+          {!qrCode ? (
+            <>
+              <p className="text-sm text-muted-foreground">{t("security.modalEnable2faStartHint")}</p>
+              <Button type="button" onClick={startSetup} disabled={loading}>
+                {t("security.enable2fa")}
+              </Button>
+            </>
+          ) : (
+            <>
+              <img
+                src={qrCode}
+                alt={t("security.qrAlt")}
+                className="mx-auto h-44 w-44 border border-border"
+              />
+              {secret ? (
+                <p className="break-all text-xs text-muted-foreground">
+                  {t("security.secretOnce")} {secret}
+                </p>
+              ) : null}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Input
+                  className="min-w-0 flex-1"
                   value={setupCode}
                   onChange={(e) => setSetupCode(e.target.value)}
                   placeholder={t("security.otpPlaceholder")}
+                  autoComplete="one-time-code"
                 />
-                <Button type="button" onClick={verifySetup} disabled={loading}>
+                <Button type="button" onClick={verifySetup} disabled={loading} className="shrink-0">
                   {t("security.verify")}
                 </Button>
               </div>
-            ) : null}
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="space-y-3 rounded-lg border border-border p-4">
-              <p className="text-sm text-muted-foreground">{t("security.disableHint")}</p>
-              <Input
-                type="password"
-                value={disablePassword}
-                onChange={(e) => setDisablePassword(e.target.value)}
-                placeholder={t("security.currentPassword")}
-              />
-              <Input
-                value={disableCode}
-                onChange={(e) => setDisableCode(e.target.value)}
-                placeholder={t("security.currentOtp")}
-              />
-              <Button type="button" variant="destructive" onClick={disable2FA} disabled={loading}>
-                {t("security.disable2fa")}
-              </Button>
-            </div>
-
-            <div className="space-y-3 rounded-lg border border-border p-4">
-              <h3 className="text-sm font-medium text-foreground">{t("security.recoveryHeading")}</h3>
-              <p className="text-sm text-muted-foreground">{t("security.recoveryBody")}</p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={requestRecoveryCode}
-                disabled={recoveryRequestLoading || recoveryVerifyLoading || recoveryCooldown.isLimited}
-              >
-                {recoveryCooldown.isLimited
-                  ? t("security.retryIn", { seconds: recoveryCooldown.remaining })
-                  : recoveryRequestLoading
-                    ? t("security.sending")
-                    : t("security.sendRecovery")}
-              </Button>
-              <div className="space-y-2">
-                <Input
-                  value={recoveryCode}
-                  onChange={(e) => setRecoveryCode(e.target.value)}
-                  placeholder={t("security.recoveryPlaceholder")}
-                  autoComplete="one-time-code"
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={verifyRecoveryAndDisable}
-                  disabled={recoveryVerifyLoading || !recoveryCode.trim()}
-                >
-                  {recoveryVerifyLoading ? t("security.verifying") : t("security.verifyDisable")}
-                </Button>
-              </div>
-              {recoveryMessage ? (
-                <p className="text-sm text-muted-foreground">{recoveryMessage}</p>
-              ) : null}
-            </div>
-          </div>
-        )}
-        {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
+            </>
+          )}
+          {enableModalMessage ? (
+            <p className="text-sm text-muted-foreground" role="status">
+              {enableModalMessage}
+            </p>
+          ) : null}
         </div>
-      </SettingsSectionBody>
+      </SettingsActionDialog>
+
+      <SettingsActionDialog
+        open={openModal === "disable"}
+        onOpenChange={(next) => {
+          if (!next) {
+            setOpenModal(null);
+            clearDisableModal();
+          }
+        }}
+        title={t("security.modalDisable2faTitle")}
+        description={t("security.disableHint")}
+      >
+        <div className="space-y-3">
+          <Input
+            type="password"
+            value={disablePassword}
+            onChange={(e) => setDisablePassword(e.target.value)}
+            placeholder={t("security.currentPassword")}
+            autoComplete="current-password"
+          />
+          <Input
+            value={disableCode}
+            onChange={(e) => setDisableCode(e.target.value)}
+            placeholder={t("security.currentOtp")}
+            autoComplete="one-time-code"
+          />
+          {disableModalMessage ? (
+            <p className="text-sm text-destructive" role="alert">
+              {disableModalMessage}
+            </p>
+          ) : null}
+          <Button type="button" variant="destructive" onClick={disable2FA} disabled={loading}>
+            {t("security.disable2fa")}
+          </Button>
+        </div>
+      </SettingsActionDialog>
+
+      <SettingsActionDialog
+        open={openModal === "recovery"}
+        onOpenChange={(next) => {
+          if (!next) {
+            setOpenModal(null);
+            clearRecoveryModal();
+          }
+        }}
+        title={t("security.modalRecoveryTitle")}
+        description={t("security.modalRecoveryDescription")}
+      >
+        <div className="space-y-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={requestRecoveryCode}
+            disabled={recoveryRequestLoading || recoveryVerifyLoading || recoveryCooldown.isLimited}
+          >
+            {recoveryCooldown.isLimited
+              ? t("security.retryIn", { seconds: recoveryCooldown.remaining })
+              : recoveryRequestLoading
+                ? t("security.sending")
+                : t("security.sendRecovery")}
+          </Button>
+          <Input
+            value={recoveryCode}
+            onChange={(e) => setRecoveryCode(e.target.value)}
+            placeholder={t("security.recoveryPlaceholder")}
+            autoComplete="one-time-code"
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full sm:w-auto"
+            onClick={verifyRecoveryAndDisable}
+            disabled={recoveryVerifyLoading || !recoveryCode.trim()}
+          >
+            {recoveryVerifyLoading ? t("security.verifying") : t("security.verifyDisable")}
+          </Button>
+          {recoveryMessage ? (
+            <p className="text-sm text-muted-foreground" role="status">
+              {recoveryMessage}
+            </p>
+          ) : null}
+        </div>
+      </SettingsActionDialog>
     </section>
   );
 }
-

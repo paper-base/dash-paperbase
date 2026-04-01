@@ -19,13 +19,13 @@ export default function IntegrationsSection({
       hidden={hidden}
       className={settingsSectionSurfaceClassName}
     >
-      <SettingsSectionBody>
+      <SettingsSectionBody gap="compact">
         <div className="space-y-1">
           <h2 className="text-lg font-medium text-foreground">{t("integrations.heading")}</h2>
           <p className="text-sm text-muted-foreground">{t("integrations.subtitle")}</p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           <MarketingIntegration />
           <CourierIntegration />
         </div>

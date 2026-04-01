@@ -302,7 +302,10 @@ select {
 }
 
 .input::placeholder {
-  color: var(--text-secondary);
+  color: hsl(var(--muted-foreground));
+  -webkit-text-fill-color: hsl(var(--muted-foreground));
+  opacity: 1;
+  font-weight: 400;
 }
 
 /* Themed scrollbars */
