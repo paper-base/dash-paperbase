@@ -31,11 +31,15 @@ export function extractRateLimitInfo(err: unknown): RateLimitInfo | null {
 /**
  * Manages a per-action countdown timer for rate-limit cooldowns.
  *
+ * Uses a wall-clock deadline so the UI stays correct after React Strict Mode
+ * (effect cleanup clears intervals) and when the tab is backgrounded.
+ *
  * - No global state — resets on unmount (page nav, logout, store switch).
- * - Safe for concurrent use: multiple instances don't interfere.
  */
 export function useRateLimitCooldown() {
   const [remaining, setRemaining] = useState(0);
+  const remainingRef = useRef(0);
+  const cooldownEndsAtRef = useRef<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearTimer = useCallback(() => {
@@ -45,36 +49,75 @@ export function useRateLimitCooldown() {
     }
   }, []);
 
-  const startCooldown = useCallback(
-    (seconds: number) => {
+  const applyRemainingSeconds = useCallback(
+    (mergedSeconds: number) => {
       clearTimer();
-      const clamped = Math.max(0, Math.ceil(seconds));
-      if (clamped === 0) return;
+      const clamped = Math.max(0, Math.ceil(mergedSeconds));
+      if (clamped === 0) {
+        cooldownEndsAtRef.current = null;
+        remainingRef.current = 0;
+        setRemaining(0);
+        return;
+      }
+      const now = Date.now();
+      cooldownEndsAtRef.current = now + clamped * 1000;
+      remainingRef.current = clamped;
       setRemaining(clamped);
       intervalRef.current = setInterval(() => {
-        setRemaining((prev) => {
-          if (prev <= 1) {
-            clearTimer();
-            return 0;
-          }
-          return prev - 1;
-        });
+        const end = cooldownEndsAtRef.current;
+        if (end == null) return;
+        const rem = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+        remainingRef.current = rem;
+        setRemaining(rem);
+        if (rem <= 0) {
+          clearTimer();
+          cooldownEndsAtRef.current = null;
+        }
       }, 1000);
     },
     [clearTimer],
   );
 
+  const startCooldown = useCallback(
+    (seconds: number) => {
+      applyRemainingSeconds(seconds);
+    },
+    [applyRemainingSeconds],
+  );
+
+  /** Use with 429 retry_after: keeps the longer of current countdown or server value. */
+  const mergeCooldownFromSeconds = useCallback(
+    (seconds: number) => {
+      const s = Math.max(0, Math.ceil(seconds));
+      const now = Date.now();
+      const prevRem =
+        cooldownEndsAtRef.current != null
+          ? Math.max(0, Math.ceil((cooldownEndsAtRef.current - now) / 1000))
+          : remainingRef.current;
+      const next = Math.max(prevRem, s);
+      applyRemainingSeconds(next);
+    },
+    [applyRemainingSeconds],
+  );
+
   const reset = useCallback(() => {
     clearTimer();
+    cooldownEndsAtRef.current = null;
+    remainingRef.current = 0;
     setRemaining(0);
   }, [clearTimer]);
 
-  useEffect(() => clearTimer, [clearTimer]);
+  useEffect(() => {
+    return () => {
+      clearTimer();
+    };
+  }, [clearTimer]);
 
   return {
     remaining,
     isLimited: remaining > 0,
     startCooldown,
+    mergeCooldownFromSeconds,
     reset,
   } as const;
 }

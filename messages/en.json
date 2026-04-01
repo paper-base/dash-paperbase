@@ -823,6 +823,7 @@
       "resendHint": "Didn't receive the email? Check spam or resend.",
       "resendSuccess": "If the email exists, verification link has been sent.",
       "resendEmail": "Resend email",
+      "resendAvailableInSeconds": "Resend available in {seconds}s",
       "sending": "Sending…",
       "emailRequiredResend": "Email address is required to resend verification.",
       "backToLogin": "Back to login",

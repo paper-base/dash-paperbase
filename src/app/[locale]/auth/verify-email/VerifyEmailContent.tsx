@@ -14,6 +14,7 @@ import {
 } from "@/lib/auth-email";
 import { useRateLimitCooldown, extractRateLimitInfo } from "@/hooks/useRateLimitCooldown";
 import { useMinDelayLoading } from "@/hooks/useMinDelayLoading";
+import { remainingResendCooldownSeconds } from "@/lib/email-verification-resend-policy";
 import {
   PENDING_VERIFICATION_EMAIL_KEY,
   clearPendingVerificationEmail,
@@ -53,11 +54,11 @@ function extractMessage(err: unknown, generic: string): string {
 
 export default function VerifyEmailContent() {
   const t = useTranslations("auth.verifyEmail");
-  const tCommon = useTranslations("common");
   const searchParams = useSearchParams();
   const uid = searchParams.get("uid") ?? "";
   const token = searchParams.get("token") ?? "";
   const emailParam = searchParams.get("email") ?? "";
+  const signupTimeRaw = searchParams.get("signup_time") ?? "";
   const decodedEmail = decodeEmailParam(emailParam);
 
   const [linkStatus, setLinkStatus] = useState<
@@ -70,9 +71,19 @@ export default function VerifyEmailContent() {
   const { loading: resendLoading, runWithLoading } = useMinDelayLoading();
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendError, setResendError] = useState("");
-  const cooldown = useRateLimitCooldown();
+  const {
+    isLimited: cooldownLimited,
+    remaining: cooldownRemaining,
+    startCooldown,
+    mergeCooldownFromSeconds,
+  } = useRateLimitCooldown();
 
   const isFromEmailLink = Boolean(uid && token);
+  const signupTimeMs = Number(signupTimeRaw);
+  const hasValidSignupTime =
+    signupTimeRaw !== "" &&
+    Number.isFinite(signupTimeMs) &&
+    signupTimeMs > 0;
   const effectiveEmail = pendingEmail || normalizeEmail(decodedEmail) || normalizeEmail(emailInput);
 
   useEffect(() => {
@@ -130,6 +141,22 @@ export default function VerifyEmailContent() {
       });
   }, [isFromEmailLink, uid, token, t]);
 
+  useEffect(() => {
+    if (isFromEmailLink || !hasValidSignupTime) return;
+    const remaining = remainingResendCooldownSeconds(signupTimeMs);
+    if (remaining > 0) {
+      // Replace (not merge): deadline must match URL signup_time. mergeCooldownFromSeconds
+      // is for 429 only — merging here could fight Strict Mode / stale refs.
+      startCooldown(remaining);
+    }
+  }, [
+    isFromEmailLink,
+    hasValidSignupTime,
+    signupTimeRaw,
+    signupTimeMs,
+    startCooldown,
+  ]);
+
   async function handleResend() {
     const resendEmail = effectiveEmail || normalizeEmail(emailInput);
     if (!resendEmail) {
@@ -148,7 +175,7 @@ export default function VerifyEmailContent() {
     } catch (err: unknown) {
       const info = extractRateLimitInfo(err);
       if (info) {
-        cooldown.startCooldown(info.retryAfter);
+        mergeCooldownFromSeconds(info.retryAfter);
         setResendError("");
       } else {
         setResendError(extractMessage(err, t("genericError")));
@@ -251,13 +278,13 @@ export default function VerifyEmailContent() {
         <LoadingButton
           type="button"
           className="mt-2 w-full"
-          disabled={cooldown.isLimited}
+          disabled={cooldownLimited || resendLoading}
           isLoading={resendLoading}
           loadingText={t("sending")}
           onClick={handleResend}
         >
-          {cooldown.isLimited
-            ? tCommon("retryInSeconds", { seconds: cooldown.remaining })
+          {cooldownLimited
+            ? t("resendAvailableInSeconds", { seconds: cooldownRemaining })
             : t("resendEmail")}
         </LoadingButton>
       </div>

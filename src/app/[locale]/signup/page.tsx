@@ -54,8 +54,9 @@ export default function SignupPage() {
         if ("2fa_required" in result) {
           return;
         }
+        const signupTime = Date.now();
         router.push(
-          `/auth/verify-email?email=${encodeURIComponent(validation.data.email)}`
+          `/auth/verify-email?email=${encodeURIComponent(validation.data.email)}&signup_time=${signupTime}`
         );
       });
     } catch (err: unknown) {
@@ -91,8 +92,9 @@ export default function SignupPage() {
           otpCode
         );
         if (flow === "register") {
+          const signupTime = Date.now();
           router.push(
-            `/auth/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`
+            `/auth/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}&signup_time=${signupTime}`
           );
           return;
         }

@@ -823,6 +823,7 @@
       "resendHint": "ইমেইল পাননি? স্প্যাম চেক করুন বা আবার পাঠান।",
       "resendSuccess": "ইমেইল থাকলে যাচাইকরণ লিংক পাঠানো হয়েছে।",
       "resendEmail": "ইমেইল আবার পাঠান",
+      "resendAvailableInSeconds": "{seconds} সেকেন্ডে আবার পাঠানো যাবে",
       "sending": "পাঠানো হচ্ছে…",
       "emailRequiredResend": "আবার পাঠাতে ইমেইল আবশ্যক।",
       "backToLogin": "লগইনে ফিরুন",
