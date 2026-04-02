@@ -23,9 +23,9 @@ import { FilterDropdown } from "@/components/filters/FilterDropdown";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useFilters } from "@/hooks/useFilters";
 import { notify } from "@/notifications";
+import { useAdminDeleteCapabilities } from "@/hooks/useAdminDeleteCapabilities";
 
 type CategoryOption = { value: string; label: string };
-type MeResponse = { is_superuser?: boolean };
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -57,7 +57,8 @@ export default function ProductsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [canDeleteProducts, setCanDeleteProducts] = useState(false);
+  const { canDelete: canDeleteProducts, isSuperuser: deleteIsSuperuser } =
+    useAdminDeleteCapabilities();
 
   useEffect(() => {
     const next = debouncedSearch.trim();
@@ -103,23 +104,6 @@ export default function ProductsPage() {
       })),
     [categoryTree]
   );
-
-  useEffect(() => {
-    let active = true;
-    api
-      .get<MeResponse>("auth/me/")
-      .then(({ data }) => {
-        if (!active) return;
-        setCanDeleteProducts(Boolean(data.is_superuser));
-      })
-      .catch(() => {
-        if (!active) return;
-        setCanDeleteProducts(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const fetchProducts = useCallback(() => {
     setLoading(true);
@@ -179,19 +163,35 @@ export default function ProductsPage() {
 
   async function handleDeleteSelected() {
     if (selectedIds.size === 0) return;
+    const deletedCount = selectedIds.size;
     const ok = await notify.confirm({
-      title: tPages("confirmDeleteProducts", {
-        count: toLocaleDigits(String(selectedIds.size), locale),
-      }),
+      title: deleteIsSuperuser
+        ? tPages("confirmDeleteProductsPermanent", {
+            count: toLocaleDigits(String(deletedCount), locale),
+          })
+        : tPages("confirmDeleteProductsTrash", {
+            count: toLocaleDigits(String(deletedCount), locale),
+          }),
       level: "destructive",
     });
     if (!ok) return;
     setDeleting(true);
+    const ids = Array.from(selectedIds);
     try {
-      await Promise.all(
-        Array.from(selectedIds).map((id) => api.delete(`admin/products/${id}/`))
-      );
+      // Sequential: parallel deletes each touch trash/DB locks and can 500 (deadlock).
+      for (const id of ids) {
+        await api.delete(`admin/products/${id}/`);
+      }
       setSelectedIds(new Set());
+      notify.warning(
+        deleteIsSuperuser
+          ? tPages("productsDeletedPermanentSuccess", {
+              count: toLocaleDigits(String(deletedCount), locale),
+            })
+          : tPages("productsMovedToTrashSuccess", {
+              count: toLocaleDigits(String(deletedCount), locale),
+            })
+      );
       fetchProducts();
     } catch (err) {
       console.error(err);
@@ -253,9 +253,13 @@ export default function ProductsPage() {
             >
               {deleting
                 ? tPages("deleting")
-                : tPages("deleteSelected", {
-                    count: toLocaleDigits(String(selectedIds.size), locale),
-                  })}
+                : deleteIsSuperuser
+                  ? tPages("deleteSelectedPermanent", {
+                      count: toLocaleDigits(String(selectedIds.size), locale),
+                    })
+                  : tPages("moveToTrashSelected", {
+                      count: toLocaleDigits(String(selectedIds.size), locale),
+                    })}
             </button>
           )}
           <Link

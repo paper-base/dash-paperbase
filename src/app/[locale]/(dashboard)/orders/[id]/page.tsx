@@ -51,6 +51,7 @@ import {
 } from "@/lib/orders/shipping-address-parts";
 import { formatDashboardDateTime } from "@/lib/datetime-display";
 import { notify, normalizeError } from "@/notifications";
+import { useAdminDeleteCapabilities } from "@/hooks/useAdminDeleteCapabilities";
 
 type EditForm = {
   shipping_name: string;
@@ -103,6 +104,8 @@ export default function OrderDetailPage() {
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
   const rightColRef = useRef<HTMLDivElement>(null);
   const [rightColHeight, setRightColHeight] = useState<number | null>(null);
+  const { canDelete: canDeleteOrder, isSuperuser: deleteIsSuperuser } =
+    useAdminDeleteCapabilities();
 
   useEffect(() => {
     api
@@ -421,7 +424,9 @@ export default function OrderDetailPage() {
 
   async function handleDelete() {
     const ok = await notify.confirm({
-      title: tPages("orderDetailConfirmDelete"),
+      title: deleteIsSuperuser
+        ? tPages("orderDetailConfirmDeletePermanent")
+        : tPages("orderDetailConfirmDeleteTrash"),
       level: "destructive",
     });
     if (!ok) return;
@@ -525,6 +530,7 @@ export default function OrderDetailPage() {
           </nav>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
+          {canDeleteOrder && (
           <Button
             variant="outline"
             size="sm"
@@ -533,6 +539,7 @@ export default function OrderDetailPage() {
           >
             {tPages("orderDetailDeleteOrder")}
           </Button>
+          )}
           {editing ? (
             <>
               <Button

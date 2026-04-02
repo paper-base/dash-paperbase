@@ -12,6 +12,7 @@ const STORAGE_KEY = "core_enabled_apps";
 
 function isAlwaysOnApp(appId: string): boolean {
   return (
+    appId === "trash" ||
     (ESSENTIAL_APP_IDS as readonly string[]).includes(appId) ||
     (CATALOG_INCLUDED_APP_IDS as readonly string[]).includes(appId)
   );

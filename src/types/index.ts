@@ -266,6 +266,21 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
+export type TrashEntityType = "product" | "order";
+
+/** Admin trash row (`GET/DELETE admin/trash/`, `POST admin/trash/{id}/restore/`). */
+export interface TrashItem {
+  id: number;
+  entity_type: TrashEntityType;
+  entity_id: string;
+  entity_public_id: string;
+  /** Display name from snapshot (product name; order shipping name + number). */
+  entity_name: string;
+  deleted_at: string;
+  expires_at: string;
+  is_restored: boolean;
+}
+
 export interface ActivityActor {
   public_id: string;
   email: string;

@@ -22,6 +22,7 @@ import {
 } from "@/lib/orders/order-statuses";
 import type { Order, PaginatedResponse } from "@/types";
 import { notify, normalizeError } from "@/notifications";
+import { useAdminDeleteCapabilities } from "@/hooks/useAdminDeleteCapabilities";
 
 /** Shown after dispatch: Steadfast consignment id only (not provider name). */
 function courierCell(order: Order): string {
@@ -52,6 +53,8 @@ export default function OrdersPage() {
   const [bulkDispatching, setBulkDispatching] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
   const [courierSendingId, setCourierSendingId] = useState<string | null>(null);
+  const { canDelete: canDeleteOrders, isSuperuser: deleteIsSuperuser } =
+    useAdminDeleteCapabilities();
 
   useEffect(() => {
     const next = debouncedSearch.trim();
@@ -189,22 +192,32 @@ export default function OrdersPage() {
     if (selectedIds.size === 0) return;
     const deletedCount = selectedIds.size;
     const ok = await notify.confirm({
-      title: tPages("confirmDeleteOrders", {
-        count: toLocaleDigits(String(deletedCount), locale),
-      }),
+      title: deleteIsSuperuser
+        ? tPages("confirmDeleteOrdersPermanent", {
+            count: toLocaleDigits(String(deletedCount), locale),
+          })
+        : tPages("confirmDeleteOrdersTrash", {
+            count: toLocaleDigits(String(deletedCount), locale),
+          }),
       level: "destructive",
     });
     if (!ok) return;
     setDeleting(true);
+    const ids = Array.from(selectedIds);
     try {
-      await Promise.all(
-        Array.from(selectedIds).map((id) => api.delete(`admin/orders/${id}/`))
-      );
+      // Sequential: parallel deletes each touch trash/DB locks and can 500 (deadlock).
+      for (const id of ids) {
+        await api.delete(`admin/orders/${id}/`);
+      }
       setSelectedIds(new Set());
       notify.warning(
-        tPages("ordersDeletedSuccess", {
-          count: deletedCount,
-        })
+        deleteIsSuperuser
+          ? tPages("ordersDeletedPermanentSuccess", {
+              count: toLocaleDigits(String(deletedCount), locale),
+            })
+          : tPages("ordersMovedToTrashSuccess", {
+              count: toLocaleDigits(String(deletedCount), locale),
+            })
       );
       fetchOrders();
     } catch (err) {
@@ -249,6 +262,7 @@ export default function OrdersPage() {
                   ? tPages("ordersSending")
                   : tPages("ordersConfirmSendCourier")}
               </button>
+              {canDeleteOrders && (
               <button
                 onClick={handleDeleteSelected}
                 disabled={deleting}
@@ -256,10 +270,15 @@ export default function OrdersPage() {
               >
                 {deleting
                   ? tPages("deleting")
-                  : tPages("deleteSelected", {
-                      count: toLocaleDigits(String(selectedIds.size), locale),
-                    })}
+                  : deleteIsSuperuser
+                    ? tPages("deleteSelectedPermanent", {
+                        count: toLocaleDigits(String(selectedIds.size), locale),
+                      })
+                    : tPages("moveToTrashSelected", {
+                        count: toLocaleDigits(String(selectedIds.size), locale),
+                      })}
               </button>
+              )}
             </>
           )}
           <Link

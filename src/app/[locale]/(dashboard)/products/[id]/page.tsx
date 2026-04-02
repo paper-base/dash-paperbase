@@ -25,6 +25,7 @@ import {
   validateRequiredExtraFields,
 } from "@/lib/validation";
 import { notify } from "@/notifications";
+import { useAdminDeleteCapabilities } from "@/hooks/useAdminDeleteCapabilities";
 
 const MAX_IMAGES = MAX_PRODUCT_IMAGES;
 
@@ -69,6 +70,9 @@ export default function EditProductPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const { canDelete: canDeleteProduct, isSuperuser: deleteIsSuperuser } =
+    useAdminDeleteCapabilities();
+  const [deleting, setDeleting] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -281,6 +285,26 @@ export default function EditProductPage() {
     }
   }
 
+  async function handleDeleteProduct() {
+    const ok = await notify.confirm({
+      title: deleteIsSuperuser
+        ? tPages("productDetailConfirmDeletePermanent")
+        : tPages("productDetailConfirmDeleteTrash"),
+      level: "destructive",
+    });
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      await api.delete(`admin/products/${product_public_id}/`);
+      router.push("/products");
+    } catch (err) {
+      console.error(err);
+      notify.error(err);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const fieldControlClass = "w-full rounded-lg bg-muted/50";
 
   if (loading) {
@@ -321,6 +345,18 @@ export default function EditProductPage() {
           </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {canDeleteProduct && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={deleting || saving}
+              onClick={() => void handleDeleteProduct()}
+              className="rounded-lg border-destructive text-destructive hover:bg-destructive/10"
+            >
+              {deleting ? tPages("deleting") : tPages("productDetailDeleteProduct")}
+            </Button>
+          )}
           <Button type="submit" form="product-form" disabled={saving} className="gap-2">
             <Check className="size-4" />
             {saving ? tPages("productSavingButton") : tPages("productSaveChanges")}

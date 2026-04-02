@@ -13,6 +13,7 @@ import {
   BarChart3,
   Truck,
   Ticket,
+  Trash2,
 } from "lucide-react";
 
 export interface NavCounts {
@@ -135,6 +136,16 @@ export const APP_CONFIG: Record<string, AppConfig> = {
     countKey: null,
     parentId: "more",
   },
+  trash: {
+    id: "trash",
+    label: "Trash",
+    icon: Trash2,
+    description: "Restore or permanently delete removed products and orders",
+    essential: false,
+    href: "/trash",
+    countKey: null,
+    parentId: "more",
+  },
   banners: {
     id: "banners",
     label: "Banners",
@@ -208,4 +219,5 @@ export const MAIN_NAV_APP_IDS = [
 export const MORE_APP_IDS = [
   "support_tickets",
   "activities",
+  "trash",
 ] as const;
