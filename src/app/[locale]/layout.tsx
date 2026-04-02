@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { AuthProvider } from "@/context/AuthContext";
+import { ConfirmDialogProvider } from "@/context/ConfirmDialogContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { routing } from "@/i18n/routing";
 import { LocaleSync } from "@/components/LocaleSync";
@@ -36,10 +37,12 @@ export default async function LocaleLayout({
       <ThemeSync />
       <TooltipProvider>
         <AuthProvider>
-          <NotificationProvider>
-            {children}
-            <NotificationViewport />
-          </NotificationProvider>
+          <ConfirmDialogProvider>
+            <NotificationProvider>
+              {children}
+              <NotificationViewport />
+            </NotificationProvider>
+          </ConfirmDialogProvider>
         </AuthProvider>
       </TooltipProvider>
     </NextIntlClientProvider>

@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Notification, PaginatedResponse } from "@/types";
 import { formatDashboardDateOptional } from "@/lib/datetime-display";
 import { displayInputToApiLocal, isoDatetimeToDisplayInput } from "@/lib/datetime-form";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
 
 type CtaForm = {
@@ -41,6 +42,7 @@ export default function CtaPage() {
   const locale = useLocale();
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
+  const confirm = useConfirm();
   const [ctas, setCtas] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | "new" | null>(null);
@@ -145,9 +147,10 @@ export default function CtaPage() {
   }
 
   async function handleDelete(publicId: string) {
-    const ok = await notify.confirm({
-      title: tPages("ctaConfirmDelete"),
-      level: "destructive",
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteNotification"),
+      message: tPages("ctaConfirmDelete"),
+      variant: "danger",
     });
     if (!ok) return;
     try {

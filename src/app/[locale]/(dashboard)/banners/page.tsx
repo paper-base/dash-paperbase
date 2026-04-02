@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import type { Banner, PaginatedResponse } from "@/types";
 import { formatDashboardDateTime } from "@/lib/datetime-display";
 import { displayInputToApiLocal, isoDatetimeToDisplayInput } from "@/lib/datetime-form";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
 
 type BannerForm = {
@@ -38,6 +39,7 @@ export default function BannersPage() {
   const locale = useLocale();
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
+  const confirm = useConfirm();
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | "new" | null>(null);
@@ -137,9 +139,10 @@ export default function BannersPage() {
   }
 
   async function handleDelete(publicId: string) {
-    const ok = await notify.confirm({
-      title: tPages("bannersConfirmDelete"),
-      level: "destructive",
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteBanner"),
+      message: tPages("bannersConfirmDelete"),
+      variant: "danger",
     });
     if (!ok) return;
     try {

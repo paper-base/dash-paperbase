@@ -14,6 +14,7 @@ import type {
   ProductAttributeValueAdmin,
   PaginatedResponse,
 } from "@/types";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify, normalizeError } from "@/notifications";
 
 type AttrForm = { name: string; order: string };
@@ -26,6 +27,7 @@ export default function ProductAttributesPage() {
   const router = useRouter();
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
+  const confirm = useConfirm();
   const [attributes, setAttributes] = useState<ProductAttributeAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -105,9 +107,10 @@ export default function ProductAttributesPage() {
   }
 
   async function deleteAttr(publicId: string, name: string) {
-    const ok = await notify.confirm({
-      title: tPages("attributesConfirmDeleteAttr", { name }),
-      level: "destructive",
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteAttribute"),
+      message: tPages("attributesConfirmDeleteAttr", { name }),
+      variant: "danger",
     });
     if (!ok) return;
     try {
@@ -155,9 +158,10 @@ export default function ProductAttributesPage() {
   }
 
   async function deleteValue(publicId: string, label: string) {
-    const ok = await notify.confirm({
-      title: tPages("attributesConfirmDeleteValue", { label }),
-      level: "destructive",
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteAttributeValue"),
+      message: tPages("attributesConfirmDeleteValue", { label }),
+      variant: "danger",
     });
     if (!ok) return;
     try {

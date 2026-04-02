@@ -24,6 +24,7 @@ import {
   slugFromName,
   validateRequiredExtraFields,
 } from "@/lib/validation";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
 import { useAdminDeleteCapabilities } from "@/hooks/useAdminDeleteCapabilities";
 
@@ -72,6 +73,7 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(true);
   const { canDelete: canDeleteProduct, isSuperuser: deleteIsSuperuser } =
     useAdminDeleteCapabilities();
+  const confirm = useConfirm();
   const [deleting, setDeleting] = useState(false);
 
   const [form, setForm] = useState({
@@ -286,11 +288,12 @@ export default function EditProductPage() {
   }
 
   async function handleDeleteProduct() {
-    const ok = await notify.confirm({
-      title: deleteIsSuperuser
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteProduct"),
+      message: deleteIsSuperuser
         ? tPages("productDetailConfirmDeletePermanent")
         : tPages("productDetailConfirmDeleteTrash"),
-      level: "destructive",
+      variant: "danger",
     });
     if (!ok) return;
     setDeleting(true);

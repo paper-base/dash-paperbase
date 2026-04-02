@@ -2,13 +2,13 @@
 
 import type { LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Archive, Package, Store, ClipboardList } from "lucide-react";
+import { Download, Store, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
 
-type ExportVariant = "products" | "orders" | "backup";
+type ExportVariant = "exportStore" | "importStore";
 
 const EXPORT_VARIANT: Record<
   ExportVariant,
@@ -20,26 +20,19 @@ const EXPORT_VARIANT: Record<
     iconClass: string;
   }
 > = {
-  products: {
+  exportStore: {
     shell: "border-[hsl(var(--chart-products)/0.38)]",
     middle: "border-[hsl(var(--chart-products)/0.2)] bg-[hsl(var(--chart-products)/0.06)]",
     footer: "border-[hsl(var(--chart-products)/0.28)] bg-[hsl(var(--chart-products)/0.09)]",
     iconWrap: "border-[hsl(var(--chart-products)/0.28)] bg-[hsl(var(--chart-products)/0.1)]",
     iconClass: "text-[hsl(var(--chart-products))]",
   },
-  orders: {
+  importStore: {
     shell: "border-[hsl(var(--chart-orders)/0.38)]",
     middle: "border-[hsl(var(--chart-orders)/0.2)] bg-[hsl(var(--chart-orders)/0.06)]",
     footer: "border-[hsl(var(--chart-orders)/0.28)] bg-[hsl(var(--chart-orders)/0.09)]",
     iconWrap: "border-[hsl(var(--chart-orders)/0.28)] bg-[hsl(var(--chart-orders)/0.1)]",
     iconClass: "text-[hsl(var(--chart-orders))]",
-  },
-  backup: {
-    shell: "border-[hsl(var(--chart-support-tickets)/0.38)]",
-    middle: "border-[hsl(var(--chart-support-tickets)/0.2)] bg-[hsl(var(--chart-support-tickets)/0.06)]",
-    footer: "border-[hsl(var(--chart-support-tickets)/0.28)] bg-[hsl(var(--chart-support-tickets)/0.09)]",
-    iconWrap: "border-[hsl(var(--chart-support-tickets)/0.28)] bg-[hsl(var(--chart-support-tickets)/0.1)]",
-    iconClass: "text-[hsl(var(--chart-support-tickets))]",
   },
 };
 
@@ -102,12 +95,10 @@ function ExportOptionCard({
           variant="outline"
           className={cn(
             "shrink-0 border bg-background/80 hover:bg-muted/60",
-            variant === "products" &&
+            variant === "exportStore" &&
               "border-[hsl(var(--chart-products)/0.45)] hover:bg-[hsl(var(--chart-products)/0.08)]",
-            variant === "orders" &&
+            variant === "importStore" &&
               "border-[hsl(var(--chart-orders)/0.45)] hover:bg-[hsl(var(--chart-orders)/0.08)]",
-            variant === "backup" &&
-              "border-[hsl(var(--chart-support-tickets)/0.45)] hover:bg-[hsl(var(--chart-support-tickets)/0.08)]",
           )}
           disabled
         >
@@ -153,36 +144,25 @@ export default function DataExportSection({
 
         <div className="space-y-6">
         <ExportOptionCard
-          variant="products"
-          icon={Package}
-          title={t("dataExport.exportProductsTitle")}
-          description={t("dataExport.exportProductsDesc")}
-          previewTitle={t("dataExport.exportProductsPreviewTitle")}
-          previewSubtitle={t("dataExport.exportProductsPreviewSubtitle")}
-          inputPlaceholder={t("dataExport.exportProductsPlaceholder")}
-          buttonLabel={t("dataExport.exportProductsButton")}
+          variant="exportStore"
+          icon={Download}
+          title={t("dataExport.exportStoreTitle")}
+          description={t("dataExport.exportStoreDesc")}
+          previewTitle={t("dataExport.exportStorePreviewTitle")}
+          previewSubtitle={t("dataExport.exportStorePreviewSubtitle")}
+          inputPlaceholder={t("dataExport.exportStorePlaceholder")}
+          buttonLabel={t("dataExport.exportStoreButton")}
         />
 
         <ExportOptionCard
-          variant="orders"
-          icon={ClipboardList}
-          title={t("dataExport.exportOrdersTitle")}
-          description={t("dataExport.exportOrdersDesc")}
-          previewTitle={t("dataExport.exportOrdersPreviewTitle")}
-          previewSubtitle={t("dataExport.exportOrdersPreviewSubtitle")}
-          inputPlaceholder={t("dataExport.exportOrdersPlaceholder")}
-          buttonLabel={t("dataExport.exportOrdersButton")}
-        />
-
-        <ExportOptionCard
-          variant="backup"
-          icon={Archive}
-          title={t("dataExport.backupTitle")}
-          description={t("dataExport.backupDesc")}
-          previewTitle={t("dataExport.backupPreviewTitle")}
-          previewSubtitle={t("dataExport.backupPreviewSubtitle")}
-          inputPlaceholder={t("dataExport.backupPlaceholder")}
-          buttonLabel={t("dataExport.backupButton")}
+          variant="importStore"
+          icon={Upload}
+          title={t("dataExport.importStoreTitle")}
+          description={t("dataExport.importStoreDesc")}
+          previewTitle={t("dataExport.importStorePreviewTitle")}
+          previewSubtitle={t("dataExport.importStorePreviewSubtitle")}
+          inputPlaceholder={t("dataExport.importStorePlaceholder")}
+          buttonLabel={t("dataExport.importStoreButton")}
         />
 
         <div

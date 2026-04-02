@@ -20,6 +20,7 @@ import {
 import api from "@/lib/api";
 import type { SupportTicket, PaginatedResponse } from "@/types";
 import { formatDashboardDateTime } from "@/lib/datetime-display";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
 
 type EditableField = "status" | "priority" | "category";
@@ -93,6 +94,7 @@ export default function SupportTicketsPage() {
   const locale = useLocale();
   const tPages = useTranslations("pages");
   const router = useRouter();
+  const confirm = useConfirm();
   const { page, filters, setFilter, setPage, clearFilters } = useFilters([
     "status",
     "priority",
@@ -136,9 +138,10 @@ export default function SupportTicketsPage() {
   }, [filters.priority, filters.search, filters.status, page]);
 
   async function handleDelete(publicId: string) {
-    const ok = await notify.confirm({
-      title: tPages("supportTicketsConfirmDeleteOne"),
-      level: "destructive",
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteTicket"),
+      message: tPages("supportTicketsConfirmDeleteOne"),
+      variant: "danger",
     });
     if (!ok) return;
     try {

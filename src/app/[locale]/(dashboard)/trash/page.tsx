@@ -9,6 +9,7 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { formatDashboardDateTime } from "@/lib/datetime-display";
 import type { PaginatedResponse, TrashEntityType, TrashItem } from "@/types";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify, normalizeError } from "@/notifications";
 import { useAdminDeleteCapabilities } from "@/hooks/useAdminDeleteCapabilities";
 
@@ -17,6 +18,7 @@ export default function TrashPage() {
   const tPages = useTranslations("pages");
   const tNav = useTranslations("nav");
   const { canDelete, loading: capsLoading } = useAdminDeleteCapabilities();
+  const confirm = useConfirm();
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<TrashItem[]>([]);
   const [count, setCount] = useState(0);
@@ -108,11 +110,14 @@ export default function TrashPage() {
   async function handleRestoreSelected() {
     if (selectedIds.size === 0) return;
     const n = selectedIds.size;
-    const ok = await notify.confirm({
-      title: tPages("trashBulkConfirmRestore", {
-        count: toLocaleDigits(String(n), locale),
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleRestoreFromTrashBulk", {
+        count: n,
       }),
-      level: "warning",
+      message: tPages("trashBulkConfirmRestore", {
+        count: n,
+      }),
+      variant: "default",
     });
     if (!ok) return;
     setBulkRestoring(true);
@@ -141,11 +146,14 @@ export default function TrashPage() {
   async function handleDeleteSelected() {
     if (selectedIds.size === 0) return;
     const n = selectedIds.size;
-    const ok = await notify.confirm({
-      title: tPages("trashBulkConfirmPermanent", {
-        count: toLocaleDigits(String(n), locale),
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteFromTrashBulk", {
+        count: n,
       }),
-      level: "destructive",
+      message: tPages("trashBulkConfirmPermanent", {
+        count: n,
+      }),
+      variant: "danger",
     });
     if (!ok) return;
     setBulkDeleting(true);
@@ -170,9 +178,12 @@ export default function TrashPage() {
   }
 
   async function handleRestore(row: TrashItem) {
-    const ok = await notify.confirm({
-      title: tPages("trashConfirmRestore", { type: typeLabel(row.entity_type) }),
-      level: "warning",
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleRestoreFromTrash", {
+        type: typeLabel(row.entity_type),
+      }),
+      message: tPages("trashConfirmRestore", { type: typeLabel(row.entity_type) }),
+      variant: "default",
     });
     if (!ok) return;
     setBusyId(row.id);
@@ -194,9 +205,10 @@ export default function TrashPage() {
   }
 
   async function handlePermanentDelete(row: TrashItem) {
-    const ok = await notify.confirm({
-      title: tPages("trashConfirmPermanent"),
-      level: "destructive",
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteFromTrashRow"),
+      message: tPages("trashConfirmPermanent"),
+      variant: "danger",
     });
     if (!ok) return;
     setBusyId(row.id);

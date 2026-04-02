@@ -28,6 +28,7 @@ import type {
 } from "@/types";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useFilters } from "@/hooks/useFilters";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify, normalizeError } from "@/notifications";
 
 async function fetchAllProducts(): Promise<Product[]> {
@@ -79,6 +80,7 @@ const emptyForm = (attrs: ProductAttributeAdmin[]): VariantForm => {
 export default function VariantsPage() {
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
+  const confirm = useConfirm();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -289,9 +291,10 @@ export default function VariantsPage() {
   }
 
   async function deleteVariant(v: ProductVariant) {
-    const ok = await notify.confirm({
-      title: tPages("variantsConfirmDeleteSku", { sku: v.sku }),
-      level: "destructive",
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteVariant"),
+      message: tPages("variantsConfirmDeleteSku", { sku: v.sku }),
+      variant: "danger",
     });
     if (!ok) return;
     try {

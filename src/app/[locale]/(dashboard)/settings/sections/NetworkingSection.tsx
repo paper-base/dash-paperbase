@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import api from "@/lib/api";
 import { formatDashboardDateTimeWithSeconds } from "@/lib/datetime-display";
 import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
 
 type APIKeyRow = {
@@ -43,6 +44,8 @@ function extractRows(data: unknown): APIKeyRow[] {
 export default function NetworkingSection({ hidden }: { hidden: boolean }) {
   const locale = useLocale();
   const t = useTranslations("settings");
+  const tPages = useTranslations("pages");
+  const confirm = useConfirm();
   const [keys, setKeys] = useState<APIKeyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +99,11 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
   }
 
   async function regenerateKey(publicId: string, currentName: string) {
-    const ok = await notify.confirm({ title: t("networking.confirmRegenerate"), level: "warning" });
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleRegenerateApiKey"),
+      message: t("networking.confirmRegenerate"),
+      variant: "default",
+    });
     if (!ok) return;
     setBusy(true);
     setMessage(null);
@@ -117,7 +124,11 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
   }
 
   async function revokeKey(publicId: string) {
-    const ok = await notify.confirm({ title: t("networking.confirmRevoke"), level: "destructive" });
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleRevokeApiKey"),
+      message: t("networking.confirmRevoke"),
+      variant: "danger",
+    });
     if (!ok) return;
     setBusy(true);
     setMessage(null);

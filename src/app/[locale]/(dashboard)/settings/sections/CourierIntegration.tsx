@@ -9,6 +9,7 @@ import { formatDashboardDate } from "@/lib/datetime-display";
 import type { Courier, PaginatedResponse } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
 import { SettingsActionDialog } from "@/components/settings/SettingsActionDialog";
 
@@ -22,18 +23,18 @@ const emptyForm: ConnectForm = {
   secret_key: "",
 };
 
-type CourierModal = null | "connect" | { type: "disconnect"; publicId: string };
+type CourierModal = null | "connect";
 
 export default function CourierIntegration() {
   const locale = useLocale();
   const t = useTranslations("settings");
+  const confirm = useConfirm();
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<CourierModal>(null);
   const [form, setForm] = useState<ConnectForm>({ ...emptyForm });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const fetchCouriers = useCallback(() => {
@@ -83,20 +84,23 @@ export default function CourierIntegration() {
     }
   }
 
-  async function confirmDisconnect() {
-    if (modal === null || modal === "connect" || modal.type !== "disconnect") return;
-    const publicId = modal.publicId;
-    setDeletingId(publicId);
-    try {
-      await api.delete(`admin/couriers/${publicId}/`);
-      setModal(null);
-      fetchCouriers();
-    } catch (err) {
-      console.error(err);
-      notify.error(err);
-    } finally {
-      setDeletingId(null);
-    }
+  function requestDisconnect(publicId: string) {
+    void confirm({
+      title: t("courier.modalDisconnectTitle"),
+      message: t("courier.modalDisconnectDescription"),
+      variant: "danger",
+      confirmText: t("courier.disconnect"),
+      onConfirm: async () => {
+        try {
+          await api.delete(`admin/couriers/${publicId}/`);
+          fetchCouriers();
+        } catch (err) {
+          console.error(err);
+          notify.error(err);
+          throw err;
+        }
+      },
+    });
   }
 
   async function handleToggleActive(courier: Courier) {
@@ -113,9 +117,6 @@ export default function CourierIntegration() {
       setTogglingId(null);
     }
   }
-
-  const disconnectTargetId =
-    modal !== null && modal !== "connect" ? modal.publicId : null;
 
   return (
     <div className="space-y-4">
@@ -180,30 +181,6 @@ export default function CourierIntegration() {
             </Button>
           </div>
         </form>
-      </SettingsActionDialog>
-
-      <SettingsActionDialog
-        open={modal !== null && modal !== "connect"}
-        onOpenChange={(next) => {
-          if (!next) setModal(null);
-        }}
-        title={t("courier.modalDisconnectTitle")}
-        description={t("courier.modalDisconnectDescription")}
-      >
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <Button type="button" variant="outline" onClick={() => setModal(null)} className="w-full sm:w-auto">
-            {t("cancel")}
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            className="w-full sm:w-auto"
-            disabled={deletingId !== null}
-            onClick={() => void confirmDisconnect()}
-          >
-            {deletingId === disconnectTargetId ? t("courier.removing") : t("courier.disconnect")}
-          </Button>
-        </div>
       </SettingsActionDialog>
 
       {loading ? (
@@ -273,8 +250,7 @@ export default function CourierIntegration() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={deletingId === c.public_id}
-                  onClick={() => setModal({ type: "disconnect", publicId: c.public_id })}
+                  onClick={() => requestDisconnect(c.public_id)}
                   className="border-destructive text-destructive hover:bg-destructive/10"
                 >
                   {t("courier.disconnect")}

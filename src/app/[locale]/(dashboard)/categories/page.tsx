@@ -14,6 +14,7 @@ import {
   findCategoryNode,
   flattenCategoryOptions,
 } from "@/lib/category-tree";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
 
 type FormMode = "closed" | "new_root" | "new_child" | "edit";
@@ -152,6 +153,7 @@ export default function CategoriesPage() {
   const router = useRouter();
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
+  const confirm = useConfirm();
   const treeLabels = {
     addChild: tPages("categoriesAddChild"),
     delete: tCommon("delete"),
@@ -276,9 +278,10 @@ export default function CategoriesPage() {
   }
 
   async function deleteCategory(publicId: string) {
-    const ok = await notify.confirm({
-      title: tPages("categoriesConfirmDelete"),
-      level: "destructive",
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteCategory"),
+      message: tPages("categoriesConfirmDelete"),
+      variant: "danger",
     });
     if (!ok) {
       return;

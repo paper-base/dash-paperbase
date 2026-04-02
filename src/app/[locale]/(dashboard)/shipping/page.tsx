@@ -9,6 +9,7 @@ import api from "@/lib/api";
 import { ClickableText } from "@/components/ui/clickable-text";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify, normalizeError } from "@/notifications";
 import type {
   ShippingMethod,
@@ -74,6 +75,7 @@ export default function ShippingPage() {
   const router = useRouter();
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
+  const confirm = useConfirm();
 
   const methodTypeLabel = useMemo(
     () =>
@@ -287,9 +289,10 @@ export default function ShippingPage() {
   }
 
   async function del(kind: "zones" | "methods" | "rates", publicId: string) {
-    const ok = await notify.confirm({
-      title: tPages("shippingConfirmDelete"),
-      level: "destructive",
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteShipping"),
+      message: tPages("shippingConfirmDelete"),
+      variant: "danger",
     });
     if (!ok) return;
     setError("");

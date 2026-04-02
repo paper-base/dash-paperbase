@@ -1,5 +1,4 @@
 import type {
-  ConfirmOptions,
   FieldErrors,
   MessageDescriptor,
   NotificationId,
@@ -17,7 +16,6 @@ type Dispatcher = {
   loading: (message: MessageDescriptor, options?: NotifyOptions) => { id: NotificationId; done: () => void; fail: (error?: unknown) => void };
   validation: (formId: string, fieldErrors: FieldErrors) => void;
   clearValidation: (formId: string, fieldNames?: string[]) => void;
-  confirm: (options: ConfirmOptions) => Promise<boolean>;
   prompt: (options: PromptOptions) => Promise<PromptResult>;
   banner: (message: MessageDescriptor, options?: NotifyOptions) => NotificationId;
 };
@@ -56,9 +54,6 @@ export const notify = {
   },
   clearValidation(formId: string, fieldNames?: string[]) {
     return mustGet().clearValidation(formId, fieldNames);
-  },
-  confirm(options: ConfirmOptions) {
-    return mustGet().confirm(options);
   },
   prompt(options: PromptOptions) {
     return mustGet().prompt(options);

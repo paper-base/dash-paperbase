@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { formatDashboardDate } from "@/lib/datetime-display";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
 import { SettingsActionDialog } from "@/components/settings/SettingsActionDialog";
 
@@ -40,19 +41,18 @@ const EVENT_LABEL_KEYS: { key: keyof IntegrationEventSettings; labelKey: string 
 type MarketingModal =
   | null
   | "connect"
-  | { type: "configure"; publicId: string }
-  | { type: "disconnect"; publicId: string };
+  | { type: "configure"; publicId: string };
 
 export default function MarketingIntegration() {
   const locale = useLocale();
   const t = useTranslations("settings");
+  const confirm = useConfirm();
   const [integrations, setIntegrations] = useState<MarketingIntegrationType[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<MarketingModal>(null);
   const [form, setForm] = useState<ConnectForm>({ ...emptyForm });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [eventSavingId, setEventSavingId] = useState<string | null>(null);
   const [pixelCopied, setPixelCopied] = useState(false);
@@ -101,11 +101,6 @@ export default function MarketingIntegration() {
       ? integrations.find((i) => i.public_id === modal.publicId)
       : undefined;
 
-  const disconnectTargetId =
-    modal !== null && modal !== "connect" && modal.type === "disconnect"
-      ? modal.publicId
-      : null;
-
   function closeConnectModal() {
     setModal(null);
     setForm({ ...emptyForm });
@@ -135,20 +130,23 @@ export default function MarketingIntegration() {
     }
   }
 
-  async function confirmDisconnect() {
-    if (modal === null || modal === "connect" || modal.type !== "disconnect") return;
-    const publicId = modal.publicId;
-    setDeletingId(publicId);
-    try {
-      await api.delete(`admin/marketing-integrations/${publicId}/`);
-      setModal(null);
-      fetchIntegrations();
-    } catch (err) {
-      console.error(err);
-      notify.error(err);
-    } finally {
-      setDeletingId(null);
-    }
+  function requestDisconnect(publicId: string) {
+    void confirm({
+      title: t("marketing.modalDisconnectTitle"),
+      message: t("marketing.modalDisconnectDescription"),
+      variant: "danger",
+      confirmText: t("marketing.disconnect"),
+      onConfirm: async () => {
+        try {
+          await api.delete(`admin/marketing-integrations/${publicId}/`);
+          fetchIntegrations();
+        } catch (err) {
+          console.error(err);
+          notify.error(err);
+          throw err;
+        }
+      },
+    });
   }
 
   async function handleToggleActive(integration: MarketingIntegrationType) {
@@ -363,30 +361,6 @@ export default function MarketingIntegration() {
         ) : null}
       </SettingsActionDialog>
 
-      <SettingsActionDialog
-        open={modal !== null && modal !== "connect" && modal.type === "disconnect"}
-        onOpenChange={(next) => {
-          if (!next) setModal(null);
-        }}
-        title={t("marketing.modalDisconnectTitle")}
-        description={t("marketing.modalDisconnectDescription")}
-      >
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <Button type="button" variant="outline" onClick={() => setModal(null)} className="w-full sm:w-auto">
-            {t("cancel")}
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            className="w-full sm:w-auto"
-            disabled={deletingId !== null}
-            onClick={() => void confirmDisconnect()}
-          >
-            {deletingId === disconnectTargetId ? t("marketing.removing") : t("marketing.disconnect")}
-          </Button>
-        </div>
-      </SettingsActionDialog>
-
       {loading ? (
         <div className="flex h-24 items-center justify-center">
           <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
@@ -471,8 +445,7 @@ export default function MarketingIntegration() {
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={deletingId === integration.public_id}
-                    onClick={() => setModal({ type: "disconnect", publicId: integration.public_id })}
+                    onClick={() => requestDisconnect(integration.public_id)}
                     className="border-destructive text-destructive hover:bg-destructive/10"
                   >
                     {t("marketing.disconnect")}

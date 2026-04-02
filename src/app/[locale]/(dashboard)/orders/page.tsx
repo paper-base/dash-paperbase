@@ -21,6 +21,7 @@ import {
   formatOrderStatusLabel,
 } from "@/lib/orders/order-statuses";
 import type { Order, PaginatedResponse } from "@/types";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify, normalizeError } from "@/notifications";
 import { useAdminDeleteCapabilities } from "@/hooks/useAdminDeleteCapabilities";
 
@@ -37,6 +38,7 @@ export default function OrdersPage() {
   const tNav = useTranslations("nav");
   const tPages = useTranslations("pages");
   const { currencySymbol } = useBranding();
+  const confirm = useConfirm();
   const { page, filters, setFilter, setPage, clearFilters } = useFilters([
     "status",
     "date_range",
@@ -107,11 +109,14 @@ export default function OrdersPage() {
 
   async function handleBulkConfirmSendCourier() {
     if (selectedIds.size === 0) return;
-    const ok = await notify.confirm({
-      title: tPages("ordersBulkConfirmCourier", {
-        count: toLocaleDigits(String(selectedIds.size), locale),
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleSendCourier", {
+        count: selectedIds.size,
       }),
-      level: "warning",
+      message: tPages("ordersBulkConfirmCourier", {
+        count: selectedIds.size,
+      }),
+      variant: "default",
     });
     if (!ok) return;
     setBulkDispatching(true);
@@ -197,15 +202,18 @@ export default function OrdersPage() {
   async function handleDeleteSelected() {
     if (selectedIds.size === 0) return;
     const deletedCount = selectedIds.size;
-    const ok = await notify.confirm({
-      title: deleteIsSuperuser
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteOrders", {
+        count: deletedCount,
+      }),
+      message: deleteIsSuperuser
         ? tPages("confirmDeleteOrdersPermanent", {
-            count: toLocaleDigits(String(deletedCount), locale),
+            count: deletedCount,
           })
         : tPages("confirmDeleteOrdersTrash", {
-            count: toLocaleDigits(String(deletedCount), locale),
+            count: deletedCount,
           }),
-      level: "destructive",
+      variant: "danger",
     });
     if (!ok) return;
     setDeleting(true);

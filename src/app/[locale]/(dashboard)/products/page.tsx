@@ -22,6 +22,7 @@ import { FilterBar } from "@/components/filters/FilterBar";
 import { FilterDropdown } from "@/components/filters/FilterDropdown";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useFilters } from "@/hooks/useFilters";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
 import { useAdminDeleteCapabilities } from "@/hooks/useAdminDeleteCapabilities";
 
@@ -34,6 +35,7 @@ export default function ProductsPage() {
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
   const { currencySymbol } = useBranding();
+  const confirm = useConfirm();
   const { page, filters, setFilter, setPage, clearFilters } = useFilters([
     "status",
     "stock",
@@ -164,15 +166,18 @@ export default function ProductsPage() {
   async function handleDeleteSelected() {
     if (selectedIds.size === 0) return;
     const deletedCount = selectedIds.size;
-    const ok = await notify.confirm({
-      title: deleteIsSuperuser
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteProducts", {
+        count: deletedCount,
+      }),
+      message: deleteIsSuperuser
         ? tPages("confirmDeleteProductsPermanent", {
-            count: toLocaleDigits(String(deletedCount), locale),
+            count: deletedCount,
           })
         : tPages("confirmDeleteProductsTrash", {
-            count: toLocaleDigits(String(deletedCount), locale),
+            count: deletedCount,
           }),
-      level: "destructive",
+      variant: "danger",
     });
     if (!ok) return;
     setDeleting(true);

@@ -26,7 +26,6 @@ import { cn } from "@/lib/utils";
 import { normalizeError, UNKNOWN_ERROR_FALLBACK } from "./normalizeError";
 import { registerNotifyDispatcher } from "./notify";
 import type {
-  ConfirmOptions,
   FieldErrors,
   MessageDescriptor,
   NotificationId,
@@ -36,17 +35,10 @@ import type {
 
 type PromptResult = { confirmed: boolean; value?: string };
 
-type ModalRequest =
-  | {
-      kind: "confirm";
-      options: ConfirmOptions;
-      resolve: (result: boolean) => void;
-    }
-  | {
-      kind: "prompt";
-      options: PromptOptions;
-      resolve: (result: PromptResult) => void;
-    };
+type PromptRequest = {
+  options: PromptOptions;
+  resolve: (result: PromptResult) => void;
+};
 
 type ContextValue = {
   getValidation: (formId: string) => FieldErrors;
@@ -63,7 +55,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const DEFAULT_DURATION_MS = 5000;
   const t = useTranslations();
   const [validationByForm, setValidationByForm] = useState<Record<string, FieldErrors>>({});
-  const [modalRequest, setModalRequest] = useState<ModalRequest | null>(null);
+  const [promptRequest, setPromptRequest] = useState<PromptRequest | null>(null);
   const [promptValue, setPromptValue] = useState("");
   const [bannerText, setBannerText] = useState<string | null>(null);
 
@@ -218,12 +210,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         setValidationByForm((prev) => ({ ...prev, [formId]: fieldErrors }));
       },
       clearValidation,
-      confirm: (options: ConfirmOptions) =>
-        new Promise<boolean>((resolve) => setModalRequest({ kind: "confirm", options, resolve })),
       prompt: (options: PromptOptions) =>
         new Promise<PromptResult>((resolve) => {
           setPromptValue(options.defaultValue ?? "");
-          setModalRequest({ kind: "prompt", options, resolve });
+          setPromptRequest({ options, resolve });
         }),
       banner: (message: MessageDescriptor, options?: NotifyOptions) => {
         const id = options?.id ?? makeId();
@@ -252,32 +242,41 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         </div>
       ) : null}
       {children}
-      <Dialog open={!!modalRequest} onOpenChange={(open) => !open && setModalRequest(null)}>
+      <Dialog
+        open={!!promptRequest}
+        onOpenChange={(open) => {
+          if (open) return;
+          setPromptRequest((current) => {
+            if (current) current.resolve({ confirmed: false });
+            return null;
+          });
+        }}
+      >
         <DialogContent
           showCloseButton={false}
           className="w-[calc(100%-1.5rem)] max-w-md rounded-xl sm:w-full"
         >
           <DialogHeader
             className={cn(
-              "gap-1 p-4 sm:p-6",
-              modalRequest?.options.level === "destructive" && "border-b-0",
+              "gap-1 border-b border-border p-4 sm:p-6",
+              promptRequest?.options.level === "destructive" && "border-b-0",
             )}
           >
             <DialogTitle>
-              {modalRequest ? resolveMessage(modalRequest.options.title) : ""}
+              {promptRequest ? resolveMessage(promptRequest.options.title) : ""}
             </DialogTitle>
-            {modalRequest?.options.body ? (
-              <DialogDescription>{resolveMessage(modalRequest.options.body)}</DialogDescription>
+            {promptRequest?.options.body ? (
+              <DialogDescription>{resolveMessage(promptRequest.options.body)}</DialogDescription>
             ) : null}
           </DialogHeader>
-          {modalRequest?.kind === "prompt" ? (
+          {promptRequest ? (
             <div className="px-4 sm:px-6">
               <Input
                 value={promptValue}
                 onChange={(e) => setPromptValue(e.target.value)}
                 placeholder={
-                  modalRequest.options.placeholder
-                    ? resolveMessage(modalRequest.options.placeholder)
+                  promptRequest.options.placeholder
+                    ? resolveMessage(promptRequest.options.placeholder)
                     : ""
                 }
               />
@@ -285,38 +284,33 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           ) : null}
           <DialogFooter
             className={cn(
-              "gap-2 p-4 sm:gap-3 sm:p-6",
-              modalRequest?.options.level === "destructive" && "border-t-0",
+              "gap-2 border-t border-border p-4 sm:gap-3 sm:p-6",
+              promptRequest?.options.level === "destructive" && "border-t-0",
             )}
           >
             <Button
               variant="outline"
               onClick={() => {
-                if (!modalRequest) return;
-                if (modalRequest.kind === "confirm") modalRequest.resolve(false);
-                if (modalRequest.kind === "prompt") modalRequest.resolve({ confirmed: false });
-                setModalRequest(null);
+                if (!promptRequest) return;
+                promptRequest.resolve({ confirmed: false });
+                setPromptRequest(null);
               }}
             >
-              {modalRequest?.options.cancelLabel
-                ? resolveMessage(modalRequest.options.cancelLabel)
+              {promptRequest?.options.cancelLabel
+                ? resolveMessage(promptRequest.options.cancelLabel)
                 : "Cancel"}
             </Button>
             <Button
-              variant={modalRequest?.options.level === "destructive" ? "destructive" : "default"}
+              variant={promptRequest?.options.level === "destructive" ? "destructive" : "default"}
               onClick={() => {
-                if (!modalRequest) return;
-                if (modalRequest.kind === "confirm") {
-                  modalRequest.resolve(true);
-                } else {
-                  if (modalRequest.options.required && !promptValue.trim()) return;
-                  modalRequest.resolve({ confirmed: true, value: promptValue });
-                }
-                setModalRequest(null);
+                if (!promptRequest) return;
+                if (promptRequest.options.required && !promptValue.trim()) return;
+                promptRequest.resolve({ confirmed: true, value: promptValue });
+                setPromptRequest(null);
               }}
             >
-              {modalRequest?.options.confirmLabel
-                ? resolveMessage(modalRequest.options.confirmLabel)
+              {promptRequest?.options.confirmLabel
+                ? resolveMessage(promptRequest.options.confirmLabel)
                 : "Confirm"}
             </Button>
           </DialogFooter>

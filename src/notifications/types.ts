@@ -28,15 +28,12 @@ export type NormalizedError = {
   raw?: unknown;
 };
 
-export type ConfirmOptions = {
+export type PromptOptions = {
   title: MessageDescriptor;
   body?: MessageDescriptor;
   confirmLabel?: MessageDescriptor;
   cancelLabel?: MessageDescriptor;
   level?: Extract<NotificationLevel, "warning" | "destructive" | "info">;
-};
-
-export type PromptOptions = ConfirmOptions & {
   placeholder?: MessageDescriptor;
   defaultValue?: string;
   required?: boolean;

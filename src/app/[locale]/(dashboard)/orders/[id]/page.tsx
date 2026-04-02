@@ -50,6 +50,7 @@ import {
   splitShippingAddressForForm,
 } from "@/lib/orders/shipping-address-parts";
 import { formatDashboardDateTime } from "@/lib/datetime-display";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify, normalizeError } from "@/notifications";
 import { useAdminDeleteCapabilities } from "@/hooks/useAdminDeleteCapabilities";
 
@@ -106,6 +107,7 @@ export default function OrderDetailPage() {
   const [rightColHeight, setRightColHeight] = useState<number | null>(null);
   const { canDelete: canDeleteOrder, isSuperuser: deleteIsSuperuser } =
     useAdminDeleteCapabilities();
+  const confirm = useConfirm();
 
   useEffect(() => {
     api
@@ -428,11 +430,12 @@ export default function OrderDetailPage() {
   }
 
   async function handleDelete() {
-    const ok = await notify.confirm({
-      title: deleteIsSuperuser
+    const ok = await confirm({
+      title: tPages("confirmDialogTitleDeleteOrder"),
+      message: deleteIsSuperuser
         ? tPages("orderDetailConfirmDeletePermanent")
         : tPages("orderDetailConfirmDeleteTrash"),
-      level: "destructive",
+      variant: "danger",
     });
     if (!ok) return;
     try {
