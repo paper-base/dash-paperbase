@@ -53,6 +53,7 @@ export function FilterDropdown({
 
   return (
     <Combobox<ComboItem>
+      modal={false}
       value={selected}
       onValueChange={(next) => {
         if (next === null) return;

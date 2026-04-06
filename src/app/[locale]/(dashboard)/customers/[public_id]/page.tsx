@@ -3,15 +3,16 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import type { CustomerDetailsResponse } from "@/types";
 import { formatDashboardDateTime } from "@/lib/datetime-display";
+import { formatOrderStatusLabel } from "@/lib/orders/order-statuses";
 
-function asCurrency(value: string) {
-  const number = Number(value || "0");
-  if (Number.isNaN(number)) return value;
+function asCurrency(value: string | number) {
+  const number = Number(value ?? "0");
+  if (Number.isNaN(number)) return String(value ?? "");
   return number.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
@@ -71,13 +72,20 @@ export default function CustomerDetailPage() {
               <p><span className="text-muted-foreground">{tPages("customerDetailsEmail")}:</span> {data.customer.email ?? "—"}</p>
               <p><span className="text-muted-foreground">{tPages("customerDetailsPhone")}:</span> {data.customer.phone || "—"}</p>
               <p><span className="text-muted-foreground">{tPages("customerDetailsAddress")}:</span> {data.customer.address ?? "—"}</p>
-              <p><span className="text-muted-foreground">{tPages("customerDetailsDistrict")}:</span> {data.customer.district ?? "—"}</p>
+              <p>
+                <span className="text-muted-foreground">{tPages("customerDetailsDistrict")}:</span>{" "}
+                {data.customer.district?.trim()
+                  ? data.customer.district
+                  : tPages("customerDetailsDistrictUnavailable")}
+              </p>
             </div>
           </section>
 
+          {/* analytics.* from API is ledger-backed; keys unchanged for contract compatibility. */}
           <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <button
               type="button"
+              title={tPages("customerDetailsHistoricalStatsHint")}
               onClick={() => setShowOrderedProducts((prev) => !prev)}
               className="rounded-xl border border-dashed border-card-border bg-card p-4 text-left hover:bg-muted/40"
             >
@@ -89,7 +97,10 @@ export default function CustomerDetailPage() {
                   : tPages("customerDetailsShowOrderedProducts")}
               </p>
             </button>
-            <div className="rounded-xl border border-dashed border-card-border bg-card p-4">
+            <div
+              className="rounded-xl border border-dashed border-card-border bg-card p-4"
+              title={tPages("customerDetailsHistoricalStatsHint")}
+            >
               <p className="text-sm text-muted-foreground">{tPages("customerDetailsTotalSpent")}</p>
               <p className="mt-1 text-2xl font-semibold">{asCurrency(data.analytics.total_spent)}</p>
             </div>
@@ -133,22 +144,57 @@ export default function CustomerDetailPage() {
                         <th className="px-3 py-2">{tPages("customerDetailsOrder")}</th>
                         <th className="px-3 py-2">{tPages("customerDetailsDate")}</th>
                         <th className="px-3 py-2">{tPages("customerDetailsProduct")}</th>
+                        <th className="px-3 py-2">{tPages("customerDetailsVariant")}</th>
                         <th className="px-3 py-2">{tPages("customerDetailsQty")}</th>
                         <th className="px-3 py-2">{tPages("customerDetailsPrice")}</th>
+                        <th className="px-3 py-2">{tPages("customerDetailsStatus")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/60">
-                      {data.ordered_products.map((item, idx) => (
-                        <tr key={`${item.order_public_id}-${item.product_public_id}-${idx}`}>
-                          <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{item.order_number}</td>
-                          <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
-                            {formatDashboardDateTime(item.ordered_at, locale)}
-                          </td>
-                          <td className="whitespace-nowrap px-3 py-2 font-medium text-foreground">{item.product_name}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{item.quantity}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{asCurrency(item.unit_price)}</td>
-                        </tr>
-                      ))}
+                      {data.ordered_products.map((item, idx) => {
+                        const live = item.current_order_status ?? null;
+                        const atPurchase = item.order_status_at_purchase;
+                        const statusPrimary = live ?? atPurchase;
+                        const statusDiffers =
+                          live != null && atPurchase != null && live !== atPurchase;
+                        return (
+                          <tr key={`${item.order_public_id}-${idx}`}>
+                            <td className="whitespace-nowrap px-3 py-2">
+                              <Link
+                                href={`/orders/${item.order_public_id}`}
+                                className="font-medium text-primary underline-offset-4 hover:underline"
+                              >
+                                {item.order_number}
+                              </Link>
+                              <span className="sr-only"> ({tPages("customerDetailsViewOrder")})</span>
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                              {formatDashboardDateTime(item.ordered_at, locale)}
+                            </td>
+                            <td className="max-w-[14rem] px-3 py-2 font-medium text-foreground">
+                              {item.product_name}
+                            </td>
+                            <td className="max-w-[12rem] px-3 py-2 text-muted-foreground">
+                              {item.variant_label?.trim() ? item.variant_label : "—"}
+                            </td>
+                            <td className="px-3 py-2 text-muted-foreground">{item.quantity}</td>
+                            <td className="px-3 py-2 text-muted-foreground">
+                              {asCurrency(item.unit_price)}
+                            </td>
+                            <td className="min-w-[8rem] px-3 py-2 text-muted-foreground">
+                              <span className="text-foreground">
+                                {formatOrderStatusLabel(statusPrimary, tPages)}
+                              </span>
+                              {statusDiffers ? (
+                                <span className="mt-0.5 block text-xs text-muted-foreground">
+                                  {tPages("customerDetailsStatusAtPurchase")}:{" "}
+                                  {formatOrderStatusLabel(atPurchase, tPages)}
+                                </span>
+                              ) : null}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

@@ -455,6 +455,7 @@ export default function ProductsPage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <Combobox
+                        modal={false}
                         value={product.is_active ? "active" : "inactive"}
                         onValueChange={(value) => {
                           if (!value) return;

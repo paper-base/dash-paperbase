@@ -353,7 +353,17 @@ export interface Customer {
   email: string | null;
   phone: string;
   address: string | null;
+  /**
+   * Legacy denormalized counter; may drift. Prefer `ledger_order_count` when present.
+   * @deprecated Use ledger_order_count for display.
+   */
   total_orders: number;
+  /** Distinct historical orders from purchase ledger (survives order deletion). */
+  ledger_order_count?: number;
+  /** Sum of ledger line totals for this customer. */
+  ledger_total_spent?: string | number;
+  /** Optional legacy field if API exposes spend on list. */
+  total_spent?: string | number;
   marketing_opt_in: boolean;
   created_at: string;
   updated_at?: string;
@@ -369,7 +379,9 @@ export interface CustomerDetailsResponse {
     district: string | null;
   };
   analytics: {
+    /** Ledger-based distinct order count (same keys as before; semantics are ledger). */
     total_orders: number;
+    /** Ledger-based spend aggregate. */
     total_spent: string;
     average_order_value: string;
     first_order_date: string | null;
@@ -380,10 +392,13 @@ export interface CustomerDetailsResponse {
     order_public_id: string;
     order_number: string;
     ordered_at: string;
-    product_public_id: string;
+    product_public_id: string | null;
     product_name: string;
+    variant_label?: string | null;
     quantity: number;
-    unit_price: string;
+    unit_price: string | number;
+    current_order_status?: string | null;
+    order_status_at_purchase: string;
   }>;
 }
 

@@ -78,12 +78,12 @@ export default function SystemNotificationBanner({
         aria-live="polite"
         aria-label={`${notification.title}. ${notification.message}`}
         className={cn(
-          "rounded-xl border border-border bg-muted/40 p-3",
+          "rounded-xl border border-border bg-muted/40 p-3 dark:border-[rgba(245,158,11,0.3)] dark:bg-[rgba(245,158,11,0.1)] dark:shadow-[0_8px_32px_-8px_rgba(245,158,11,0.12)] dark:backdrop-blur-sm",
           className
         )}
       >
         <div className="flex items-start gap-2">
-          <p className="min-w-0 flex-1 text-sm font-semibold text-foreground">
+          <p className="min-w-0 flex-1 text-sm font-semibold text-foreground dark:text-white">
             {notification.title}
           </p>
           <Button
@@ -103,19 +103,19 @@ export default function SystemNotificationBanner({
             }}
             disabled={isDismissing}
             aria-label={t("dismissAria")}
-            className="shrink-0 text-muted-foreground hover:text-foreground"
+            className="shrink-0 text-muted-foreground hover:text-foreground dark:text-white/70 dark:hover:text-white"
           >
             <X className="size-4" />
           </Button>
         </div>
-        <p className="mt-1 line-clamp-3 text-sm text-muted-foreground">
+        <p className="mt-1 line-clamp-3 text-sm text-muted-foreground dark:text-[#E5E7EB]">
           {notification.message}
         </p>
         {ctaText && ctaTarget && (
           <Button
             type="button"
             variant="link"
-            className="mt-1 h-auto p-0 text-sm text-primary underline decoration-primary underline-offset-2"
+            className="mt-1 h-auto p-0 text-sm text-primary underline decoration-primary underline-offset-2 dark:text-white dark:decoration-white/70 dark:hover:decoration-white"
             onClick={() => {
               if (ctaTarget.kind === "internal") {
                 router.push(ctaTarget.path);
@@ -137,21 +137,21 @@ export default function SystemNotificationBanner({
       aria-live="polite"
       aria-label={`${notification.title}. ${notification.message}`}
       className={cn(
-        "fixed right-0 top-0 z-50 flex h-[var(--header-height)] shrink-0 items-center border-b border-border bg-muted px-4 text-sm transition-[left] duration-300",
+        "fixed right-0 top-0 z-50 flex h-[var(--header-height)] shrink-0 items-center border-b border-border bg-muted px-4 text-sm transition-[left] duration-300 dark:border-[rgba(245,158,11,0.3)] dark:bg-[rgba(245,158,11,0.1)] dark:shadow-[0_8px_32px_-8px_rgba(245,158,11,0.12)] dark:backdrop-blur-sm",
         "left-0 md:left-16",
         !sidebarCollapsed && "md:left-72",
         className
       )}
     >
       <div className="flex min-w-0 flex-1 items-center justify-center gap-x-3 gap-y-1 px-8 pr-12 text-center sm:px-10 sm:pr-14">
-        <p className="max-w-[min(100%,36rem)] truncate text-muted-foreground">
+        <p className="max-w-[min(100%,36rem)] truncate text-muted-foreground dark:text-[#E5E7EB]">
           {notification.message}
         </p>
         {ctaText && ctaTarget && (
           <Button
             type="button"
             variant="link"
-            className="h-auto shrink-0 p-0 text-primary underline decoration-primary underline-offset-4"
+            className="h-auto shrink-0 p-0 text-primary underline decoration-primary underline-offset-4 dark:text-white dark:decoration-white/70 dark:hover:decoration-white"
             onClick={() => {
               if (ctaTarget.kind === "internal") {
                 router.push(ctaTarget.path);
@@ -181,7 +181,7 @@ export default function SystemNotificationBanner({
         }}
         disabled={isDismissing}
         aria-label={t("dismissAria")}
-        className="absolute right-3 top-1/2 shrink-0 -translate-y-1/2 text-muted-foreground hover:text-foreground sm:right-4"
+        className="absolute right-3 top-1/2 shrink-0 -translate-y-1/2 text-muted-foreground hover:text-foreground dark:text-white/70 dark:hover:text-white sm:right-4"
       >
         <X className="size-4" />
       </Button>

@@ -58,7 +58,7 @@ export default function AnalyticsPage() {
         <div
           className={[
             "flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 px-6 py-20 text-center",
-            !hasAdvancedAnalytics ? "blur-[1px]" : "",
+            !hasAdvancedAnalytics,
           ].join(" ")}
         >
           <div

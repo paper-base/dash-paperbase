@@ -15,6 +15,22 @@ import type { Customer, PaginatedResponse } from "@/types";
 import { formatDashboardDate } from "@/lib/datetime-display";
 import { notify } from "@/notifications";
 
+/** Prefer ledger-based historical order count; falls back to legacy `total_orders`. */
+function customerLedgerOrderCount(c: Customer): number {
+  const n = c.ledger_order_count;
+  if (typeof n === "number" && !Number.isNaN(n)) return n;
+  return c.total_orders ?? 0;
+}
+
+/** Format ledger (or legacy) list spend; no client-side aggregation. */
+function customerLedgerTotalSpentDisplay(c: Customer): string {
+  const raw = c.ledger_total_spent ?? c.total_spent;
+  if (raw === undefined || raw === null || raw === "") return "—";
+  const num = Number(raw);
+  if (Number.isNaN(num)) return String(raw);
+  return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
 export default function CustomersPage() {
   const router = useRouter();
   const locale = useLocale();
@@ -146,6 +162,7 @@ export default function CustomersPage() {
                       <th className="th">{tPages("customersListColPhone")}</th>
                       <th className="th">{tPages("customersListColMarketing")}</th>
                       <th className="th">{tPages("customersListColTotalOrders")}</th>
+                      <th className="th">{tPages("customersListColTotalSpent")}</th>
                       <th className="th">{tPages("customersListColJoined")}</th>
                     </tr>
                   </thead>
@@ -177,7 +194,10 @@ export default function CustomersPage() {
                           {c.marketing_opt_in ? tCommon("yes") : tCommon("no")}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
-                          {c.total_orders ?? 0}
+                          {customerLedgerOrderCount(c)}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {customerLedgerTotalSpentDisplay(c)}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
                           <span className="whitespace-nowrap">
