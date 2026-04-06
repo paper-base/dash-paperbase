@@ -29,7 +29,6 @@
     "categories": "ক্যাটাগরি",
     "supportTickets": "সাপোর্ট টিকিট",
     "supportTicketDetail": "সাপোর্ট টিকিট",
-    "analytics": "অ্যানালিটিক্স",
     "trash": "ট্র্যাশ"
   },
   "common": {
@@ -76,7 +75,6 @@
     "activities": "কার্যকলাপ",
     "trash": "ট্র্যাশ",
     "banners": "ব্যানার",
-    "analytics": "অ্যানালিটিক্স",
     "shipping": "শিপিং",
     "catalog": "ক্যাটালগ",
     "more": "আরও",
@@ -125,8 +123,6 @@
     "customersSubtitle": "গ্রাহক অ্যাকাউন্ট ও প্রোফাইল",
     "customersEmpty": "এখনও কোনো গ্রাহক নেই। ব্যবহারকারী নিবন্ধন বা অর্ডার দিলে গ্রাহক তৈরি হয়।",
     "addCustomer": "গ্রাহক যোগ করুন",
-    "analyticsSubtitle": "উন্নত স্টোর অ্যানালিটিক্স ও ইনসাইট",
-    "analyticsUpgradeHint": "আপনার প্ল্যানে advanced_analytics ফিচারটি নেই। আপগ্রেড করুন।",
     "customerDetailsTitle": "গ্রাহকের বিস্তারিত",
     "customerDetailsLoadError": "গ্রাহকের তথ্য লোড করা যায়নি।",
     "customerDetailsBasicInfo": "মৌলিক তথ্য",
@@ -1073,10 +1069,6 @@
         "banners": {
           "label": "ব্যানার",
           "description": "হোমপেজ, সাইডবার, ফুটারের ব্যানার ব্যবস্থাপনা"
-        },
-        "analytics": {
-          "label": "অ্যানালিটিক্স",
-          "description": "স্টোর ইনসাইট – অর্ডার ও পেজভিউ"
         },
         "shipping": {
           "label": "শিপিং",

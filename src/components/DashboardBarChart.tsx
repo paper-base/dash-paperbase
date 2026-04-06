@@ -59,8 +59,11 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
   const formatTick = (v: string | number) =>
     toLocaleDigits(String(v), locale);
 
+  const metricFilterBtnBase =
+    "min-w-0 max-w-full break-words rounded-md border px-2 py-1 text-[11px] font-medium leading-relaxed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--card))]";
+
   return (
-    <Card className="h-[360px] border border-card-border bg-card">
+    <Card className="dashboard-chart-card h-[360px] border border-card-border bg-card">
       <CardContent className="h-full pb-2 pt-4">
         {data.length === 0 ? (
           <div className="flex h-full items-center justify-center px-2 text-center text-sm leading-relaxed text-muted-foreground">
@@ -138,7 +141,7 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
                       type="button"
                       onClick={() => setActiveMetric("all")}
                       className={[
-                        "min-w-0 max-w-full break-words rounded-md border px-2 py-1 text-[11px] font-medium leading-relaxed transition-colors",
+                        metricFilterBtnBase,
                         activeMetric === "all"
                           ? "border-primary/30 bg-primary/10 text-foreground"
                           : "border-border bg-background text-muted-foreground hover:text-foreground",
@@ -154,7 +157,8 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
                           type="button"
                           onClick={() => setActiveMetric(m.key)}
                           className={[
-                            "inline-flex min-w-0 max-w-full items-center gap-1.5 break-words rounded-md border px-2 py-1 text-[11px] font-medium leading-relaxed transition-colors",
+                            "inline-flex items-center gap-1.5",
+                            metricFilterBtnBase,
                             active
                               ? "border-primary/30 bg-primary/10 text-foreground"
                               : "border-border bg-background text-muted-foreground hover:text-foreground",

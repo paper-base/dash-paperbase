@@ -142,6 +142,20 @@
     --text-primary: hsl(var(--foreground));
     --text-secondary: hsl(var(--muted-foreground));
     --border-color: hsl(var(--border));
+
+    /* System notification banner (API-driven; warm amber glass, both themes) */
+    --system-banner-surface: rgba(245, 158, 11, 0.14);
+    --system-banner-border: rgba(245, 158, 11, 0.38);
+    --system-banner-shadow: 0 8px 28px -8px rgba(245, 158, 11, 0.16);
+    --system-banner-title: #1c1917;
+    --system-banner-text: #44403c;
+    --system-banner-text-muted: rgba(68, 64, 60, 0.88);
+    --system-banner-cta: #b45309;
+    --system-banner-cta-decoration: rgba(180, 83, 9, 0.45);
+    --system-banner-cta-decoration-hover: rgba(180, 83, 9, 0.85);
+    --system-banner-dismiss: rgba(68, 64, 60, 0.55);
+    --system-banner-dismiss-hover: #292524;
+    --system-banner-dismiss-hover-bg: rgba(245, 158, 11, 0.08);
   }
 
   :root.dark {
@@ -185,6 +199,19 @@
     --text-primary: hsl(var(--foreground));
     --text-secondary: hsl(var(--muted-foreground));
     --border-color: hsl(var(--border));
+
+    --system-banner-surface: rgba(245, 158, 11, 0.1);
+    --system-banner-border: rgba(245, 158, 11, 0.3);
+    --system-banner-shadow: 0 8px 32px -8px rgba(245, 158, 11, 0.12);
+    --system-banner-title: #ffffff;
+    --system-banner-text: #e5e7eb;
+    --system-banner-text-muted: rgba(229, 231, 235, 0.92);
+    --system-banner-cta: #ffffff;
+    --system-banner-cta-decoration: rgba(255, 255, 255, 0.65);
+    --system-banner-cta-decoration-hover: rgba(255, 255, 255, 0.95);
+    --system-banner-dismiss: rgba(255, 255, 255, 0.65);
+    --system-banner-dismiss-hover: #ffffff;
+    --system-banner-dismiss-hover-bg: rgba(245, 158, 11, 0.12);
   }
 }
 
@@ -408,5 +435,64 @@ select {
   /* File input control surface */
   .form-file-input {
     @apply block w-full cursor-pointer rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:cursor-pointer file:rounded-sm file:border-0 file:bg-muted file:px-2 file:py-1 file:text-sm file:font-medium file:text-foreground;
+  }
+
+  /*
+   * Recharts: clicking the chart focuses the SVG; the browser default focus
+   * outline reads as a harsh white box on dark themes. Use no outline here —
+   * keyboard users use the metric filter buttons above the chart instead.
+   */
+  .dashboard-chart-card .recharts-responsive-container:focus,
+  .dashboard-chart-card .recharts-responsive-container:focus-visible,
+  .dashboard-chart-card .recharts-wrapper:focus,
+  .dashboard-chart-card .recharts-wrapper:focus-visible,
+  .dashboard-chart-card .recharts-surface:focus,
+  .dashboard-chart-card .recharts-surface:focus-visible,
+  .dashboard-chart-card svg.recharts-surface:focus,
+  .dashboard-chart-card svg.recharts-surface:focus-visible {
+    outline: none;
+  }
+
+  /* System notification banner — tokens: --system-banner-* in :root / .dark */
+  .system-notification-banner {
+    background-color: var(--system-banner-surface);
+    border-color: var(--system-banner-border);
+    box-shadow: var(--system-banner-shadow);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .system-notification-banner__title {
+    color: var(--system-banner-title);
+  }
+
+  .system-notification-banner__text {
+    color: var(--system-banner-text);
+  }
+
+  .system-notification-banner__text-muted {
+    color: var(--system-banner-text-muted);
+  }
+}
+
+/* Overrides Button variant utilities (text-primary, hover:text-accent-foreground) */
+@layer utilities {
+  .system-notification-banner .system-notification-banner__cta {
+    color: var(--system-banner-cta);
+    text-decoration-color: var(--system-banner-cta-decoration);
+  }
+
+  .system-notification-banner .system-notification-banner__cta:hover {
+    text-decoration-color: var(--system-banner-cta-decoration-hover);
+    color: var(--system-banner-cta);
+  }
+
+  .system-notification-banner .system-notification-banner__dismiss {
+    color: var(--system-banner-dismiss);
+  }
+
+  .system-notification-banner .system-notification-banner__dismiss:hover {
+    color: var(--system-banner-dismiss-hover);
+    background-color: var(--system-banner-dismiss-hover-bg);
   }
 }

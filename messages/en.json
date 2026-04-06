@@ -29,7 +29,6 @@
     "categories": "Categories",
     "supportTickets": "Support tickets",
     "supportTicketDetail": "Support ticket",
-    "analytics": "Analytics",
     "trash": "Trash"
   },
   "common": {
@@ -76,7 +75,6 @@
     "activities": "Activities",
     "trash": "Trash",
     "banners": "Banners",
-    "analytics": "Analytics",
     "shipping": "Shipping",
     "catalog": "Catalog",
     "more": "More",
@@ -125,8 +123,6 @@
     "customersSubtitle": "Customer accounts and profiles",
     "customersEmpty": "No customers yet. Customers are created when users register or place orders.",
     "addCustomer": "Add customer",
-    "analyticsSubtitle": "Advanced store analytics and insights",
-    "analyticsUpgradeHint": "This feature (advanced_analytics) is not available on your plan. Please upgrade.",
     "customerDetailsTitle": "Customer Details",
     "customerDetailsLoadError": "Failed to load customer details.",
     "customerDetailsBasicInfo": "Basic Info",
@@ -1073,10 +1069,6 @@
         "banners": {
           "label": "Banners",
           "description": "Manage banners for homepage, sidebar, footer"
-        },
-        "analytics": {
-          "label": "Analytics",
-          "description": "Store insights – orders and pageviews"
         },
         "shipping": {
           "label": "Shipping",

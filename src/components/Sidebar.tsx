@@ -84,7 +84,6 @@ const MAIN_NAV_SEQUENCE = [
   "shipping",
   "cta",
   "banners",
-  "analytics",
 ] as const;
 
 function logoUrl(url: string | null): string | null {

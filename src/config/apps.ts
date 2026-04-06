@@ -10,7 +10,6 @@ import {
   PackageSearch,
   History,
   Image as ImageIcon,
-  BarChart3,
   Truck,
   Ticket,
   Trash2,
@@ -156,16 +155,6 @@ export const APP_CONFIG: Record<string, AppConfig> = {
     countKey: null,
     parentId: null,
   },
-  analytics: {
-    id: "analytics",
-    label: "Analytics",
-    icon: BarChart3,
-    description: "Store insights – orders and pageviews",
-    essential: false,
-    href: "/analytics",
-    countKey: null,
-    parentId: null,
-  },
   shipping: {
     id: "shipping",
     label: "Shipping",
@@ -193,7 +182,6 @@ export const OPTIONAL_APP_IDS = [
   "inventory",
   "activities",
   "banners",
-  "analytics",
   "shipping",
 ] as const;
 
@@ -213,7 +201,6 @@ export const MAIN_NAV_APP_IDS = [
   "shipping",
   "cta",
   "banners",
-  "analytics",
 ] as const;
 
 export const MORE_APP_IDS = [
