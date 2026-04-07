@@ -6,7 +6,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { toLocaleDigits } from "@/lib/locale-digits";
 import { Truck, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ClickableText } from "@/components/ui/clickable-text";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { FilterBar } from "@/components/filters/FilterBar";
@@ -372,7 +372,11 @@ export default function OrdersPage() {
               </thead>
               <tbody className="divide-y divide-border/60">
                 {orders.map((order) => (
-                  <tr key={order.public_id} className="hover:bg-muted/40">
+                  <ClickableTableRow
+                    key={order.public_id}
+                    href={`/orders/${order.public_id}`}
+                    aria-label={String(order.order_number)}
+                  >
                     <td className="w-10 px-2 py-3">
                       <input
                         type="checkbox"
@@ -384,13 +388,8 @@ export default function OrdersPage() {
                         })}
                       />
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <ClickableText
-                        href={`/orders/${order.public_id}`}
-                        className="whitespace-nowrap"
-                      >
-                        {order.order_number}
-                      </ClickableText>
+                    <td className="px-4 py-3 whitespace-nowrap font-medium text-foreground">
+                      {order.order_number}
                     </td>
                     <td className="px-4 py-3 text-foreground whitespace-nowrap">
                       {order.shipping_name || "—"}
@@ -471,7 +470,7 @@ export default function OrdersPage() {
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {formatDashboardDateTime(order.created_at, locale)}
                     </td>
-                  </tr>
+                  </ClickableTableRow>
                 ))}
               </tbody>
             </table>

@@ -16,6 +16,7 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FilterBar } from "@/components/filters/FilterBar";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { ClickableText } from "@/components/ui/clickable-text";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -620,16 +621,23 @@ export default function VariantsPageClient() {
                 </thead>
                 <tbody>
                   {filteredVariants.map((v) => (
-                    <tr key={v.public_id} className="border-b border-border last:border-0">
-                      <td className="px-4 py-3">
-                        <ClickableText
-                          aria-label={tPages("variantsEditVariantAria", { sku: v.sku })}
-                          disabled={editing !== null}
-                          onClick={() => openEdit(v)}
-                          className="max-w-full whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"
+                    <ClickableTableRow
+                      key={v.public_id}
+                      onNavigate={() => openEdit(v)}
+                      aria-label={tPages("variantsEditVariantAria", { sku: v.sku })}
+                      disabled={editing !== null}
+                      className="border-b border-border last:border-0"
+                    >
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        <span
+                          className={
+                            editing !== null
+                              ? "max-w-full whitespace-nowrap opacity-50"
+                              : "max-w-full whitespace-nowrap"
+                          }
                         >
                           {v.sku}
-                        </ClickableText>
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {v.option_labels?.length
@@ -674,7 +682,7 @@ export default function VariantsPageClient() {
                           {tCommon("delete")}
                         </Button>
                       </td>
-                    </tr>
+                    </ClickableTableRow>
                   ))}
                 </tbody>
               </table>

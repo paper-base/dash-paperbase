@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { ChevronDown, ChevronRight, Undo2 } from "lucide-react";
 import api from "@/lib/api";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { ClickableText } from "@/components/ui/clickable-text";
 import { FilterDropdown } from "@/components/filters/FilterDropdown";
 import { Input } from "@/components/ui/input";
@@ -67,7 +68,10 @@ function CategoryTreeRows({
         const isOpen = expanded.has(node.public_id);
         return (
           <Fragment key={node.public_id}>
-            <tr className="hover:bg-muted/40">
+            <ClickableTableRow
+              onNavigate={() => onEdit(node)}
+              aria-label={node.name}
+            >
               <td className="px-4 py-3 whitespace-nowrap">
                 <div
                   className="flex items-center gap-1 whitespace-nowrap"
@@ -89,12 +93,9 @@ function CategoryTreeRows({
                   ) : (
                     <span className="inline-block w-5 shrink-0" />
                   )}
-                  <ClickableText
-                    onClick={() => onEdit(node)}
-                    className="font-medium text-foreground whitespace-nowrap"
-                  >
+                  <span className="font-medium text-foreground whitespace-nowrap">
                     {node.name}
-                  </ClickableText>
+                  </span>
                 </div>
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
@@ -129,7 +130,7 @@ function CategoryTreeRows({
                   </ClickableText>
                 </div>
               </td>
-            </tr>
+            </ClickableTableRow>
             {hasKids && isOpen ? (
               <CategoryTreeRows
                 nodes={children}

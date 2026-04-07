@@ -16,6 +16,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { ClickableText } from "@/components/ui/clickable-text";
 import { Input } from "@/components/ui/input";
 import { FilterBar } from "@/components/filters/FilterBar";
@@ -381,14 +382,17 @@ export default function ProductsPage() {
               </thead>
               <tbody className="divide-y divide-border/60">
                 {products.map((product) => (
-                  <tr key={product.public_id} className="hover:bg-muted/40">
+                  <ClickableTableRow
+                    key={product.public_id}
+                    href={`/products/${product.public_id}`}
+                    aria-label={product.name}
+                  >
                     <td className="w-10 px-4 py-3">
                       {canDeleteProducts && (
                         <input
                           type="checkbox"
                           checked={selectedIds.has(product.public_id)}
                           onChange={() => toggleSelect(product.public_id)}
-                          onClick={(e) => e.stopPropagation()}
                           className="form-checkbox"
                           aria-label={tPages("productsListSelectRowAria", {
                             name: product.name,
@@ -397,12 +401,9 @@ export default function ProductsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <ClickableText
-                        href={`/products/${product.public_id}`}
-                        className="flex max-w-xs items-center"
-                      >
+                      <span className="flex max-w-xs items-center font-medium text-foreground">
                         <span className="truncate">{product.name}</span>
-                      </ClickableText>
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-foreground whitespace-nowrap">
                       {product.brand || "—"}
@@ -489,7 +490,7 @@ export default function ProductsPage() {
                         </ComboboxContent>
                       </Combobox>
                     </td>
-                  </tr>
+                  </ClickableTableRow>
                 ))}
               </tbody>
             </table>

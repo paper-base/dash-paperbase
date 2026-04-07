@@ -6,6 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { Undo2} from "lucide-react";
 import { isAxiosError } from "axios";
 import api from "@/lib/api";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { ClickableText } from "@/components/ui/clickable-text";
 import { Input } from "@/components/ui/input";
 import {
@@ -440,7 +441,11 @@ export default function BannersPage() {
           </thead>
           <tbody className="divide-y divide-border/60">
             {banners.map((b) => (
-              <tr key={b.public_id} className="hover:bg-muted/40">
+              <ClickableTableRow
+                key={b.public_id}
+                onNavigate={() => openEdit(b)}
+                aria-label={b.title?.trim() ? b.title : `Banner ${b.public_id}`}
+              >
                 <td className="px-4 py-3">
                   {b.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -453,13 +458,8 @@ export default function BannersPage() {
                     <span className="text-muted-foreground">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3 font-medium">
-                  <ClickableText
-                    onClick={() => openEdit(b)}
-                    className="font-medium text-foreground"
-                  >
-                    {b.title || "—"}
-                  </ClickableText>
+                <td className="px-4 py-3 font-medium text-foreground">
+                  {b.title || "—"}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {formatPlacements(b.placement_slots || [])}
@@ -491,7 +491,7 @@ export default function BannersPage() {
                     {tCommon("delete")}
                   </ClickableText>
                 </td>
-              </tr>
+              </ClickableTableRow>
             ))}
           </tbody>
         </table>

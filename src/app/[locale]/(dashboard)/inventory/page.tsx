@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Undo2, AlertTriangle } from "lucide-react";
-import { ClickableText } from "@/components/ui/clickable-text";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { Input } from "@/components/ui/input";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { FilterDropdown } from "@/components/filters/FilterDropdown";
@@ -195,14 +195,16 @@ export default function InventoryPage() {
               </thead>
               <tbody className="divide-y divide-border/60">
                 {inventory.map((inv) => (
-                  <tr
+                  <ClickableTableRow
                     key={inv.public_id}
-                    className={`hover:bg-muted/40 ${inv.is_low ? "bg-amber-50/50 dark:bg-amber-950/20" : ""}`}
+                    href={`/products/${inv.product_public_id}`}
+                    aria-label={inv.product_name}
+                    className={
+                      inv.is_low ? "bg-amber-50/50 dark:bg-amber-950/20" : undefined
+                    }
                   >
                     <td className="px-4 py-3 font-medium text-foreground">
-                      <ClickableText href={`/products/${inv.product_public_id}`}>
-                        {inv.product_name}
-                      </ClickableText>
+                      {inv.product_name}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {inv.variant_sku || "—"}
@@ -254,7 +256,7 @@ export default function InventoryPage() {
                         </button>
                       </div>
                     </td>
-                  </tr>
+                  </ClickableTableRow>
                 ))}
               </tbody>
             </table>

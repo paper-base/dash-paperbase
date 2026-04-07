@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { toLocaleDigits } from "@/lib/locale-digits";
 import { Undo2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -168,18 +169,16 @@ export default function CustomersPage() {
                   </thead>
                   <tbody className="divide-y divide-border/60">
                     {customers.map((c) => (
-                      <tr
+                      <ClickableTableRow
                         key={c.public_id}
-                        className="cursor-pointer hover:bg-muted/40 focus-within:bg-muted/40"
-                        role="link"
-                        tabIndex={0}
-                        onClick={() => router.push(`/customers/${c.public_id}`)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            router.push(`/customers/${c.public_id}`);
-                          }
-                        }}
+                        href={`/customers/${c.public_id}`}
+                        aria-label={
+                          c.email ||
+                          c.user_email ||
+                          c.name ||
+                          c.user_username ||
+                          c.public_id
+                        }
                       >
                         <td className="px-4 py-3 font-medium text-foreground">
                           {c.email || c.user_email || "—"}
@@ -206,7 +205,7 @@ export default function CustomersPage() {
                               : "—"}
                           </span>
                         </td>
-                      </tr>
+                      </ClickableTableRow>
                     ))}
                   </tbody>
                 </table>

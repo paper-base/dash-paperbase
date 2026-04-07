@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Undo2 } from "lucide-react";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { ClickableText } from "@/components/ui/clickable-text";
 import { Input } from "@/components/ui/input";
 import { FilterBar } from "@/components/filters/FilterBar";
@@ -277,15 +278,14 @@ export default function SupportTicketsPage() {
               </thead>
               <tbody className="divide-y divide-border/60">
                 {tickets.map((ticket) => (
-                  <tr key={ticket.public_id} className="hover:bg-muted/40">
+                  <ClickableTableRow
+                    key={ticket.public_id}
+                    href={`/support-tickets/${ticket.public_id}`}
+                    aria-label={ticket.name}
+                  >
                     <td className="px-4 py-3">
                       <div className="min-w-[180px]">
-                        <ClickableText
-                          href={`/support-tickets/${ticket.public_id}`}
-                          className="font-medium"
-                        >
-                          {ticket.name}
-                        </ClickableText>
+                        <span className="font-medium text-foreground">{ticket.name}</span>
                         {errors[ticket.public_id] ? (
                           <p className="mt-1 text-xs text-destructive">
                             {errors[ticket.public_id]}
@@ -353,7 +353,7 @@ export default function SupportTicketsPage() {
                         </span>
                       )}
                     </td>
-                  </tr>
+                  </ClickableTableRow>
                 ))}
               </tbody>
             </table>

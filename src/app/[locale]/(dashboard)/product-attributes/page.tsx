@@ -7,6 +7,7 @@ import { Plus, Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ClickableListItem } from "@/components/ui/clickable-list-item";
 import { ClickableText } from "@/components/ui/clickable-text";
 import { Input } from "@/components/ui/input";
 import type {
@@ -366,19 +367,23 @@ export default function ProductAttributesPage() {
                 ) : (
                   <ul className="divide-y divide-border rounded-lg border border-border">
                     {a.values.map((v) => (
-                      <li
+                      <ClickableListItem
                         key={v.public_id}
                         className="flex items-center justify-between gap-2 px-3 py-2 text-sm"
+                        onNavigate={() => openValueEdit(a.public_id, v)}
+                        aria-label={tPages("attributesEditValueAria", { label: v.value })}
+                        disabled={valueEditing !== null || attrEditing !== null}
                       >
                         <div className="min-w-0 flex-1">
-                          <ClickableText
-                            aria-label={tPages("attributesEditValueAria", { label: v.value })}
-                            disabled={valueEditing !== null || attrEditing !== null}
-                            onClick={() => openValueEdit(a.public_id, v)}
-                            className="text-left disabled:cursor-not-allowed disabled:opacity-50"
+                          <span
+                            className={
+                              valueEditing !== null || attrEditing !== null
+                                ? "text-left opacity-50"
+                                : "text-left"
+                            }
                           >
                             {v.value}
-                          </ClickableText>{" "}
+                          </span>{" "}
                           <span className="text-xs text-muted-foreground">
                             {tPages("attributesValueOrderMeta", { order: v.order })}
                           </span>
@@ -396,7 +401,7 @@ export default function ProductAttributesPage() {
                             {tCommon("delete")}
                           </Button>
                         </div>
-                      </li>
+                      </ClickableListItem>
                     ))}
                   </ul>
                 )}

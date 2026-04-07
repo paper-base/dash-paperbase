@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { ClickableText } from "@/components/ui/clickable-text";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -325,15 +326,17 @@ export default function CtaPage() {
           </thead>
           <tbody className="divide-y divide-border/60">
             {ctas.map((n) => (
-              <tr key={n.public_id} className="hover:bg-muted/40">
+              <ClickableTableRow
+                key={n.public_id}
+                onNavigate={() => openEdit(n)}
+                aria-label={
+                  n.cta_text?.trim()
+                    ? n.cta_text
+                    : `CTA ${n.public_id}`
+                }
+              >
                 <td className="max-w-xs truncate px-4 py-3 font-medium text-foreground">
-                  <ClickableText
-                    onClick={() => openEdit(n)}
-                    truncate
-                    className="font-medium text-foreground"
-                  >
-                    {n.cta_text}
-                  </ClickableText>
+                  {n.cta_text}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground capitalize">
                   {n.notification_type}
@@ -368,7 +371,7 @@ export default function CtaPage() {
                     {tCommon("delete")}
                   </ClickableText>
                 </td>
-              </tr>
+              </ClickableTableRow>
             ))}
           </tbody>
         </table>

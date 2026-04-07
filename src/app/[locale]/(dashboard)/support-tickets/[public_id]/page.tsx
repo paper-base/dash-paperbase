@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import type { SupportTicket } from "@/types";
@@ -163,21 +164,24 @@ export default function SupportTicketDetailPage() {
                   </thead>
                   <tbody className="divide-y divide-border/60">
                     {ticket.attachments.map((attachment) => (
-                      <tr key={attachment.public_id}>
-                        <td className="px-3 py-2">
-                          <a
-                            href={attachment.file}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            {attachment.public_id}
-                          </a>
+                      <ClickableTableRow
+                        key={attachment.public_id}
+                        onNavigate={() =>
+                          window.open(
+                            attachment.file,
+                            "_blank",
+                            "noopener,noreferrer"
+                          )
+                        }
+                        aria-label={attachment.public_id}
+                      >
+                        <td className="px-3 py-2 font-medium text-foreground">
+                          {attachment.public_id}
                         </td>
                         <td className="px-3 py-2 text-muted-foreground">
                           {formatDashboardDateTime(attachment.created_at, locale)}
                         </td>
-                      </tr>
+                      </ClickableTableRow>
                     ))}
                   </tbody>
                 </table>

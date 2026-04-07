@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { Undo2 } from "lucide-react";
 import api from "@/lib/api";
 import type { CustomerDetailsResponse } from "@/types";
@@ -158,15 +159,13 @@ export default function CustomerDetailPage() {
                         const statusDiffers =
                           live != null && atPurchase != null && live !== atPurchase;
                         return (
-                          <tr key={`${item.order_public_id}-${idx}`}>
-                            <td className="whitespace-nowrap px-3 py-2">
-                              <Link
-                                href={`/orders/${item.order_public_id}`}
-                                className="font-medium text-primary underline-offset-4 hover:underline"
-                              >
-                                {item.order_number}
-                              </Link>
-                              <span className="sr-only"> ({tPages("customerDetailsViewOrder")})</span>
+                          <ClickableTableRow
+                            key={`${item.order_public_id}-${idx}`}
+                            href={`/orders/${item.order_public_id}`}
+                            aria-label={`${tPages("customerDetailsOrder")} ${item.order_number}. ${tPages("customerDetailsViewOrder")}`}
+                          >
+                            <td className="whitespace-nowrap px-3 py-2 font-medium text-foreground">
+                              {item.order_number}
                             </td>
                             <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
                               {formatDashboardDateTime(item.ordered_at, locale)}
@@ -192,7 +191,7 @@ export default function CustomerDetailPage() {
                                 </span>
                               ) : null}
                             </td>
-                          </tr>
+                          </ClickableTableRow>
                         );
                       })}
                     </tbody>
