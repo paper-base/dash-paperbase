@@ -128,7 +128,7 @@ export default function DashboardLayoutClient({
     <BrandingProvider>
       <SearchModalProvider>
         <NotificationProvider>
-          <div className="min-h-screen bg-muted/30">
+          <div className="min-h-screen">
             <SystemNotificationBanner
               className="md:hidden"
               onPresenceChange={setMobileSystemBannerVisible}
