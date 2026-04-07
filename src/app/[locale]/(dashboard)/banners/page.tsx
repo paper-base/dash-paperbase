@@ -257,7 +257,7 @@ export default function BannersPage() {
                 Placement slots
               </label>
               <div className="space-y-2">
-                <Combobox<PlacementItem>
+                <Combobox<PlacementItem, true>
                   multiple
                   modal={false}
                   value={placementItems}
@@ -273,9 +273,7 @@ export default function BannersPage() {
                 >
                   <ComboboxChips ref={placementAnchor} className="w-full">
                     {placementItems.map((item) => (
-                      <ComboboxChip key={item.value} value={item}>
-                        {item.label}
-                      </ComboboxChip>
+                      <ComboboxChip key={item.value}>{item.label}</ComboboxChip>
                     ))}
                     <ComboboxChipsInput placeholder="Select placements…" />
                   </ComboboxChips>
