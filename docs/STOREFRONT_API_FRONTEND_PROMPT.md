@@ -1049,8 +1049,8 @@ Submit a support ticket.
 
 | Scenario | Status | Body |
 |---|---|---|
-| Missing API key | 401 | `{"detail":"No API key found. Create one in Settings → Networking."}` |
-| Invalid API key | 401 | `{"detail":"No API key found. Create one in Settings → Networking."}` |
+| Missing API key | 401 | `{"detail":"No API key found"}` |
+| Invalid API key | 401 | `{"detail":"No API key found"}` |
 | Secret key on storefront | 403 | `{"detail":"Secret API keys cannot access storefront endpoints."}` |
 | Store is inactive | 403 | `{"detail":"Store is not active."}` |
 | Too many invalid attempts | 429 | `{"detail":"Too many invalid API key attempts."}` + `Retry-After: 60` |
