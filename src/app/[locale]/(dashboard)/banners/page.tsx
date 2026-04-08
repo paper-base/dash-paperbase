@@ -24,6 +24,14 @@ import { formatDashboardDateTime } from "@/lib/datetime-display";
 import { displayInputToApiLocal, isoDatetimeToDisplayInput } from "@/lib/datetime-form";
 import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
+import { PLACEMENT_OPTIONS } from "@/components/preview-system/placementConfig";
+import { MiniSitePreview } from "@/components/preview-system/MiniSitePreview";
+
+const ALLOWED_PLACEMENTS = new Set([
+  "home_top",
+  "home_mid",
+  "home_bottom",
+]);
 
 type BannerForm = {
   title: string;
@@ -42,26 +50,10 @@ const emptyForm: BannerForm = {
   cta_link: "",
   order: "0",
   is_active: true,
-  placement_slots: ["global_topbar"],
+  placement_slots: ["home_top"],
   start_at: "",
   end_at: "",
 };
-
-const PLACEMENT_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "global_topbar", label: "Global Topbar" },
-  { value: "global_bottom", label: "Global Bottom" },
-  { value: "home_top", label: "Home Top" },
-  { value: "home_mid", label: "Home Mid" },
-  { value: "home_bottom", label: "Home Bottom" },
-  { value: "dashboard_header", label: "Dashboard Header" },
-  { value: "dashboard_sidebar", label: "Dashboard Sidebar" },
-  { value: "dashboard_mid", label: "Dashboard Mid" },
-  { value: "product_top", label: "Product Top" },
-  { value: "product_mid", label: "Product Mid" },
-  { value: "product_bottom", label: "Product Bottom" },
-  { value: "checkout_top", label: "Checkout Top" },
-  { value: "checkout_bottom", label: "Checkout Bottom" },
-];
 
 function formatPlacements(values: string[]): string {
   if (!values?.length) return "—";
@@ -125,7 +117,7 @@ export default function BannersPage() {
       order: String(banner.order ?? 0),
       is_active: banner.is_active,
       placement_slots:
-        banner.placement_slots?.length ? banner.placement_slots : ["global_topbar"],
+        banner.placement_slots?.length ? banner.placement_slots : ["home_top"],
       start_at: isoDatetimeToDisplayInput(banner.start_at),
       end_at: isoDatetimeToDisplayInput(banner.end_at),
     });
@@ -138,6 +130,12 @@ export default function BannersPage() {
     if (!form.placement_slots.length) {
       notify.validation("banners-form", {
         placement_slots: "Select at least one placement slot",
+      });
+      return;
+    }
+    if (form.placement_slots.some((p) => !ALLOWED_PLACEMENTS.has(p))) {
+      notify.validation("banners-form", {
+        placement_slots: "Invalid placement slot selected",
       });
       return;
     }
@@ -299,6 +297,7 @@ export default function BannersPage() {
                 <p className="text-xs text-muted-foreground">
                   {formatPlacements(form.placement_slots)}
                 </p>
+                <MiniSitePreview placements={form.placement_slots} />
               </div>
             </div>
             <div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { toLocaleDigits } from "@/lib/locale-digits";
 import { Undo2 } from "lucide-react";
@@ -82,33 +82,25 @@ export default function CustomersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-muted/80 px-1 py-1 hidden md:block">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              aria-label={tPages("goBack")}
-              className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
-            >
-              <Undo2 className="h-4 w-4" />
-            </button>
-          </div>
-          <div>
-            <h1 className="text-2xl font-medium leading-relaxed text-foreground">
-              {tNav("customers")} ({toLocaleDigits(String(count), locale)})
-            </h1>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground md:hidden">
-              {tPages("customersSubtitle")}
-            </p>
-          </div>
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="rounded-lg bg-muted/80 px-1 py-1 hidden md:block">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            aria-label={tPages("goBack")}
+            className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted"
+          >
+            <Undo2 className="h-4 w-4" />
+          </button>
         </div>
-        <Link
-          href="/customers/new"
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
-        >
-          {tPages("addCustomer")}
-        </Link>
+        <div>
+          <h1 className="text-2xl font-medium leading-relaxed text-foreground">
+            {tNav("customers")} ({toLocaleDigits(String(count), locale)})
+          </h1>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground md:hidden">
+            {tPages("customersSubtitle")}
+          </p>
+        </div>
       </div>
 
       <p className="hidden text-sm leading-relaxed text-muted-foreground md:block">

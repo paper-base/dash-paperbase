@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Supported Banner Placements
+
+Only the following banner placement values are supported:
+
+- `home_top`: Top of homepage
+- `home_mid`: Middle content area of homepage
+- `home_bottom`: Bottom section of homepage
+
+Any other placement value is invalid and will be rejected.
+
 ## Getting Started
 
 First, run the development server:

@@ -538,7 +538,9 @@ Active promotional banners. Unpaginated array.
 |---|---|---|
 | `slot` | string | Optional — filter by placement slot |
 
-**Valid `slot` values:** `global_topbar`, `global_bottom`, `home_top`, `home_mid`, `home_bottom`, `dashboard_header`, `dashboard_sidebar`, `dashboard_mid`, `product_top`, `product_mid`, `product_bottom`, `checkout_top`, `checkout_bottom`
+**Valid `slot` values:** `home_top`, `home_mid`, `home_bottom`
+
+Any other placement value is invalid and will be rejected by the API.
 
 **Response `200`:**
 
@@ -551,7 +553,7 @@ Active promotional banners. Unpaginated array.
     "cta_text": "Shop Now",
     "cta_url": "https://mystore.com/sale",
     "order": 0,
-    "placement_slots": ["home_top", "global_topbar"],
+    "placement_slots": ["home_top"],
     "start_at": "2025-06-01T00:00:00+06:00",
     "end_at": "2025-06-30T23:59:59+06:00"
   }
