@@ -14,6 +14,8 @@ const PUBLIC_PATHS = [
   "/signup",
   "/onboarding",
   "/plan-not-active",
+  "/plans",
+  "/checkout",
   "/reset-password",
   "/verify-email",
   "/auth",

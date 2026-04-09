@@ -101,6 +101,14 @@ export default function DashboardLayoutClient({
     router.replace("/recover");
   }, [shouldRedirectToRecover, router]);
 
+  const shouldRedirectToPlanFlow =
+    meProfileStatus === "ready" && meProfile !== null && !hasActiveSubscription(meProfile);
+
+  useEffect(() => {
+    if (!shouldRedirectToPlanFlow) return;
+    router.replace("/plan-not-active");
+  }, [shouldRedirectToPlanFlow, router]);
+
   useEffect(() => {
     const root = document.documentElement;
     const syncDashboardInset = () => {
@@ -128,7 +136,7 @@ export default function DashboardLayoutClient({
     meProfileStatus === "loading" ||
     (meProfileStatus === "idle" && isAuthenticated);
 
-  if (authBlocking || shouldRedirectToOnboarding || shouldRedirectToRecover) {
+  if (authBlocking || shouldRedirectToOnboarding || shouldRedirectToRecover || shouldRedirectToPlanFlow) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -138,10 +146,6 @@ export default function DashboardLayoutClient({
 
   if (meProfileStatus === "error") {
     return <SubscriptionAccessBlock variant="verifyFailed" />;
-  }
-
-  if (meProfileStatus === "ready" && meProfile && !hasActiveSubscription(meProfile)) {
-    return <SubscriptionAccessBlock variant="inactive" />;
   }
 
   return (
