@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { History, Info } from "lucide-react";
@@ -43,6 +43,7 @@ export default function DashboardLayoutClient({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSystemBannerVisible, setMobileSystemBannerVisible] = useState(false);
+  const subscriptionBannerStackRef = useRef<HTMLDivElement>(null);
   const subscription =
     meProfileStatus === "ready" ? (meProfile?.subscription ?? null) : null;
   /** Must match `resolvePostAuthPath` in subscription-access.ts (avoid / ↔ /onboarding / create-store loops). */
@@ -133,12 +134,28 @@ export default function DashboardLayoutClient({
     return () => window.removeEventListener("resize", syncDashboardInset);
   }, [collapsed]);
 
-  /** Pushes sidebar / sticky chrome below the fixed subscription strip (same var as globals.css). */
-  useEffect(() => {
-    const offset = showTopBannerStrip ? "1.75rem" : "0px";
-    document.documentElement.style.setProperty("--subscription-banner-offset", offset);
+  /** Match actual fixed subscription/pending strip height so nav & system banner sit flush (no hardcoded gap). */
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    if (!showTopBannerStrip) {
+      root.style.setProperty("--subscription-banner-offset", "0px");
+      return;
+    }
+    const el = subscriptionBannerStackRef.current;
+    if (!el) {
+      root.style.setProperty("--subscription-banner-offset", "0px");
+      return;
+    }
+    const apply = () => {
+      const h = el.getBoundingClientRect().height;
+      root.style.setProperty("--subscription-banner-offset", `${Math.max(0, Math.ceil(h))}px`);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
     return () => {
-      document.documentElement.style.setProperty("--subscription-banner-offset", "0px");
+      ro.disconnect();
+      root.style.setProperty("--subscription-banner-offset", "0px");
     };
   }, [showTopBannerStrip]);
 
@@ -166,7 +183,10 @@ export default function DashboardLayoutClient({
       <SearchModalProvider>
         <NotificationProvider>
           {showTopBannerStrip && (
-            <div className="fixed inset-x-0 top-0 z-[60] flex flex-col">
+            <div
+              ref={subscriptionBannerStackRef}
+              className="fixed inset-x-0 top-0 z-[60] flex flex-col"
+            >
               {showPendingReviewBanner ? (
                 <div
                   role="status"
