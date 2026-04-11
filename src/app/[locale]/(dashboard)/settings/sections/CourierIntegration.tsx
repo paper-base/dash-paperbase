@@ -152,7 +152,7 @@ export default function CourierIntegration() {
       >
         <form onSubmit={handleConnect} className="space-y-3">
           {error ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <div className="rounded-card border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {error}
             </div>
           ) : null}
@@ -224,7 +224,7 @@ export default function CourierIntegration() {
           {couriers.map((c) => (
             <div
               key={c.public_id}
-              className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 rounded-card border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center gap-2">

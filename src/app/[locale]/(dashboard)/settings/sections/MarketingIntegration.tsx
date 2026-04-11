@@ -237,7 +237,7 @@ export default function MarketingIntegration() {
       >
         <form onSubmit={handleConnect} className="space-y-3">
           {error ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <div className="rounded-card border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {error}
             </div>
           ) : null}
@@ -320,7 +320,7 @@ export default function MarketingIntegration() {
             <div>
               <p className="mb-1 text-xs font-medium text-muted-foreground">{t("marketing.pixelLabel")}</p>
               <div className="flex flex-wrap items-center gap-2">
-                <code className="min-w-0 break-all rounded border border-border bg-muted/50 px-2 py-1 font-mono text-xs">
+                <code className="min-w-0 break-all rounded-ui border border-border bg-muted/50 px-2 py-1 font-mono text-xs">
                   {configureIntegration.pixel_id || "—"}
                 </code>
                 {configureIntegration.pixel_id ? (
@@ -402,7 +402,7 @@ export default function MarketingIntegration() {
           {integrations.map((integration) => (
             <div
               key={integration.public_id}
-              className="rounded-lg border border-border bg-background p-4"
+              className="rounded-card border border-border bg-background p-4"
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 flex-1 space-y-1">

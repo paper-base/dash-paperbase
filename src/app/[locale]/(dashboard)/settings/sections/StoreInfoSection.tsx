@@ -204,7 +204,7 @@ export default function StoreInfoSection({
           </div>
         </div>
 
-        <div className="rounded-xl border border-border/80 bg-muted/20 p-3 sm:p-4">
+        <div className="rounded-card border border-border/80 bg-muted/20 p-3 sm:p-4">
           <div className="mb-3 space-y-1">
             <h3 className="text-sm font-semibold tracking-tight text-foreground sm:text-base">
               {t("store.socialHeading")}

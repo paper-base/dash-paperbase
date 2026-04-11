@@ -77,7 +77,7 @@ function ExportOptionCard({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border bg-background shadow-sm",
+        "overflow-hidden rounded-card border bg-background shadow-sm",
         v.shell,
       )}
     >
@@ -90,7 +90,7 @@ function ExportOptionCard({
         <div className="flex items-start gap-4">
           <div
             className={cn(
-              "relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md border",
+              "relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-ui border",
               v.iconWrap,
             )}
             aria-hidden
@@ -220,7 +220,7 @@ export default function DataExportSection({
 
         <div
           className={cn(
-            "overflow-hidden rounded-lg border border-amber-600/35 bg-background",
+            "overflow-hidden rounded-card border border-amber-600/35 bg-background",
             "shadow-sm",
           )}
         >
@@ -246,8 +246,8 @@ export default function DataExportSection({
         <Dialog open={removeOpen} onOpenChange={handleRemoveDialogChange}>
           <DialogContent
             className={cn(
-              "gap-0 p-0 sm:rounded-lg",
-              "max-sm:max-w-[min(20rem,calc(100vw-1.5rem))] max-sm:rounded-lg",
+              "gap-0 p-0 sm:rounded-card",
+              "max-sm:max-w-[min(20rem,calc(100vw-1.5rem))] max-sm:rounded-card",
             )}
             onPointerDownOutside={(e) => {
               if (removeStoreSubmitting) e.preventDefault();
@@ -322,7 +322,7 @@ export default function DataExportSection({
 
         <div
           className={cn(
-            "overflow-hidden rounded-lg border border-destructive/40 bg-background",
+            "overflow-hidden rounded-card border border-destructive/40 bg-background",
             "shadow-sm",
           )}
         >
@@ -334,7 +334,7 @@ export default function DataExportSection({
           <div className="border-t border-border/80 bg-muted/20 px-5 py-4 md:px-6">
             <div className="flex items-center gap-4">
               <div
-                className="relative size-14 shrink-0 overflow-hidden rounded-md border border-border bg-muted"
+                className="relative size-14 shrink-0 overflow-hidden rounded-ui border border-border bg-muted"
                 aria-hidden
               >
                 {logoSrc ? (

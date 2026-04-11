@@ -113,12 +113,12 @@ export default function SettingsPage() {
       <div className="flex w-full flex-col gap-6">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="hidden rounded-lg bg-muted/80 px-1 py-1 md:block">
+            <div className="hidden rounded-card bg-muted/80 px-1 py-1 md:block">
               <button
                 type="button"
                 onClick={() => router.back()}
                 aria-label={tSettings("goBackAria")}
-                className="flex items-center justify-center rounded-md border border-foreground bg-foreground p-1.5 text-background hover:bg-foreground/90"
+                className="flex items-center justify-center rounded-ui border border-foreground bg-foreground p-1.5 text-background hover:bg-foreground/90"
               >
                 <Undo2 className="h-4 w-4" />
               </button>
@@ -157,7 +157,7 @@ export default function SettingsPage() {
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <div className="mt-2 rounded-xl border border-dashed border-border bg-muted/30 p-3">
+              <div className="mt-2 rounded-card border border-dashed border-border bg-muted/30 p-3">
                 <SettingsSectionNav
                   activeSection={activeSection}
                   onSelect={(id) => {

@@ -53,7 +53,7 @@ function CopyButton({ value }: { value: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className="inline-flex items-center gap-1 rounded-ui px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       aria-label={copied ? "Copied" : "Copy number"}
     >
       <Copy className="h-3 w-3" aria-hidden />
@@ -295,7 +295,7 @@ export default function CheckoutPage() {
                 <dt className="text-muted-foreground shrink-0">{t("billingPeriodLabel")}</dt>
                 <dd className="text-right">
                   <span
-                    className={`inline-block rounded-md px-2 py-0.5 text-xs font-semibold ${
+                    className={`inline-block rounded-ui px-2 py-0.5 text-xs font-semibold ${
                       payment.plan.billing_cycle === "monthly"
                         ? "bg-primary/15 text-primary"
                         : "bg-muted text-foreground"
@@ -404,7 +404,7 @@ export default function CheckoutPage() {
                   setTxnIdError(null);
                 }}
                 placeholder={t("transactionIdPlaceholder")}
-                className={`w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                className={`w-full rounded-ui border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${
                   txnIdError ? "border-destructive" : "border-input"
                 }`}
               />
@@ -427,7 +427,7 @@ export default function CheckoutPage() {
                 value={senderNumber}
                 onChange={(e) => setSenderNumber(e.target.value)}
                 placeholder={t("senderNumberPlaceholder")}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full rounded-ui border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
 
