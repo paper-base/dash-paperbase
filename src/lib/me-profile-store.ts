@@ -5,7 +5,7 @@ import api, {
 import type { MeForRouting } from "@/lib/subscription-access";
 
 /** Persisted profile cache; stored in localStorage for cross-tab `storage` events. */
-export const ME_PROFILE_STORAGE_KEY = "paperbase_me_profile_v4";
+export const ME_PROFILE_STORAGE_KEY = "paperbase_me_profile_v5";
 
 export const ME_PROFILE_PERSIST_EVENT = "paperbase-me-profile-persisted";
 
@@ -59,8 +59,11 @@ export function getMeProfileKeyFromToken(accessToken: string): string | null {
 function isSubscriptionPayloadComplete(me: MeForRouting): boolean {
   const sub = me.subscription;
   if (sub == null || typeof sub !== "object") return true;
-  /** Reject legacy/partial caches (e.g. before subscription_status) so we refetch auth/me/. */
-  return typeof sub.subscription_status === "string";
+  /** Reject legacy/partial caches (e.g. before subscription_status / latest_payment_status) so we refetch auth/me/. */
+  return (
+    typeof sub.subscription_status === "string" &&
+    "latest_payment_status" in me
+  );
 }
 
 function readStored(profileKey: string): MeForRouting | null {

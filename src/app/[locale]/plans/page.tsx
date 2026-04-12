@@ -10,6 +10,7 @@ import { logout, getAccessToken } from "@/lib/auth";
 import api from "@/lib/api";
 import { numberTextClass } from "@/lib/number-font";
 import { cn } from "@/lib/utils";
+import { markPlansVisited } from "@/lib/plans-onboarding";
 
 interface Plan {
   public_id: string;
@@ -44,6 +45,7 @@ export default function PlansPage() {
       router.replace("/login");
       return;
     }
+    markPlansVisited();
     api
       .get<Plan[]>("billing/plans/")
       .then(({ data }) => {

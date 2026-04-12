@@ -744,7 +744,12 @@
     "expiredBannerPayLoading": "Opening checkout…",
     "expiredBannerPayError": "Could not start checkout. Try again or pick a plan.",
     "bannerPayNow": "Pay now",
-    "pendingReviewBannerText": "Your store is under review. It will go live after approval."
+    "paymentPendingBannerText": "Your payment is pending. It will go live after approval.",
+    "pendingReviewBannerText": "Your store is under review. It will go live after approval.",
+    "inactivePlanBannerText": "Your plan is inactive. Your store is not live. Choose a plan to enable customer access.",
+    "inactivePlanBannerPlansLink": "View plans",
+    "rejectedPlanBannerText": "Your last subscription request was not approved. You can choose a new plan or contact support.",
+    "rejectedPlanBannerPlansLink": "View plans"
   },
   "dashboard": {
     "title": "Dashboard overview",
@@ -1195,7 +1200,9 @@
       "statusActive": "Active",
       "statusInactive": "Inactive",
       "statusGrace": "Grace period",
-      "statusExpired": "Expired"
+      "statusExpired": "Expired",
+      "statusPendingReview": "Pending review",
+      "statusRejected": "Rejected"
     },
     "dataExport": {
       "heading": "Data & Export",

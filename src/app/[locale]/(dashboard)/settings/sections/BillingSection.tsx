@@ -4,19 +4,20 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import api from "@/lib/api";
-import type { SubscriptionStatus } from "@/lib/subscription-access";
+import type { MeForRouting } from "@/lib/subscription-access";
+import {
+  billingSettingsStatusKey,
+  type BillingSettingsStatusKey,
+  resolveSubscriptionUIState,
+} from "@/lib/subscription-ui-state";
 import { SettingsSectionBody, settingsSectionSurfaceClassName } from "../SettingsSectionBody";
-
-interface MeSubscription {
-  subscription_status: SubscriptionStatus;
-  plan: string | null;
-  plan_public_id: string | null;
-  end_date: string | null;
-}
 
 export default function BillingSection({ hidden }: { hidden: boolean }) {
   const t = useTranslations("settings");
-  const [subscription, setSubscription] = useState<MeSubscription | null>(null);
+  const [meSnapshot, setMeSnapshot] = useState<Pick<
+    MeForRouting,
+    "subscription" | "latest_payment_status"
+  > | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -24,13 +25,16 @@ export default function BillingSection({ hidden }: { hidden: boolean }) {
     let cancelled = false;
     setLoading(true);
     api
-      .get<{ subscription?: MeSubscription }>("auth/me/")
+      .get<MeForRouting>("auth/me/")
       .then(({ data }) => {
         if (cancelled) return;
-        setSubscription(data.subscription ?? null);
+        setMeSnapshot({
+          subscription: data.subscription,
+          latest_payment_status: data.latest_payment_status ?? null,
+        });
       })
       .catch(() => {
-        if (!cancelled) setSubscription(null);
+        if (!cancelled) setMeSnapshot(null);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -40,20 +44,42 @@ export default function BillingSection({ hidden }: { hidden: boolean }) {
     };
   }, [hidden]);
 
+  const subscription = meSnapshot?.subscription ?? null;
+  const uiState =
+    subscription && meSnapshot
+      ? resolveSubscriptionUIState(
+          subscription.subscription_status,
+          meSnapshot.latest_payment_status ?? null
+        )
+      : null;
+  const statusKey: BillingSettingsStatusKey | null =
+    subscription && uiState !== null
+      ? billingSettingsStatusKey(uiState, subscription.subscription_status)
+      : null;
+
+  const billingStatusLabel = (key: BillingSettingsStatusKey) => {
+    switch (key) {
+      case "statusActive":
+        return t("billing.statusActive");
+      case "statusInactive":
+        return t("billing.statusInactive");
+      case "statusGrace":
+        return t("billing.statusGrace");
+      case "statusExpired":
+        return t("billing.statusExpired");
+      case "statusPendingReview":
+        return t("billing.statusPendingReview");
+      case "statusRejected":
+        return t("billing.statusRejected");
+    }
+  };
+
   const planLabel = loading ? t("billing.loading") : subscription?.plan ?? t("billing.dash");
   const statusLabel = loading
     ? t("billing.dash")
-    : subscription == null
+    : subscription == null || statusKey == null
       ? t("billing.dash")
-      : subscription.subscription_status === "NONE"
-        ? t("billing.statusInactive")
-        : subscription.subscription_status === "ACTIVE"
-          ? t("billing.statusActive")
-          : subscription.subscription_status === "GRACE"
-            ? t("billing.statusGrace")
-            : subscription.subscription_status === "EXPIRED"
-              ? t("billing.statusExpired")
-              : t("billing.dash");
+      : billingStatusLabel(statusKey);
   const endLabel = loading ? t("billing.dash") : subscription?.end_date ?? t("billing.dash");
 
   return (

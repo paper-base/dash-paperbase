@@ -77,9 +77,8 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [txnIdError, setTxnIdError] = useState<string | null>(null);
-  /** After payment submit: load /auth/me/ to choose dashboard vs create-store CTA. */
+  /** After payment submit: brief profile load before CTA (keeps layout stable). */
   const [successProfileLoading, setSuccessProfileLoading] = useState(false);
-  const [successHasStore, setSuccessHasStore] = useState(false);
 
   useEffect(() => {
     if (!getAccessToken()) {
@@ -101,7 +100,7 @@ export default function CheckoutPage() {
         if (cancelled) return;
 
         if (!pendingRes.data.pending || !pendingRes.data.payment) {
-          router.replace("/plans");
+          router.replace("/");
           return;
         }
 
@@ -133,17 +132,9 @@ export default function CheckoutPage() {
     (async () => {
       try {
         invalidateMeRoutingCache();
-        const { data } = await api.get<{
-          active_store_public_id: string | null;
-          store?: { public_id: string } | null;
-        }>("auth/me/");
-        if (cancelled) return;
-        const hasStore =
-          Boolean((data.active_store_public_id ?? "").trim()) ||
-          Boolean((data.store?.public_id ?? "").trim());
-        setSuccessHasStore(hasStore);
+        await api.get("auth/me/");
       } catch {
-        if (!cancelled) setSuccessHasStore(false);
+        // ignore
       } finally {
         if (!cancelled) setSuccessProfileLoading(false);
       }
@@ -248,16 +239,9 @@ export default function CheckoutPage() {
             <div className="flex justify-center py-4">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
             </div>
-          ) : successHasStore ? (
-            <Button className="w-full" onClick={() => router.push("/")}>
-              {t("goToDashboard")}
-            </Button>
           ) : (
-            <Button
-              className="w-full"
-              onClick={() => router.push("/onboarding/create-store")}
-            >
-              {t("createYourStore")}
+            <Button className="w-full" onClick={() => router.replace("/")}>
+              {t("goToDashboard")}
             </Button>
           )}
         </div>

@@ -16,6 +16,7 @@ import {
 import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
 import { useAuth } from "@/context/AuthContext";
+import { isNetworkingStoreUnderReview } from "@/lib/subscription-ui-state";
 
 type APIKeyRow = {
   public_id: string;
@@ -57,8 +58,9 @@ export default function NetworkingSection({ hidden }: { hidden: boolean }) {
     meProfileStatus === "ready" &&
     meProfile?.subscription?.subscription_status === "EXPIRED";
   const storeUnderReview =
-    meProfileStatus === "ready" &&
-    meProfile?.subscription?.subscription_status === "PENDING_REVIEW";
+    meProfileStatus === "ready" && meProfile
+      ? isNetworkingStoreUnderReview(meProfile)
+      : false;
   const networkingActionsLocked = planExpired || storeUnderReview;
   const [keys, setKeys] = useState<APIKeyRow[]>([]);
   const [loading, setLoading] = useState(true);

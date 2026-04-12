@@ -35,10 +35,6 @@ export default function OnboardingLayout({
         const me = await fetchMeForRouting();
         if (cancelled) return;
         const path = resolvePostAuthPath(me);
-        if (path === "/plan-not-active") {
-          router.replace("/plan-not-active");
-          return;
-        }
         // Strict ownership: if the user has ANY owned store (active or not), onboarding is blocked.
         // - ACTIVE store -> dashboard
         // - INACTIVE / PENDING_DELETE -> recover

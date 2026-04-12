@@ -744,7 +744,12 @@
     "expiredBannerPayLoading": "চেকআউট খোলা হচ্ছে…",
     "expiredBannerPayError": "চেকআউট শুরু করা যায়নি। আবার চেষ্টা করুন বা প্ল্যান বেছে নিন।",
     "bannerPayNow": "এখনই পরিশোধ করুন",
-    "pendingReviewBannerText": "আপনার স্টোর যাচাইয়াধীন। অনুমোদনের পর স্টোর লাইভ হবে।"
+    "paymentPendingBannerText": "আপনার পেমেন্ট অনুমোদনের অপেক্ষায়। অনুমোদনের পর স্টোর লাইভ হবে।",
+    "pendingReviewBannerText": "আপনার স্টোর যাচাইয়াধীন। অনুমোদনের পর স্টোর লাইভ হবে।",
+    "inactivePlanBannerText": "আপনার প্ল্যান নিষ্ক্রিয়। স্টোর এখন লাইভ নয়। গ্রাহকদের জন্য স্টোর চালু করতে একটি প্ল্যান বেছে নিন।",
+    "inactivePlanBannerPlansLink": "প্ল্যান দেখুন",
+    "rejectedPlanBannerText": "আপনার সর্বশেষ সাবস্ক্রিপশন অনুরোধ অনুমোদিত হয়নি। নতুন প্ল্যান বেছে নিতে পারেন বা সাপোর্টে যোগাযোগ করুন।",
+    "rejectedPlanBannerPlansLink": "প্ল্যান দেখুন"
   },
   "dashboard": {
     "title": "ড্যাশবোর্ড সারসংক্ষেপ",
@@ -1195,7 +1200,9 @@
       "statusActive": "সক্রিয়",
       "statusInactive": "নিষ্ক্রিয়",
       "statusGrace": "গ্রেস সময়কাল",
-      "statusExpired": "মেয়াদ শেষ"
+      "statusExpired": "মেয়াদ শেষ",
+      "statusPendingReview": "অনুমোদনের অপেক্ষায়",
+      "statusRejected": "প্রত্যাখ্যাত"
     },
     "dataExport": {
       "heading": "ডেটা ও এক্সপোর্ট",

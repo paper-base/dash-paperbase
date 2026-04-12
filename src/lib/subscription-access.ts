@@ -28,6 +28,11 @@ export interface MeForRouting {
   active_store_public_id: string | null;
   /** True when the user owns a suspended / pending-delete store that can be restored. */
   has_recoverable_stores?: boolean;
+  /**
+   * Latest subscription row by server `updated_at` (REJECTED / PENDING_REVIEW only).
+   * Distinct from `subscription.subscription_status` (candidate row / calendar).
+   */
+  latest_payment_status: "REJECTED" | "PENDING_REVIEW" | null;
   subscription: MeSubscription;
   /** Single store summary for the current user (owner or staff). */
   store?: {
@@ -37,7 +42,7 @@ export interface MeForRouting {
   } | null;
 }
 
-/** True when the user may access plan/onboarding flows (excludes never-subscribed and rejected). */
+/** True when the user has a subscription row other than NONE/REJECTED (banners, onboarding eligibility). */
 export function hasSubscriptionPlan(me: MeForRouting): boolean {
   const s = me.subscription?.subscription_status;
   return s !== "NONE" && s !== "REJECTED";
@@ -63,25 +68,20 @@ export type PostAuthPath =
   | "/"
   | "/onboarding"
   | "/onboarding/create-store"
-  | "/plan-not-active"
   | "/recover";
 
 /**
  * Where to send the user after login / 2FA, using server truth from auth/me/.
+ * Subscription status does not gate routing; inactive plans are surfaced in-dashboard only.
  */
 export function resolvePostAuthPath(me: MeForRouting): PostAuthPath {
-  if (!hasSubscriptionPlan(me)) {
-    return "/plan-not-active";
-  }
   if (me.active_store_public_id) {
     return "/";
   }
   if (me.has_recoverable_stores === true) {
     return "/recover";
   }
-  if (me.subscription?.subscription_status === "PENDING_REVIEW") {
-    return "/onboarding/create-store";
-  }
+  /** Dashboard is never gated by subscription; pending payment is surfaced in-app only. */
   return "/onboarding";
 }
 

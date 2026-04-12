@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { AlertTriangle } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import api from "@/lib/api";
 import { LoadingButton } from "@/components/ui/loading-button";
@@ -85,10 +84,6 @@ export default function SubscriptionExpirationBanner({
     <div className="border-b border-border bg-red-50 dark:bg-red-950">
       <div className="mx-auto flex w-full max-w-[88rem] flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 py-1 text-center md:gap-x-3 md:px-4 md:py-1">
         <div className="flex max-w-3xl flex-wrap items-center justify-center gap-1 sm:gap-1.5">
-          <AlertTriangle
-            className="size-3 shrink-0 text-red-600 dark:text-red-400 sm:size-3.5"
-            aria-hidden
-          />
           <p className="text-center text-[11px] leading-snug text-red-800 sm:text-xs dark:text-red-200">
             {variant === "grace" ? (
               <span className={cn("font-medium", numClass)}>

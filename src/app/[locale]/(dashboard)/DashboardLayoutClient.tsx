@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { History, Info } from "lucide-react";
+import { History } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { BrandingProvider } from "@/context/BrandingContext";
 import { SearchModalProvider } from "@/context/SearchModalContext";
@@ -17,9 +17,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { logout } from "@/lib/auth";
 import {
-  hasSubscriptionPlan,
-  subscriptionIsPaidPeriod,
-} from "@/lib/subscription-access";
+  hasVisitedPlans,
+  shouldOfferInitialPlanSelection,
+} from "@/lib/plans-onboarding";
+import { subscriptionIsPaidPeriod } from "@/lib/subscription-access";
+import { resolveSubscriptionUIStateFromMe } from "@/lib/subscription-ui-state";
 import SubscriptionAccessBlock from "@/components/auth/SubscriptionAccessBlock";
 import SubscriptionExpirationBanner from "@/components/auth/SubscriptionExpirationBanner";
 
@@ -46,6 +48,10 @@ export default function DashboardLayoutClient({
   const subscriptionBannerStackRef = useRef<HTMLDivElement>(null);
   const subscription =
     meProfileStatus === "ready" ? (meProfile?.subscription ?? null) : null;
+  const subscriptionUiState =
+    meProfileStatus === "ready" && meProfile
+      ? resolveSubscriptionUIStateFromMe(meProfile)
+      : null;
   /** Must match `resolvePostAuthPath` in subscription-access.ts (avoid / ↔ /onboarding / create-store loops). */
   const hasStoreContext =
     meProfileStatus === "ready" &&
@@ -57,21 +63,10 @@ export default function DashboardLayoutClient({
   const storeCount = hasStoreContext ? 1 : 0;
   const contentContainerClass = "mx-auto w-full max-w-[88rem] px-4 md:px-6 lg:px-8";
 
-  const subscriptionBannerVariant =
-    subscription?.subscription_status === "GRACE"
-      ? "grace"
-      : subscription?.subscription_status === "EXPIRED"
-        ? "expired"
-        : null;
-  const showSubscriptionBanner =
-    meProfileStatus === "ready" && subscriptionBannerVariant !== null;
-
-  const showPendingReviewBanner =
-    meProfileStatus === "ready" &&
-    subscription?.subscription_status === "PENDING_REVIEW";
-
   const showTopBannerStrip =
-    showSubscriptionBanner || showPendingReviewBanner;
+    meProfileStatus === "ready" &&
+    subscriptionUiState !== null &&
+    subscriptionUiState !== "none";
 
   const normalizedPlan = (subscription?.plan ?? "").toLowerCase();
   const isEligiblePlan =
@@ -113,15 +108,13 @@ export default function DashboardLayoutClient({
     router.replace("/recover");
   }, [shouldRedirectToRecover, router]);
 
-  const shouldRedirectToPlanFlow =
-    meProfileStatus === "ready" &&
-    meProfile !== null &&
-    !hasSubscriptionPlan(meProfile);
-
+  /** One-time: new store owners with no subscription row → /plans (flag prevents loops). */
   useEffect(() => {
-    if (!shouldRedirectToPlanFlow) return;
-    router.replace("/plan-not-active");
-  }, [shouldRedirectToPlanFlow, router]);
+    if (!meReady || !meProfile || pathname !== "/") return;
+    if (hasVisitedPlans()) return;
+    if (!shouldOfferInitialPlanSelection(meProfile)) return;
+    router.replace("/plans");
+  }, [meReady, meProfile, pathname, router]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -166,7 +159,7 @@ export default function DashboardLayoutClient({
     meProfileStatus === "loading" ||
     (meProfileStatus === "idle" && isAuthenticated);
 
-  if (authBlocking || shouldRedirectToOnboarding || shouldRedirectToRecover || shouldRedirectToPlanFlow) {
+  if (authBlocking || shouldRedirectToOnboarding || shouldRedirectToRecover) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -182,39 +175,77 @@ export default function DashboardLayoutClient({
     <BrandingProvider>
       <SearchModalProvider>
         <NotificationProvider>
-          {showTopBannerStrip && (
+          {showTopBannerStrip && subscriptionUiState ? (
             <div
               ref={subscriptionBannerStackRef}
               className="fixed inset-x-0 top-0 z-[60] flex flex-col"
             >
-              {showPendingReviewBanner ? (
+              {subscriptionUiState === "pending_review" ? (
                 <div
                   role="status"
                   className="border-b border-border bg-amber-50 dark:bg-amber-950"
                 >
                   <div className="mx-auto flex w-full max-w-[88rem] flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 py-1 text-center md:gap-x-3 md:px-4 md:py-1">
                     <div className="flex max-w-3xl flex-wrap items-center justify-center gap-1 sm:gap-1.5">
-                      <Info
-                        className="size-3 shrink-0 text-amber-700 dark:text-amber-300 sm:size-3.5"
-                        aria-hidden
-                      />
                       <p className="text-center text-[11px] leading-snug text-amber-900 sm:text-xs dark:text-amber-100">
-                        {tDashboardLayout("pendingReviewBannerText")}
+                        {meProfile?.latest_payment_status === "PENDING_REVIEW"
+                          ? tDashboardLayout("paymentPendingBannerText")
+                          : tDashboardLayout("pendingReviewBannerText")}
                       </p>
                     </div>
                   </div>
                 </div>
               ) : null}
-              {showSubscriptionBanner && subscriptionBannerVariant ? (
+              {subscriptionUiState === "grace" || subscriptionUiState === "expired" ? (
                 <SubscriptionExpirationBanner
-                  variant={subscriptionBannerVariant}
+                  variant={subscriptionUiState}
                   planPublicId={subscription?.plan_public_id ?? null}
                   storefrontBlocksAt={subscription?.storefront_blocks_at ?? null}
                   endDate={subscription?.end_date ?? null}
                 />
               ) : null}
+              {subscriptionUiState === "inactive" ? (
+                <div
+                  role="status"
+                  className="border-b border-border bg-amber-50 dark:bg-amber-950"
+                >
+                  <div className="mx-auto flex w-full max-w-[88rem] flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 py-1 text-center md:gap-x-3 md:px-4 md:py-1">
+                    <div className="flex max-w-3xl flex-wrap items-center justify-center gap-1 sm:gap-1.5">
+                      <p className="text-center text-[11px] leading-snug text-amber-900 sm:text-xs dark:text-amber-100">
+                        {tDashboardLayout("inactivePlanBannerText")}{" "}
+                        <Link
+                          href="/plans"
+                          className="font-medium underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-50"
+                        >
+                          {tDashboardLayout("inactivePlanBannerPlansLink")}
+                        </Link>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+              {subscriptionUiState === "rejected" ? (
+                <div
+                  role="status"
+                  className="border-b border-border bg-orange-50 dark:bg-orange-950"
+                >
+                  <div className="mx-auto flex w-full max-w-[88rem] flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 py-1 text-center md:gap-x-3 md:px-4 md:py-1">
+                    <div className="flex max-w-3xl flex-wrap items-center justify-center gap-1 sm:gap-1.5">
+                      <p className="text-center text-[11px] leading-snug text-orange-900 sm:text-xs dark:text-orange-100">
+                        {tDashboardLayout("rejectedPlanBannerText")}{" "}
+                        <Link
+                          href="/plans"
+                          className="font-medium underline underline-offset-2 hover:text-orange-950 dark:hover:text-orange-50"
+                        >
+                          {tDashboardLayout("rejectedPlanBannerPlansLink")}
+                        </Link>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
-          )}
+          ) : null}
 
           <div className="min-h-screen pt-[var(--subscription-banner-offset,0px)]">
             <SystemNotificationBanner

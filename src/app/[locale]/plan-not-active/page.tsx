@@ -7,9 +7,8 @@ import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import api from "@/lib/api";
 
 /**
- * Smart redirect hub for users without an active subscription.
- * - No pending payment  →  /plans  (select a plan)
- * - Pending payment exists  →  /checkout  (submit / review transaction)
+ * Legacy entry: send users to checkout if payment is pending, otherwise dashboard.
+ * Plan selection is a one-time / onboarding step from the dashboard, not a hard gate.
  */
 export default function PlanNotActivePage() {
   const router = useRouter();
@@ -31,12 +30,11 @@ export default function PlanNotActivePage() {
         if (data.pending) {
           router.replace("/checkout");
         } else {
-          router.replace("/plans");
+          router.replace("/");
         }
       } catch {
         if (!cancelled) {
-          // Fall back to plan selection on any API error.
-          router.replace("/plans");
+          router.replace("/");
         }
       }
     })();
