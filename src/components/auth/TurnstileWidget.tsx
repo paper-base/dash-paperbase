@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { isTurnstileDisabled } from "@/lib/turnstile-env";
 
@@ -22,6 +23,7 @@ declare global {
  * the node exists, which fails on client-rendered pages.
  */
 export function TurnstileWidget() {
+  const t = useTranslations("auth");
   const disabled = isTurnstileDisabled();
   const siteKey =
     process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "0x4AAAAAAC6DO_T68mWECpJd";
@@ -81,7 +83,10 @@ export function TurnstileWidget() {
   return (
     <>
       <input type="hidden" name="cf-turnstile-response" value={token} readOnly />
-      <div ref={containerRef} className="w-full min-h-[65px]" />
+      <div className="space-y-2">
+        <p className="text-left text-sm text-muted-foreground">{t("turnstileHumanPrompt")}</p>
+        <div ref={containerRef} className="w-full min-h-[65px]" />
+      </div>
     </>
   );
 }

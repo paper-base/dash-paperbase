@@ -768,6 +768,7 @@
     "chartCustomers": "গ্রাহক"
   },
   "auth": {
+    "turnstileHumanPrompt": "আমরা যাচাই করি আপনি একজন মানুষ",
     "turnstileRequired": "চালিয়ে যেতে আগে যাচাইকরণ সম্পূর্ণ করুন।",
     "login": {
       "title": "লগইন",

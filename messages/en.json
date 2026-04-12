@@ -768,6 +768,7 @@
     "chartCustomers": "Customers"
   },
   "auth": {
+    "turnstileHumanPrompt": "Let us verify you are a human",
     "turnstileRequired": "Please complete the verification challenge before continuing.",
     "login": {
       "title": "Login",
