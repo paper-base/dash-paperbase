@@ -14,6 +14,7 @@ import {
   Settings,
   LayoutGrid,
   Copy,
+  Check,
   Sun,
   Moon,
   Laptop,
@@ -720,7 +721,14 @@ function SidebarContent({
                   }}
                   className="text-[15px] font-medium"
                 >
-                  <Copy className="size-[1.125rem]" />
+                  {copiedStoreId === activeStoreId ? (
+                    <Check
+                      className="size-[1.125rem] text-emerald-600 animate-pulse"
+                      aria-hidden
+                    />
+                  ) : (
+                    <Copy className="size-[1.125rem]" aria-hidden />
+                  )}
                   <span>
                     {copiedStoreId === activeStoreId
                       ? tSidebar("storeIdCopied")

@@ -247,10 +247,8 @@ export default function StoreInfoSection({
           </div>
         </div>
 
-        {storeMessage && (
-          <p
-            className={storeMessage.type === "success" ? "text-sm text-green-600" : "text-sm text-destructive"}
-          >
+        {storeMessage?.type === "error" && (
+          <p className="text-sm text-destructive" role="alert">
             {storeMessage.text}
           </p>
         )}

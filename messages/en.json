@@ -964,7 +964,7 @@
       "contactEmail": "Contact email",
       "contactEmailPlaceholder": "contact@yourstore.com",
       "phone": "Phone number",
-      "phonePlaceholder": "+880 1XXX-XXXXXX",
+      "phonePlaceholder": "01XXXXXXXXX",
       "address": "Address",
       "addressPlaceholder": "123 Main St, City, Country",
       "socialHeading": "Social links",
@@ -1081,7 +1081,7 @@
     },
     "networking": {
       "heading": "Networking",
-      "subtitle": "Create API keys here to authenticate tenant API and WebSocket requests. Keys are not created automatically when you create a store.",
+      "subtitle": "Create API keys to authenticate storefront API requests and WebSocket connections for this store. Setting up a new store does not issue a key—you create keys here when you are ready to integrate.",
       "subscriptionExpiredNotice": "Your subscription has expired. Renew your plan to create new API keys and copy the storefront integration prompt.",
       "storeUnderReviewNotice": "Your store is under review. API key actions and the storefront integration prompt are disabled until your subscription is approved and the storefront goes live.",
       "apiBaseUrl": "API Base URL",

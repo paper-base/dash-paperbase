@@ -3,83 +3,6 @@
 /* Tailwind `dark:` follows html.dark (class strategy). */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ============================================
-   FONT FACES - Futura PT
-   ============================================ */
-@font-face {
-  font-family: 'Futura PT';
-  src: url('/assets/fonts/futura-pt/FuturaCyrillicLight.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Futura PT';
-  src: url('/assets/fonts/futura-pt/FuturaCyrillicBook.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Futura PT';
-  src: url('/assets/fonts/futura-pt/FuturaCyrillicMedium.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Futura PT';
-  src: url('/assets/fonts/futura-pt/FuturaCyrillicDemi.ttf') format('truetype');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Futura PT';
-  src: url('/assets/fonts/futura-pt/FuturaCyrillicBold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Futura PT';
-  src: url('/assets/fonts/futura-pt/FuturaCyrillicExtraBold.ttf') format('truetype');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Futura PT';
-  src: url('/assets/fonts/futura-pt/FuturaCyrillicHeavy.ttf') format('truetype');
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* U+003F (?): Futura PT renders poorly — use system UI for this code point only.
-   This family must appear before 'Futura PT' in stacks: unicode-range limits the
-   face to '?', so other characters still match Futura PT. */
-@font-face {
-  font-family: 'FuturaPTOverride';
-  src:
-    local("Segoe UI"),
-    local("Helvetica Neue"),
-    local("Roboto"),
-    local("Liberation Sans"),
-    local("DejaVu Sans"),
-    local("Arial");
-  unicode-range: U+003F;
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
 /* Bengali — add Ador Noirit files under public/fonts/bengali/ador-noirit/ansi-v2/ */
 @font-face {
   font-family: 'Ador Noirit';
@@ -93,7 +16,7 @@
 
 @layer base {
   :root {
-    /* Numeric UI (.font-numbers); faces from @fontsource/poppins in app/layout.tsx */
+    /* Primary UI + numeric faces from @fontsource/poppins in app/layout.tsx */
     --font-poppins: "Poppins";
 
     /* Subscription warning strip height (set from JS when expiring-soon); default 0 */
@@ -235,9 +158,9 @@
 }
 
 @theme inline {
-  /* Primary text: Futura PT; '?' uses FuturaPTOverride (see @font-face above). */
+  /* Primary text: Poppins (@fontsource in app/layout.tsx) */
   --font-family-sans:
-    'FuturaPTOverride', 'Futura PT', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    "Poppins", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-family-mono: ui-monospace, monospace;
 
   --color-background: hsl(var(--background));
@@ -280,7 +203,7 @@
 
 html[lang="bn"] {
   --font-family-sans:
-    'Ador Noirit', 'FuturaPTOverride', 'Futura PT', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    "Ador Noirit", "Poppins", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
 }
 

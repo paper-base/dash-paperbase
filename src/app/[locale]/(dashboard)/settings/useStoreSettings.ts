@@ -4,8 +4,8 @@ import { useState, useRef, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import api from "@/lib/api";
 import { defaultBranding } from "@/context/BrandingContext";
-import { useAutoExpire } from "@/hooks/useAutoExpire";
 import type { SettingsMessage } from "./useAccountSettings";
+import { notify } from "@/notifications";
 import { parseValidation, storeUpdateSchema } from "@/lib/validation";
 import {
   emptySocialLinks,
@@ -40,8 +40,6 @@ export function useStoreSettings({ onSaveSuccess }: UseStoreSettingsOptions = {}
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<SettingsMessage>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useAutoExpire(message, setMessage);
 
   function syncFromBranding(branding: {
     admin_name?: string;
@@ -118,7 +116,7 @@ export function useStoreSettings({ onSaveSuccess }: UseStoreSettingsOptions = {}
       setClearLogo(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
 
-      setMessage({ type: "success", text: t("store.saved") });
+      notify.success(t("store.saved"));
     } catch {
       setMessage({ type: "error", text: t("store.saveFailed") });
     } finally {

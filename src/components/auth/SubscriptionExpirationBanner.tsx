@@ -76,7 +76,7 @@ export default function SubscriptionExpirationBanner({
   }
 
   const payLinkClass = cn(
-    "h-auto min-h-0 shrink-0 bg-transparent px-0 py-0 text-[11px] font-medium text-red-800 underline underline-offset-2 shadow-none",
+    "h-auto min-h-0 shrink-0 bg-transparent px-0 py-0 text-[11px] leading-snug sm:text-xs font-medium text-red-800 underline underline-offset-2 shadow-none",
     "hover:bg-transparent hover:text-red-900 hover:underline",
     "dark:text-red-200 dark:hover:text-red-100"
   );
