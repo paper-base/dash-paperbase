@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Package, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClickableText } from "@/components/ui/clickable-text";
@@ -10,6 +10,8 @@ import { Select } from "@/components/ui/select";
 import type { OrderLineDisplayItem } from "@/lib/orders/editable-order-item";
 import { resolveOrderLineImageUrl } from "@/lib/orders/resolve-order-line-image";
 import type { ProductVariant } from "@/types";
+import { numberTextClass } from "@/lib/number-font";
+import { cn } from "@/lib/utils";
 
 export type LineItemEdit = {
   variant_public_id: string | null;
@@ -42,6 +44,8 @@ function OrderLineProductCardInner({
   onVariantFocus,
   onRemove,
 }: OrderLineProductCardProps) {
+  const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
   const isUnavailable =
@@ -191,16 +195,16 @@ function OrderLineProductCardInner({
                 min={1}
                 value={edit?.quantity ?? item.quantity}
                 onChange={onQuantityChange}
-                className="h-8 w-20 py-1 text-center"
+                className={cn("h-8 w-20 py-1 text-center", numClass)}
                 size="sm"
               />
             ) : (
-              <span className="tabular-nums text-foreground">{item.quantity}</span>
+              <span className={`${numClass} text-foreground`}>{item.quantity}</span>
             )}
           </div>
           <div className="flex w-full items-center justify-between gap-2">
             <span className="text-muted-foreground">{tPages("orderDetailUnitPrice")}</span>
-            <span className="tabular-nums font-medium text-foreground">
+            <span className={`${numClass} font-medium text-foreground`}>
               {currencySymbol}
               {displayListUnit.toLocaleString()}
             </span>
@@ -208,7 +212,7 @@ function OrderLineProductCardInner({
           {!editing && itemDiscount > 0 && (
             <div className="flex items-center justify-between gap-2">
               <span className="text-muted-foreground">{tPages("orderNewDiscount")}</span>
-              <span className="tabular-nums font-medium text-foreground">
+              <span className={`${numClass} font-medium text-foreground`}>
                 −{currencySymbol}
                 {itemDiscount.toLocaleString()}
               </span>

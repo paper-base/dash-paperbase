@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import type { AnalyticsBucket } from "@/hooks/useDashboardAnalytics";
+import { digitsInNumberFont } from "@/lib/number-font";
 import {
   dateRangeInputSchema,
   normalizeDateRange,
@@ -26,6 +28,8 @@ export default function DateRangeFilter({
   value,
   onChange,
 }: DateRangeFilterProps) {
+  const locale = useLocale();
+  const t = useTranslations("pages");
   const today = useMemo(() => new Date(), []);
 
   const setPreset = (preset: PresetKey) => {
@@ -96,49 +100,51 @@ export default function DateRangeFilter({
             variant={value.preset === "today" ? "default" : "outline"}
             onClick={() => setPreset("today")}
           >
-            Today
+            {digitsInNumberFont(t("filtersToday"), locale)}
           </Button>
           <Button
             size="sm"
             variant={value.preset === "last7" ? "default" : "outline"}
             onClick={() => setPreset("last7")}
           >
-            Last 7 days
+            {digitsInNumberFont(t("filtersLast7Days"), locale)}
           </Button>
           <Button
             size="sm"
             variant={value.preset === "last30" ? "default" : "outline"}
             onClick={() => setPreset("last30")}
           >
-            Last 30 days
+            {digitsInNumberFont(t("filtersLast30Days"), locale)}
           </Button>
           <Button
             size="sm"
             variant={value.preset === "thisMonth" ? "default" : "outline"}
             onClick={() => setPreset("thisMonth")}
           >
-            This month
+            {digitsInNumberFont(t("filtersThisMonth"), locale)}
           </Button>
         </div>
 
         <div className="flex flex-col gap-2 text-xs sm:flex-row sm:items-center sm:gap-3 sm:text-sm sm:flex-nowrap">
           <span className="text-muted-foreground whitespace-nowrap">
-            Custom range:
+            {t("filtersCustomRange")}
           </span>
           <Input
             type="text"
             inputMode="numeric"
-            placeholder="YYYY-MM-DD"
-            className="h-8 w-[120px] sm:w-[110px]"
+            placeholder={t("filtersDatePlaceholder")}
+            className="font-numbers-date-value h-8 w-[120px] sm:w-[110px]"
             value={value.startDate}
             onChange={(e) => handleDateInput("startDate", e.target.value)}
           />
-          <span className="text-muted-foreground whitespace-nowrap">to</span>
+          <span className="text-muted-foreground whitespace-nowrap">
+            {t("filtersDateRangeTo")}
+          </span>
           <Input
             type="text"
             inputMode="numeric"
-            placeholder="YYYY-MM-DD"
-            className="h-8 w-[120px] sm:w-[110px]"
+            placeholder={t("filtersDatePlaceholder")}
+            className="font-numbers-date-value h-8 w-[120px] sm:w-[110px]"
             value={value.endDate}
             onChange={(e) => handleDateInput("endDate", e.target.value)}
           />

@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Check } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { logout, getAccessToken } from "@/lib/auth";
 import api from "@/lib/api";
+import { numberTextClass } from "@/lib/number-font";
+import { cn } from "@/lib/utils";
 
 interface Plan {
   public_id: string;
@@ -25,6 +27,8 @@ type PageState = "loading" | "ready" | "error";
 type BillingCycle = "monthly" | "yearly";
 
 export default function PlansPage() {
+  const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const t = useTranslations("plansPage");
   const tCommon = useTranslations("common");
   const router = useRouter();
@@ -218,7 +222,7 @@ export default function PlansPage() {
                     </div>
 
                     <div className="mt-5 flex items-end gap-2">
-                      <p className="text-4xl font-semibold tracking-tight">
+                      <p className={cn("text-4xl font-semibold tracking-tight", numClass)}>
                         {formatPriceMonthlyEquivalent(selected)}
                       </p>
                       <p className="pb-1 text-sm text-muted-foreground">{t("perMonth")}</p>
@@ -226,7 +230,9 @@ export default function PlansPage() {
 
                     {showYearly ? (
                       <p className="mt-2 text-sm text-muted-foreground">
-                        {`Billed yearly (${formatYearlyTotal(selected.price)} total)`}
+                        {`Billed yearly (`}
+                        <span className={numClass}>{formatYearlyTotal(selected.price)}</span>
+                        {` total)`}
                       </p>
                     ) : (
                       <p className="mt-2 text-sm text-muted-foreground">
@@ -255,7 +261,7 @@ export default function PlansPage() {
                             </span>
                             <span className="min-w-0 leading-snug text-card-foreground">
                               {key.replace(/_/g, " ")}:{" "}
-                              <span className="font-medium">{val}</span>
+                              <span className={cn("font-medium", numClass)}>{val}</span>
                             </span>
                           </li>
                         ))}

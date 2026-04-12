@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingButton } from "@/components/ui/loading-button";
@@ -20,6 +20,8 @@ import {
 } from "@/lib/subscription-access";
 import { useRouter } from "@/i18n/navigation";
 import type { RecoverableStore } from "@/hooks/useRecoverableStores";
+import { numberTextClass } from "@/lib/number-font";
+import { cn } from "@/lib/utils";
 
 export default function RecoverStorePanel({
   stores,
@@ -30,6 +32,8 @@ export default function RecoverStorePanel({
   onRecovered: () => void;
   showHeader?: boolean;
 }) {
+  const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const t = useTranslations("settings");
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -226,7 +230,10 @@ export default function RecoverStorePanel({
                     onChange={(e) => setOwnerCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     maxLength={6}
                     placeholder="000000"
-                    className="text-center font-mono text-base tracking-[0.25em] tabular-nums placeholder:tracking-[0.25em] sm:text-lg"
+                    className={cn(
+                      "text-center text-base tracking-[0.25em] placeholder:tracking-[0.25em] sm:text-lg",
+                      numClass
+                    )}
                   />
                 </div>
                 {!singleChannel && (
@@ -243,7 +250,10 @@ export default function RecoverStorePanel({
                       onChange={(e) => setContactCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                       maxLength={6}
                       placeholder="000000"
-                      className="text-center font-mono text-base tracking-[0.25em] tabular-nums placeholder:tracking-[0.25em] sm:text-lg"
+                      className={cn(
+                        "text-center text-base tracking-[0.25em] placeholder:tracking-[0.25em] sm:text-lg",
+                        numClass
+                      )}
                     />
                   </div>
                 )}

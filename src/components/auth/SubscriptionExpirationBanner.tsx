@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { AlertTriangle } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import api from "@/lib/api";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { cn } from "@/lib/utils";
+import { numberTextClass } from "@/lib/number-font";
 import {
   formatTimeLeftHm,
   resolveStorefrontBlocksAtIso,
@@ -29,6 +30,8 @@ export default function SubscriptionExpirationBanner({
   storefrontBlocksAt,
   endDate,
 }: SubscriptionExpirationBannerProps) {
+  const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const t = useTranslations("dashboardLayout");
   const router = useRouter();
   const [payLoading, setPayLoading] = useState(false);
@@ -88,7 +91,7 @@ export default function SubscriptionExpirationBanner({
           />
           <p className="text-center text-[11px] leading-snug text-red-800 sm:text-xs dark:text-red-200">
             {variant === "grace" ? (
-              <span className="font-medium tabular-nums">
+              <span className={cn("font-medium", numClass)}>
                 {timeLeftHm != null
                   ? t("graceBannerText", { time: timeLeftHm })
                   : t("graceBannerTextNoTimer")}

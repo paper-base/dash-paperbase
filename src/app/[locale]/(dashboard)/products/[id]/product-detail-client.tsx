@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useParams, usePathname } from "next/navigation";
 import { Undo2, Plus, X } from "lucide-react";
@@ -27,6 +27,8 @@ import {
 import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
 import { useAdminDeleteCapabilities } from "@/hooks/useAdminDeleteCapabilities";
+import { numberTextClass } from "@/lib/number-font";
+import { cn } from "@/lib/utils";
 
 const MAX_IMAGES = MAX_PRODUCT_IMAGES;
 
@@ -80,6 +82,8 @@ export default function ProductDetailClient() {
 
   const { id: product_public_id } = useParams<{ locale: string; id: string }>();
   const router = useRouter();
+  const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
   const [product, setProduct] = useState<Product | null>(null);
@@ -611,7 +615,7 @@ export default function ProductDetailClient() {
                         setForm({ ...form, price: e.target.value })
                       }
                       placeholder="0.00"
-                      className={`font-numbers ${fieldControlClass}`}
+                      className={cn(numClass, fieldControlClass)}
                     />
                   </Field>
                   <Field label={tPages("productCompareAt")}>
@@ -623,7 +627,7 @@ export default function ProductDetailClient() {
                         setForm({ ...form, original_price: e.target.value })
                       }
                       placeholder={tCommon("optional")}
-                      className={`font-numbers ${fieldControlClass}`}
+                      className={cn(numClass, fieldControlClass)}
                     />
                   </Field>
                   <Field label={tPages("productStockInventoryDerived")}>
@@ -632,7 +636,7 @@ export default function ProductDetailClient() {
                       min={0}
                       value={form.stock}
                       readOnly
-                      className={`font-numbers ${fieldControlClass}`}
+                      className={cn(numClass, fieldControlClass)}
                       disabled
                       title={tPages("productStockManagedInventory")}
                     />
@@ -915,11 +919,11 @@ export default function ProductDetailClient() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-sm">
                   <div>
                     <p className="text-xs text-muted-foreground">{tPages("productBasePrice")}</p>
-                    <p className="font-numbers font-medium text-foreground">{product.price}</p>
+                    <p className={cn("font-medium text-foreground", numClass)}>{product.price}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">{tPages("productCompareAt")}</p>
-                    <p className="font-numbers text-foreground">
+                    <p className={cn("text-foreground", numClass)}>
                       {product.original_price?.trim() || "—"}
                     </p>
                   </div>
@@ -927,7 +931,7 @@ export default function ProductDetailClient() {
                     <p className="text-xs text-muted-foreground">
                       {tPages("productStockInventoryDerived")}
                     </p>
-                    <p className="font-numbers text-foreground">
+                    <p className={cn("text-foreground", numClass)}>
                       {product.available_quantity ?? product.total_stock ?? form.stock}
                     </p>
                   </div>

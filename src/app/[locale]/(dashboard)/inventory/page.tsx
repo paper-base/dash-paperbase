@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Undo2, AlertTriangle } from "lucide-react";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
@@ -13,9 +13,13 @@ import { useFilters } from "@/hooks/useFilters";
 import api from "@/lib/api";
 import type { Inventory, PaginatedResponse } from "@/types";
 import { notify } from "@/notifications";
+import { numberTextClass } from "@/lib/number-font";
+import { cn } from "@/lib/utils";
 
 export default function InventoryPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const { page, filters, setFilter, setPage, clearFilters } = useFilters([
     "search",
@@ -214,10 +218,10 @@ export default function InventoryPage() {
                         ? inv.option_labels.join(" · ")
                         : "—"}
                     </td>
-                    <td className="px-4 py-3 text-right font-medium">
+                    <td className={cn("px-4 py-3 text-right font-medium", numClass)}>
                       {inv.quantity}
                     </td>
-                    <td className="px-4 py-3 text-right text-muted-foreground">
+                    <td className={cn("px-4 py-3 text-right text-muted-foreground", numClass)}>
                       {inv.low_stock_threshold}
                     </td>
                     <td className="px-4 py-3">
@@ -232,7 +236,7 @@ export default function InventoryPage() {
                             }))
                           }
                           placeholder={tPages("inventoryAdjustPlaceholder")}
-                          className="w-20 px-2 py-1 text-right text-sm"
+                          className={cn("w-20 px-2 py-1 text-right text-sm", numClass)}
                           size="sm"
                         />
                         <button

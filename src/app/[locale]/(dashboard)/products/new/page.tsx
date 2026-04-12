@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { Undo2, Check, Plus, X } from "lucide-react";
 import api from "@/lib/api";
@@ -23,11 +23,15 @@ import {
   validateRequiredExtraFields,
 } from "@/lib/validation";
 import { notify } from "@/notifications";
+import { numberTextClass } from "@/lib/number-font";
+import { cn } from "@/lib/utils";
 
 const MAX_IMAGES = MAX_PRODUCT_IMAGES;
 
 export default function NewProductPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
   const [categoryTree, setCategoryTree] = useState<AdminCategoryTreeNode[]>([]);
@@ -333,7 +337,7 @@ export default function NewProductPage() {
                       setForm({ ...form, price: e.target.value })
                     }
                     placeholder="0.00"
-                    className={`font-numbers ${fieldControlClass}`}
+                    className={cn(numClass, fieldControlClass)}
                   />
                 </Field>
                 <Field label={tPages("productCompareAt")}>
@@ -345,7 +349,7 @@ export default function NewProductPage() {
                       setForm({ ...form, original_price: e.target.value })
                     }
                     placeholder={tCommon("optional")}
-                    className={`font-numbers ${fieldControlClass}`}
+                    className={cn(numClass, fieldControlClass)}
                   />
                 </Field>
                 <Field label={tPages("productStock")}>
@@ -356,7 +360,7 @@ export default function NewProductPage() {
                     onChange={(e) =>
                       setForm({ ...form, stock: e.target.value })
                     }
-                    className={`font-numbers ${fieldControlClass}`}
+                    className={cn(numClass, fieldControlClass)}
                     disabled
                     title={tPages("productStockNewTitle")}
                   />

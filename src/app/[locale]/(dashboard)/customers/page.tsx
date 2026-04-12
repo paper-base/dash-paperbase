@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { toLocaleDigits } from "@/lib/locale-digits";
+import { digitsInNumberFont, numberTextClass } from "@/lib/number-font";
 import { Undo2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { FilterBar } from "@/components/filters/FilterBar";
@@ -27,6 +28,7 @@ function customerTotalSpentDisplay(c: Customer): string {
 export default function CustomersPage() {
   const router = useRouter();
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tNav = useTranslations("nav");
   const tPages = useTranslations("pages");
   const { page, filters, setFilter, setPage, clearFilters } = useFilters([
@@ -86,7 +88,8 @@ export default function CustomersPage() {
         </div>
         <div>
           <h1 className="text-2xl font-medium leading-relaxed text-foreground">
-            {tNav("customers")} ({toLocaleDigits(String(count), locale)})
+            {tNav("customers")} (
+            <span className={numClass}>{toLocaleDigits(String(count), locale)}</span>)
           </h1>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground md:hidden">
             {tPages("customersSubtitle")}
@@ -105,8 +108,22 @@ export default function CustomersPage() {
           placeholder={tPages("filtersJoinedDate")}
           options={[
             { value: "today", label: tPages("filtersToday") },
-            { value: "last_7_days", label: tPages("filtersLast7Days") },
-            { value: "last_30_days", label: tPages("filtersLast30Days") },
+            {
+              value: "last_7_days",
+              label: tPages("filtersLast7Days"),
+              labelDisplay: digitsInNumberFont(
+                tPages("filtersLast7Days"),
+                locale
+              ),
+            },
+            {
+              value: "last_30_days",
+              label: tPages("filtersLast30Days"),
+              labelDisplay: digitsInNumberFont(
+                tPages("filtersLast30Days"),
+                locale
+              ),
+            },
           ]}
         />
         <Input
@@ -169,10 +186,10 @@ export default function CustomersPage() {
                         <td className="px-4 py-3 text-muted-foreground">
                           {c.phone || "—"}
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground">
+                        <td className={`px-4 py-3 text-muted-foreground ${numClass}`}>
                           {c.total_orders ?? 0}
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground">
+                        <td className={`px-4 py-3 text-muted-foreground ${numClass}`}>
                           {customerTotalSpentDisplay(c)}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
@@ -197,7 +214,7 @@ export default function CustomersPage() {
               >
                 {tPages("supportTicketsPrevious")}
               </button>
-              <span className="text-sm text-muted-foreground">
+              <span className={`text-sm text-muted-foreground ${numClass}`}>
                 {tPages("supportTicketsPageLabel", {
                   page: toLocaleDigits(String(page), locale),
                 })}

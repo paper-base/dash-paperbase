@@ -50,7 +50,9 @@ import {
   splitShippingAddressForForm,
 } from "@/lib/orders/shipping-address-parts";
 import { formatDashboardDateTime } from "@/lib/datetime-display";
+import { numberTextClass } from "@/lib/number-font";
 import { notify, normalizeError } from "@/notifications";
+import { cn } from "@/lib/utils";
 
 type EditForm = {
   shipping_name: string;
@@ -67,6 +69,7 @@ export default function OrderDetailPage() {
   const { id: order_public_id } = useParams<{ locale: string; id: string }>();
   const router = useRouter();
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const tNav = useTranslations("nav");
   const tCommon = useTranslations("common");
@@ -508,7 +511,12 @@ export default function OrderDetailPage() {
                 <Undo2 className="size-4" />
               </Button>
             </div>
-            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+            <h1
+              className={cn(
+                "text-xl font-semibold tracking-tight text-foreground sm:text-2xl",
+                numClass
+              )}
+            >
               #S-{order.order_number}
             </h1>
           </div>
@@ -521,7 +529,7 @@ export default function OrderDetailPage() {
               {tNav("orders")}
             </ClickableText>
             <span aria-hidden>/</span>
-            <span>
+            <span className={numClass}>
               S-{order.order_number} – {orderDateFormatted}
             </span>
           </nav>
@@ -675,14 +683,14 @@ export default function OrderDetailPage() {
               <dl className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">{tPages("orderDetailSubtotalBeforeDiscount")}</dt>
-                  <dd>
+                  <dd className={numClass}>
                     {currencySymbol}
                     {savedSubtotalBefore.toLocaleString()}
                   </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">{tPages("orderDetailDiscount")}</dt>
-                  <dd className={savedDiscountTotal ? "text-foreground" : undefined}>
+                  <dd className={cn(numClass, savedDiscountTotal && "text-foreground")}>
                     {savedDiscountTotal
                       ? `-${currencySymbol}${savedDiscountTotal.toLocaleString()}`
                       : "—"}
@@ -690,14 +698,14 @@ export default function OrderDetailPage() {
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">{tPages("orderDetailSubtotalAfterDiscount")}</dt>
-                  <dd>
+                  <dd className={numClass}>
                     {currencySymbol}
                     {savedSubtotalAfter.toLocaleString()}
                   </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">{tPages("orderDetailShippingCost")}</dt>
-                  <dd>
+                  <dd className={numClass}>
                     {shippingCostNum
                       ? `${currencySymbol}${shippingCostNum.toLocaleString()}`
                       : "—"}
@@ -713,7 +721,7 @@ export default function OrderDetailPage() {
                 </div>
                 <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
                   <dt>{tPages("orderDetailTotal")}</dt>
-                  <dd>
+                  <dd className={numClass}>
                     {currencySymbol}
                     {savedTotalNum.toLocaleString()}
                   </dd>
@@ -729,14 +737,14 @@ export default function OrderDetailPage() {
                   <dl className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">{tPages("orderDetailSubtotalBeforeDiscount")}</dt>
-                      <dd>
+                      <dd className={numClass}>
                         {currencySymbol}
                         {savedSubtotalBefore.toLocaleString()}
                       </dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">{tPages("orderDetailDiscount")}</dt>
-                      <dd className={savedDiscountTotal ? "text-foreground" : undefined}>
+                      <dd className={cn(numClass, savedDiscountTotal && "text-foreground")}>
                         {savedDiscountTotal
                           ? `-${currencySymbol}${savedDiscountTotal.toLocaleString()}`
                           : "—"}
@@ -744,14 +752,14 @@ export default function OrderDetailPage() {
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">{tPages("orderDetailSubtotalAfterDiscount")}</dt>
-                      <dd>
+                      <dd className={numClass}>
                         {currencySymbol}
                         {savedSubtotalAfter.toLocaleString()}
                       </dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">{tPages("orderDetailShippingCost")}</dt>
-                      <dd>
+                      <dd className={numClass}>
                         {shippingCostNum
                           ? `${currencySymbol}${shippingCostNum.toLocaleString()}`
                           : "—"}
@@ -759,7 +767,7 @@ export default function OrderDetailPage() {
                     </div>
                     <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
                       <dt>{tPages("orderDetailTotal")}</dt>
-                      <dd>
+                      <dd className={numClass}>
                         {currencySymbol}
                         {savedTotalNum.toLocaleString()}
                       </dd>
@@ -774,14 +782,14 @@ export default function OrderDetailPage() {
                     <dl className="space-y-3 text-sm">
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">{tPages("orderDetailSubtotalBeforeDiscount")}</dt>
-                        <dd>
+                        <dd className={numClass}>
                           {currencySymbol}
                           {Number(pricingPreview.subtotal_before_discount).toLocaleString()}
                         </dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">{tPages("orderDetailDiscount")}</dt>
-                        <dd>
+                        <dd className={numClass}>
                           {Number(pricingPreview.discount_total) > 0
                             ? `-${currencySymbol}${Number(pricingPreview.discount_total).toLocaleString()}`
                             : "—"}
@@ -789,14 +797,14 @@ export default function OrderDetailPage() {
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">{tPages("orderDetailSubtotalAfterDiscount")}</dt>
-                        <dd>
+                        <dd className={numClass}>
                           {currencySymbol}
                           {Number(pricingPreview.subtotal_after_discount).toLocaleString()}
                         </dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">{tPages("orderDetailShippingCost")}</dt>
-                        <dd>
+                        <dd className={numClass}>
                           {Number(pricingPreview.shipping_cost) > 0
                             ? `${currencySymbol}${Number(pricingPreview.shipping_cost).toLocaleString()}`
                             : "—"}
@@ -804,7 +812,7 @@ export default function OrderDetailPage() {
                       </div>
                       <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
                         <dt>{tPages("orderDetailTotal")}</dt>
-                        <dd>
+                        <dd className={numClass}>
                           {currencySymbol}
                           {Number(pricingPreview.total).toLocaleString()}
                         </dd>
@@ -888,7 +896,7 @@ export default function OrderDetailPage() {
                   <Input
                     value={order.order_number}
                     readOnly
-                    className="bg-muted/50"
+                    className={cn("bg-muted/50", numClass)}
                   />
                 </div>
                 <div>

@@ -26,6 +26,8 @@ import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
 import { PLACEMENT_OPTIONS } from "@/components/preview-system/placementConfig";
 import { MiniSitePreview } from "@/components/preview-system/MiniSitePreview";
+import { numberTextClass } from "@/lib/number-font";
+import { cn } from "@/lib/utils";
 
 const ALLOWED_PLACEMENTS = new Set([
   "home_top",
@@ -66,6 +68,7 @@ type PlacementItem = { value: string; label: string };
 export default function BannersPage() {
   const router = useRouter();
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
   const confirm = useConfirm();
@@ -360,7 +363,7 @@ export default function BannersPage() {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, start_at: e.target.value }))
                 }
-                className="text-sm font-numbers"
+                className={cn("text-sm", numClass)}
               />
             </div>
             <div>
@@ -373,7 +376,7 @@ export default function BannersPage() {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, end_at: e.target.value }))
                 }
-                className="text-sm font-numbers"
+                className={cn("text-sm", numClass)}
               />
             </div>
             <div className="sm:col-span-2">

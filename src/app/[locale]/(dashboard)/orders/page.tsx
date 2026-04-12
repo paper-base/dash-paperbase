@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { toLocaleDigits } from "@/lib/locale-digits";
+import { digitsInNumberFont, numberTextClass } from "@/lib/number-font";
 import { Truck, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
@@ -34,6 +35,7 @@ function courierCell(order: Order): string {
 export default function OrdersPage() {
   const router = useRouter();
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tNav = useTranslations("nav");
   const tPages = useTranslations("pages");
   const { currencySymbol } = useBranding();
@@ -215,7 +217,8 @@ export default function OrdersPage() {
             </button>
           </div>
           <h1 className="text-2xl font-medium leading-relaxed text-foreground">
-            {tNav("orders")} ({toLocaleDigits(String(count), locale)})
+            {tNav("orders")} (
+            <span className={numClass}>{toLocaleDigits(String(count), locale)}</span>)
           </h1>
         </div>
         <div className="flex items-center gap-2">
@@ -258,8 +261,22 @@ export default function OrdersPage() {
           placeholder={tPages("filtersDateRange")}
           options={[
             { value: "today", label: tPages("filtersToday") },
-            { value: "last_7_days", label: tPages("filtersLast7Days") },
-            { value: "last_30_days", label: tPages("filtersLast30Days") },
+            {
+              value: "last_7_days",
+              label: tPages("filtersLast7Days"),
+              labelDisplay: digitsInNumberFont(
+                tPages("filtersLast7Days"),
+                locale
+              ),
+            },
+            {
+              value: "last_30_days",
+              label: tPages("filtersLast30Days"),
+              labelDisplay: digitsInNumberFont(
+                tPages("filtersLast30Days"),
+                locale
+              ),
+            },
           ]}
         />
         <Input
@@ -326,7 +343,7 @@ export default function OrdersPage() {
                         })}
                       />
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap font-medium text-foreground">
+                    <td className={`px-4 py-3 whitespace-nowrap font-medium text-foreground ${numClass}`}>
                       {order.order_number}
                     </td>
                     <td className="px-4 py-3 text-foreground whitespace-nowrap">
@@ -378,10 +395,11 @@ export default function OrdersPage() {
                         ) : null}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-foreground whitespace-nowrap">
-                      {currencySymbol}{Number(order.total).toLocaleString()}
+                    <td className={`px-4 py-3 whitespace-nowrap text-foreground ${numClass}`}>
+                      {currencySymbol}
+                      {Number(order.total).toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap max-w-[220px]">
+                    <td className={`px-4 py-3 text-muted-foreground whitespace-nowrap max-w-[220px] ${numClass}`}>
                       {order.status === "confirmed" && !order.sent_to_courier ? (
                         <Button
                           type="button"

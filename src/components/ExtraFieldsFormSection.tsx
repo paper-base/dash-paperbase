@@ -1,9 +1,11 @@
 "use client";
 
+import { useLocale } from "next-intl";
 import { useExtraFieldsSchema } from "@/hooks/useExtraFieldsSchema";
 import type { ExtraFieldEntityType, ExtraFieldValues } from "@/types/extra-fields";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { numberTextClass } from "@/lib/number-font";
 import { cn } from "@/lib/utils";
 
 const fieldControlClass = "w-full rounded-card bg-muted/50";
@@ -44,6 +46,8 @@ export function ExtraFieldsFormSection({
   onChange: (values: ExtraFieldValues) => void;
   errors?: Record<string, string>;
 }) {
+  const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const { schema } = useExtraFieldsSchema(entityType);
 
   const sortedSchema = [...schema]
@@ -92,10 +96,7 @@ export function ExtraFieldsFormSection({
                   handleChange(field.name, v === "" ? "" : Number(v));
                 }}
                 placeholder={field.defaultValue ?? ""}
-                className={cn(
-                  fieldControlClass,
-                  error && "border-destructive font-numbers"
-                )}
+                className={cn(fieldControlClass, numClass, error && "border-destructive")}
               />
             )}
             {field.fieldType === "boolean" && (

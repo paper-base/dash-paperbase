@@ -9,6 +9,7 @@ import api from "@/lib/api";
 import type { CustomerDetailsResponse } from "@/types";
 import { formatDashboardDateTime } from "@/lib/datetime-display";
 import { Button } from "@/components/ui/button";
+import { numberTextClass } from "@/lib/number-font";
 
 function asCurrency(value: string | number) {
   const number = Number(value ?? "0");
@@ -18,6 +19,7 @@ function asCurrency(value: string | number) {
 
 export default function CustomerDetailPage() {
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
   const router = useRouter();
@@ -87,13 +89,17 @@ export default function CustomerDetailPage() {
           <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-card border border-dashed border-card-border bg-card p-4">
               <p className="text-sm text-muted-foreground">{tPages("customerDetailsTotalOrders")}</p>
-              <p className="mt-1 text-2xl font-semibold">{data.analytics.total_orders}</p>
+              <p className={`mt-1 text-2xl font-semibold ${numClass}`}>
+                {data.analytics.total_orders}
+              </p>
             </div>
             <div
               className="rounded-card border border-dashed border-card-border bg-card p-4"
             >
               <p className="text-sm text-muted-foreground">{tPages("customerDetailsTotalSpent")}</p>
-              <p className="mt-1 text-2xl font-semibold">{asCurrency(data.analytics.total_spent)}</p>
+              <p className={`mt-1 text-2xl font-semibold ${numClass}`}>
+                {asCurrency(data.analytics.total_spent)}
+              </p>
             </div>
             <div className="rounded-card border border-dashed border-card-border bg-card p-4">
               <p className="text-sm text-muted-foreground">{tPages("customerDetailsFirstOrderDate")}</p>
@@ -119,7 +125,7 @@ export default function CustomerDetailPage() {
             </div>
             <div className="rounded-card border border-dashed border-card-border bg-card p-4">
               <p className="text-sm text-muted-foreground">{tPages("customerDetailsAvgOrderIntervalDays")}</p>
-              <p className="mt-1 text-2xl font-semibold">
+              <p className={`mt-1 text-2xl font-semibold ${numClass}`}>
                 {data.analytics.avg_order_interval_days == null
                   ? "—"
                   : asCurrency(data.analytics.avg_order_interval_days)}

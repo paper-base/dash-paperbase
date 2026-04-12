@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import { cookies, headers } from "next/headers";
 import Script from "next/script";
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/500.css";
+import "@fontsource/poppins/600.css";
+import "@fontsource/poppins/700.css";
 import "./globals.css";
 import { isTurnstileDisabled } from "@/lib/turnstile-env";
 import { CORE_THEME_COOKIE_KEY } from "@/lib/theme";

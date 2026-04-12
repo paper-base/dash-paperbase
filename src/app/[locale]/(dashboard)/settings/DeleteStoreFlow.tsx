@@ -20,6 +20,7 @@ import { translateDeletionStep } from "./deletionStepLabels";
 import type { DeleteModalStep } from "./useDeleteStore";
 import { useAuth } from "@/context/AuthContext";
 import { formatDashboardDateTimeWithSeconds } from "@/lib/datetime-display";
+import { numberTextClass } from "@/lib/number-font";
 
 type DeleteStatus = {
   status: string;
@@ -78,6 +79,7 @@ export default function DeleteStoreFlow({
   onCloseDeletion: () => void;
 }) {
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const t = useTranslations("settings");
   const { logout } = useAuth();
   function handleDialogOpenChange(next: boolean) {
@@ -176,7 +178,10 @@ export default function DeleteStoreFlow({
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   maxLength={6}
-                  className="h-9 text-center font-mono text-base tracking-widest sm:h-10 sm:text-lg"
+                  className={cn(
+                    "h-9 text-center text-base tracking-widest sm:h-10 sm:text-lg",
+                    numClass
+                  )}
                   value={otpCode}
                   onChange={(e) => onOtpCodeChange(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   disabled={deleteRequestSubmitting}
@@ -313,7 +318,7 @@ export default function DeleteStoreFlow({
                       {t("deleteFlow.scheduledBody")}
                     </p>
                     {deleteStatus.scheduled_delete_at ? (
-                      <p className="mt-2 font-numbers text-base font-semibold text-foreground">
+                      <p className={cn("mt-2 text-base font-semibold text-foreground", numClass)}>
                         {formatDashboardDateTimeWithSeconds(
                           deleteStatus.scheduled_delete_at,
                           locale

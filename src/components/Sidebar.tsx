@@ -50,6 +50,7 @@ import {
   MORE_APP_IDS,
   type NavCounts,
 } from "@/config/apps";
+import { numberTextClass } from "@/lib/number-font";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
@@ -107,6 +108,7 @@ function SidebarContent({
   const tCommon = useTranslations("common");
   const tLang = useTranslations("language");
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const pathname = usePathname();
   const router = useRouter();
   const { logout, isAuthenticated, meProfile, meProfileStatus } = useAuth();
@@ -439,7 +441,12 @@ function SidebarContent({
                             {app.countKey &&
                               counts != null &&
                               counts[app.countKey] > 0 && (
-                                <Badge className="h-5 min-w-5 rounded-full border-0 bg-primary/15 px-1.5 text-xs font-medium text-primary">
+                                <Badge
+                                  className={cn(
+                                    "h-5 min-w-5 rounded-full border-0 bg-primary/15 px-1.5 text-xs font-medium text-primary",
+                                    numClass
+                                  )}
+                                >
                                   {formatCount(counts[app.countKey])}
                                 </Badge>
                               )}
@@ -480,7 +487,10 @@ function SidebarContent({
                     counts != null &&
                     counts[app.countKey] > 0 && (
                       <Badge
-                        className="h-5 min-w-5 rounded-full border-0 bg-primary/15 px-1.5 text-xs font-medium text-primary"
+                        className={cn(
+                          "h-5 min-w-5 rounded-full border-0 bg-primary/15 px-1.5 text-xs font-medium text-primary",
+                          numClass
+                        )}
                       >
                         {formatCount(counts[app.countKey])}
                       </Badge>
@@ -551,7 +561,12 @@ function SidebarContent({
                       {app.countKey &&
                         counts != null &&
                         counts[app.countKey] > 0 && (
-                          <Badge className="h-5 min-w-5 rounded-full border-0 bg-primary/15 px-1.5 text-xs font-medium text-primary">
+                          <Badge
+                            className={cn(
+                              "h-5 min-w-5 rounded-full border-0 bg-primary/15 px-1.5 text-xs font-medium text-primary",
+                              numClass
+                            )}
+                          >
                             {formatCount(counts[app.countKey])}
                           </Badge>
                         )}

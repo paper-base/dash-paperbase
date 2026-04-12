@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useMemo } from "react";
 import {
   Combobox,
@@ -7,13 +8,19 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox";
 
-type FilterOption = {
+export type FilterOption = {
   value: string;
   label: string;
+  /** When set, list rows use this for display; combobox input still uses `label` (plain string). */
+  labelDisplay?: ReactNode;
 };
 
-/** Base UI Combobox shows the item *value* in the input for string items; use `{ value, label }` so the label is displayed. */
-type ComboItem = { value: string; label: string };
+/** Internal item: `labelText` drives filtering + input text; `labelDisplay` is optional rich list content. */
+type ComboItem = {
+  value: string;
+  labelText: string;
+  labelDisplay: ReactNode;
+};
 
 function selectedComboItem(
   value: string | undefined,
@@ -22,8 +29,14 @@ function selectedComboItem(
   const v = (value || "").trim();
   if (!v) return null;
   const found = options.find((o) => o.value === v);
-  if (found) return { value: found.value, label: found.label };
-  return { value: v, label: v };
+  if (found) {
+    return {
+      value: found.value,
+      labelText: found.label,
+      labelDisplay: found.labelDisplay ?? found.label,
+    };
+  }
+  return { value: v, labelText: v, labelDisplay: v };
 }
 
 export function FilterDropdown({
@@ -42,7 +55,11 @@ export function FilterDropdown({
   disabled?: boolean;
 }) {
   const emptyItem = useMemo(
-    (): ComboItem => ({ value: "", label: placeholder }),
+    (): ComboItem => ({
+      value: "",
+      labelText: placeholder,
+      labelDisplay: placeholder,
+    }),
     [placeholder]
   );
 
@@ -60,6 +77,7 @@ export function FilterDropdown({
         onChange(next.value);
       }}
       isItemEqualToValue={(a, b) => a.value === b.value}
+      itemToStringLabel={(item) => item?.labelText ?? ""}
     >
       <ComboboxInput
         disabled={disabled}
@@ -74,10 +92,14 @@ export function FilterDropdown({
             <span className="text-xs font-medium">{placeholder}</span>
           </ComboboxItem>
           {options.map((option) => {
-            const item: ComboItem = { value: option.value, label: option.label };
+            const item: ComboItem = {
+              value: option.value,
+              labelText: option.label,
+              labelDisplay: option.labelDisplay ?? option.label,
+            };
             return (
               <ComboboxItem key={option.value} value={item}>
-                <span className="text-xs font-medium">{option.label}</span>
+                <span className="text-xs font-medium">{item.labelDisplay}</span>
               </ComboboxItem>
             );
           })}

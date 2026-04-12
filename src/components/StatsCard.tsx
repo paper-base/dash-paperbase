@@ -27,7 +27,7 @@ export default function StatsCard({
         {title}
       </p>
       <p
-        className={`mt-2 text-3xl font-bold tabular-nums ${numberFont === "sans" ? "font-sans" : "font-mono"} ${ACCENT_CLASSES[accent]}`}
+        className={`mt-2 text-3xl font-bold ${numberFont === "sans" ? "font-sans tabular-nums" : "font-numbers"} ${ACCENT_CLASSES[accent]}`}
       >
         {value}
       </p>

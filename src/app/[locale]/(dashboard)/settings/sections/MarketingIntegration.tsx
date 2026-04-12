@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { formatDashboardDate } from "@/lib/datetime-display";
 import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
+import { numberTextClass } from "@/lib/number-font";
 import { SettingsActionDialog } from "@/components/settings/SettingsActionDialog";
 import { settingsInvertedButtonClassName } from "../SettingsSectionBody";
 
@@ -46,6 +47,7 @@ type MarketingModal =
 
 export default function MarketingIntegration() {
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const t = useTranslations("settings");
   const confirm = useConfirm();
   const [integrations, setIntegrations] = useState<MarketingIntegrationType[]>([]);
@@ -424,7 +426,7 @@ export default function MarketingIntegration() {
                   <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
                     <span>
                       {t("marketing.pixelLabel")}{" "}
-                      <code className="font-mono">{integration.pixel_id || "---"}</code>
+                      <code className={numClass}>{integration.pixel_id || "---"}</code>
                     </span>
                     <span>
                       {t("marketing.tokenLabel")}{" "}
@@ -433,7 +435,7 @@ export default function MarketingIntegration() {
                     {integration.test_event_code ? (
                       <span>
                         {t("marketing.testCodeLabel")}{" "}
-                        <code className="font-mono">{integration.test_event_code}</code>
+                        <code className={numClass}>{integration.test_event_code}</code>
                       </span>
                     ) : null}
                     <span>

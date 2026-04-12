@@ -26,12 +26,15 @@ import { useFilters } from "@/hooks/useFilters";
 import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
 import { useAdminDeleteCapabilities } from "@/hooks/useAdminDeleteCapabilities";
+import { numberTextClass } from "@/lib/number-font";
+import { cn } from "@/lib/utils";
 
 type CategoryOption = { value: string; label: string };
 
 export default function ProductsPage() {
   const router = useRouter();
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tNav = useTranslations("nav");
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
@@ -411,18 +414,21 @@ export default function ProductsPage() {
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {product.category_name ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-foreground whitespace-nowrap">
-                      {currencySymbol}{Number(product.price).toLocaleString()}
+                    <td className={cn("px-4 py-3 whitespace-nowrap text-foreground", numClass)}>
+                      {currencySymbol}
+                      {Number(product.price).toLocaleString()}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       {product.variant_count && product.variant_count > 0 ? (
                         <div className="flex flex-col gap-0.5">
                           <span
-                            className={`font-numbers text-sm font-medium ${
+                            className={cn(
+                              "text-sm font-medium",
+                              numClass,
                               (product.total_stock ?? 0) === 0
                                 ? "text-destructive"
                                 : "text-foreground"
-                            }`}
+                            )}
                           >
                             {product.total_stock ?? product.available_quantity ?? 0}
                           </span>
@@ -441,11 +447,13 @@ export default function ProductsPage() {
                         </div>
                       ) : (
                         <span
-                          className={`font-numbers text-sm font-medium ${
+                          className={cn(
+                            "text-sm font-medium",
+                            numClass,
                             (product.total_stock ?? product.available_quantity ?? 0) === 0
                               ? "text-destructive"
                               : "text-foreground"
-                          }`}
+                          )}
                           title={tPages(
                             "productsListStockManagedFromInventoryTitle"
                           )}

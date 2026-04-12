@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Dialog } from "radix-ui";
 import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types";
+import { numberTextClass } from "@/lib/number-font";
 
 export type ProductSearchBarProps = {
   value: string;
@@ -30,6 +31,8 @@ export function ProductSearchBar({
   onSelectProduct,
   onDismissResults,
 }: ProductSearchBarProps) {
+  const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const [open, setOpen] = useState(false);
 
@@ -138,7 +141,7 @@ export function ProductSearchBar({
                       onClick={() => handleSelectProduct(product)}
                     >
                       <span className="truncate text-foreground">{product.name}</span>
-                      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                      <span className={`shrink-0 text-xs text-muted-foreground ${numClass}`}>
                         {currencySymbol}
                         {Number(product.price).toLocaleString()}
                       </span>

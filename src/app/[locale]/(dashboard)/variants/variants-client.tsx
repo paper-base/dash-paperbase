@@ -8,7 +8,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { Plus, Undo2 } from "lucide-react";
@@ -30,6 +30,7 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useFilters } from "@/hooks/useFilters";
 import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify, normalizeError } from "@/notifications";
+import { numberTextClass } from "@/lib/number-font";
 import { cn } from "@/lib/utils";
 
 async function fetchAllProducts(): Promise<Product[]> {
@@ -103,6 +104,8 @@ function unlockDocumentScroll() {
 }
 
 export default function VariantsPageClient() {
+  const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
   const confirm = useConfirm();
@@ -470,7 +473,7 @@ export default function VariantsPageClient() {
       {selectedProduct ? (
         <p className="text-xs text-muted-foreground">
           {tPages("variantsBasePrice")}{" "}
-          <span className="font-numbers text-foreground">{selectedProduct.price}</span>
+          <span className={cn("text-foreground", numClass)}>{selectedProduct.price}</span>
           {selectedProduct.variant_count != null ? (
             <> {tPages("variantsVariantCount", { count: selectedProduct.variant_count })}</>
           ) : null}
@@ -506,7 +509,9 @@ export default function VariantsPageClient() {
                           {tPages("variantsSkuPlaceholder")}
                         </p>
                       ) : (
-                        <p className="font-mono text-sm text-foreground">{editingVariantSku ?? "—"}</p>
+                        <p className={cn("text-sm text-foreground", numClass)}>
+                          {editingVariantSku ?? "—"}
+                        </p>
                       )}
                     </div>
                     <label className="flex flex-col gap-2">
@@ -516,7 +521,7 @@ export default function VariantsPageClient() {
                       <Input
                         type="number"
                         step="0.01"
-                        className="w-full max-w-xs font-numbers text-sm"
+                        className={cn("w-full max-w-xs text-sm", numClass)}
                         value={form.price_override}
                         onChange={(e) => setForm({ ...form, price_override: e.target.value })}
                         placeholder={tPages("variantsPriceOverridePlaceholder")}
@@ -630,11 +635,12 @@ export default function VariantsPageClient() {
                     >
                       <td className="px-4 py-3 font-medium text-foreground">
                         <span
-                          className={
+                          className={cn(
+                            numClass,
                             editing !== null
                               ? "max-w-full whitespace-nowrap opacity-50"
                               : "max-w-full whitespace-nowrap"
-                          }
+                          )}
                         >
                           {v.sku}
                         </span>
@@ -644,10 +650,10 @@ export default function VariantsPageClient() {
                           ? v.option_labels.join(" · ")
                           : "—"}
                       </td>
-                      <td className="px-4 py-3 font-numbers text-foreground">
+                      <td className={cn("px-4 py-3 text-foreground", numClass)}>
                         {v.price_override ?? selectedProduct?.price ?? "—"}
                       </td>
-                      <td className="px-4 py-3 font-numbers">{v.available_quantity}</td>
+                      <td className={cn("px-4 py-3", numClass)}>{v.available_quantity}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <Select
                           size="sm"

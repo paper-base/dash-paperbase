@@ -15,6 +15,7 @@ import {
 
 import type { DashboardAnalyticsPoint } from "@/hooks/useDashboardAnalytics";
 import { toLocaleDigits } from "@/lib/locale-digits";
+import { numberTextClass } from "@/lib/number-font";
 import { Card, CardContent } from "./ui/card";
 
 interface DashboardBarChartProps {
@@ -24,6 +25,7 @@ interface DashboardBarChartProps {
 export default function DashboardBarChart({ data }: DashboardBarChartProps) {
   const t = useTranslations("dashboard");
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
 
   const metrics = useMemo(
     () =>
@@ -93,7 +95,11 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
                 axisLine={false}
                 tickMargin={8}
                 minTickGap={24}
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                tick={{
+                  fill: "hsl(var(--muted-foreground))",
+                  fontSize: 11,
+                  className: numClass,
+                }}
                 tickFormatter={formatTick}
               />
               <YAxis
@@ -101,7 +107,11 @@ export default function DashboardBarChart({ data }: DashboardBarChartProps) {
                 axisLine={false}
                 tickMargin={8}
                 allowDecimals={false}
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                tick={{
+                  fill: "hsl(var(--muted-foreground))",
+                  fontSize: 11,
+                  className: numClass,
+                }}
                 tickFormatter={formatTick}
               />
               <Tooltip

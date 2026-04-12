@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { toLocaleDigits } from "@/lib/locale-digits";
+import { numberTextClass } from "@/lib/number-font";
 import { Undo2, Trash2 } from "lucide-react";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { useAdminDeleteCapabilities } from "@/hooks/useAdminDeleteCapabilities";
 
 export default function TrashPage() {
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const tNav = useTranslations("nav");
   const { canDelete, loading: capsLoading } = useAdminDeleteCapabilities();
@@ -349,7 +351,9 @@ export default function TrashPage() {
                       >
                         {displayName || "—"}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 align-middle font-mono text-xs text-muted-foreground">
+                      <td
+                        className={`whitespace-nowrap px-3 py-3 align-middle text-xs text-muted-foreground ${numClass}`}
+                      >
                         {pub || "—"}
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 align-middle text-muted-foreground">
@@ -392,7 +396,7 @@ export default function TrashPage() {
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
             <span>
-              {count}{" "}
+              <span className={numClass}>{toLocaleDigits(String(count), locale)}</span>{" "}
               {count === 1 ? tPages("trashCountSingular") : tPages("trashCountPlural")}
             </span>
             <div className="flex gap-2">

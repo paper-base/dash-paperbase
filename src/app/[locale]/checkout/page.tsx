@@ -10,6 +10,7 @@ import { getAccessToken } from "@/lib/auth";
 import { invalidateMeRoutingCache } from "@/lib/subscription-access";
 import api from "@/lib/api";
 import { CheckoutSuccessAnimation } from "@/components/checkout/CheckoutSuccessAnimation";
+import { numberTextClass } from "@/lib/number-font";
 import { cn } from "@/lib/utils";
 
 interface Plan {
@@ -65,6 +66,7 @@ function CopyButton({ value }: { value: string }) {
 export default function CheckoutPage() {
   const t = useTranslations("checkoutPage");
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const router = useRouter();
 
   const [screen, setScreen] = useState<Screen>("loading");
@@ -314,12 +316,17 @@ export default function CheckoutPage() {
               </p>
               {payment.plan.billing_cycle === "yearly" && monthlyEq !== null && yearlyTotal && (
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  {`${payment.currency} ${monthlyEq.toLocaleString()}/month billed yearly (${yearlyTotal} total)`}
+                  <span className={numClass}>
+                    {payment.currency} {monthlyEq.toLocaleString()}
+                  </span>
+                  /month billed yearly (
+                  <span className={numClass}>{yearlyTotal}</span>
+                  {` total)`}
                 </p>
               )}
               <div className="flex items-baseline justify-between gap-4 border-t border-border pt-3">
                 <dt className="text-muted-foreground">{t("amountLabel")}</dt>
-                <dd className="text-lg font-bold tabular-nums text-foreground">
+                <dd className={cn("text-lg font-bold text-foreground", numClass)}>
                   {payment.currency} {parseFloat(payment.amount).toLocaleString()}
                 </dd>
               </div>
@@ -351,7 +358,7 @@ export default function CheckoutPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {t("bkashLabel")}
                 </p>
-                <p className="mt-0.5 font-mono text-base font-semibold text-foreground">
+                <p className={cn("mt-0.5 text-base font-semibold text-foreground", numClass)}>
                   {config.bkash_number}
                 </p>
               </div>
@@ -365,7 +372,7 @@ export default function CheckoutPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {t("nagadLabel")}
                 </p>
-                <p className="mt-0.5 font-mono text-base font-semibold text-foreground">
+                <p className={cn("mt-0.5 text-base font-semibold text-foreground", numClass)}>
                   {config.nagad_number}
                 </p>
               </div>
@@ -404,9 +411,11 @@ export default function CheckoutPage() {
                   setTxnIdError(null);
                 }}
                 placeholder={t("transactionIdPlaceholder")}
-                className={`w-full rounded-ui border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                className={cn(
+                  "w-full rounded-ui border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50",
+                  numClass,
                   txnIdError ? "border-destructive" : "border-input"
-                }`}
+                )}
               />
               {txnIdError && (
                 <p className="mt-1 text-xs text-destructive">{txnIdError}</p>
@@ -427,7 +436,10 @@ export default function CheckoutPage() {
                 value={senderNumber}
                 onChange={(e) => setSenderNumber(e.target.value)}
                 placeholder={t("senderNumberPlaceholder")}
-                className="w-full rounded-ui border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className={cn(
+                  "w-full rounded-ui border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50",
+                  numClass
+                )}
               />
             </div>
 

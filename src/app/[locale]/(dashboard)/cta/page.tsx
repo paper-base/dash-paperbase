@@ -15,6 +15,8 @@ import { formatDashboardDateOptional } from "@/lib/datetime-display";
 import { displayInputToApiLocal, isoDatetimeToDisplayInput } from "@/lib/datetime-form";
 import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify } from "@/notifications";
+import { numberTextClass } from "@/lib/number-font";
+import { cn } from "@/lib/utils";
 
 type CtaForm = {
   cta_text: string;
@@ -41,6 +43,7 @@ const emptyForm: CtaForm = {
 export default function CtaPage() {
   const router = useRouter();
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
   const confirm = useConfirm();
@@ -275,7 +278,7 @@ export default function CtaPage() {
                 onChange={(e) =>
                   setForm({ ...form, start_date: e.target.value })
                 }
-                className="text-sm font-numbers"
+                className={cn("text-sm", numClass)}
               />
             </div>
             <div>
@@ -290,7 +293,7 @@ export default function CtaPage() {
                 onChange={(e) =>
                   setForm({ ...form, end_date: e.target.value })
                 }
-                className="text-sm font-numbers"
+                className={cn("text-sm", numClass)}
               />
             </div>
           </div>

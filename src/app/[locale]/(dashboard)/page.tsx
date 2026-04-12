@@ -10,11 +10,13 @@ import DateRangeFilter, {
 import { useDashboardAnalytics } from "@/hooks/useDashboardAnalytics";
 import { useActivities } from "@/hooks/useActivities";
 import { toLocaleDigits } from "@/lib/locale-digits";
+import { numberTextClass } from "@/lib/number-font";
 import { formatDashboardDateTimeWithSeconds } from "@/lib/datetime-display";
 import { todayYmdInBD } from "@/utils/time";
 
 export default function DashboardPage() {
   const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const t = useTranslations("dashboard");
   const today = useMemo(() => new Date(), []);
 
@@ -111,9 +113,14 @@ export default function DashboardPage() {
                             <span>·</span>
                             <span>
                               {item.entity_type}
-                              {item.entity_id
-                                ? ` #${toLocaleDigits(String(item.entity_id), locale)}`
-                                : ""}
+                              {item.entity_id ? (
+                                <>
+                                  {" #"}
+                                  <span className={numClass}>
+                                    {toLocaleDigits(String(item.entity_id), locale)}
+                                  </span>
+                                </>
+                              ) : null}
                             </span>
                           </div>
                         </div>

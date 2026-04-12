@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Undo2, Trash2 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
+import { numberTextClass } from "@/lib/number-font";
 import { cn } from "@/lib/utils";
 import { useNewOrder } from "./useNewOrder";
 
 export default function NewOrderPage() {
+  const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
   const { currencySymbol } = useBranding();
@@ -281,9 +284,14 @@ export default function NewOrderPage() {
                             {product.name || tPages("orderNewProductUnavailable")}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {currencySymbol}
-                            {Number(product.price || 0).toLocaleString()} · {tPages("orderNewStock")}:{" "}
-                            {product.available_quantity ?? product.total_stock ?? 0}
+                            <span className={numClass}>
+                              {currencySymbol}
+                              {Number(product.price || 0).toLocaleString()}
+                            </span>{" "}
+                            · {tPages("orderNewStock")}:{" "}
+                            <span className={numClass}>
+                              {product.available_quantity ?? product.total_stock ?? 0}
+                            </span>
                           </p>
                         </div>
                       </button>
@@ -374,7 +382,10 @@ export default function NewOrderPage() {
 
                                 {selectedVariant && (
                                   <span className="whitespace-nowrap text-xs text-muted-foreground">
-                                    {tPages("orderNewStock")}: {selectedVariant.available_quantity}
+                                    {tPages("orderNewStock")}:{" "}
+                                    <span className={numClass}>
+                                      {selectedVariant.available_quantity}
+                                    </span>
                                   </span>
                                 )}
                               </div>
@@ -404,6 +415,7 @@ export default function NewOrderPage() {
                                 }
                                 className={cn(
                                   "w-20 text-center",
+                                  numClass,
                                   rowQtyErr && "border-destructive",
                                 )}
                                 aria-invalid={!!rowQtyErr}
@@ -422,7 +434,7 @@ export default function NewOrderPage() {
                                 onChange={(e) =>
                                   updateItem(item.key, "unit_price", e.target.value)
                                 }
-                                className={cn("w-28", rowPriceErr && "border-destructive")}
+                                className={cn("w-28", numClass, rowPriceErr && "border-destructive")}
                                 aria-invalid={!!rowPriceErr}
                               />
                               {rowPriceErr && (
@@ -451,7 +463,7 @@ export default function NewOrderPage() {
 
               <div className="flex items-center justify-between border-t border-border pt-4">
                 <span className="text-sm text-muted-foreground">{tPages("orderNewEstimatedTotal")}</span>
-                <span className="text-lg font-semibold text-foreground">
+                <span className={`text-lg font-semibold text-foreground ${numClass}`}>
                   {currencySymbol}
                   {displayTotal.toLocaleString()}
                 </span>
@@ -459,24 +471,39 @@ export default function NewOrderPage() {
               {pricingPreview && (
                 <div className="space-y-1 text-xs text-muted-foreground">
                   <p>
-                    {tPages("orderNewSubtotalBeforeDiscount")}: {currencySymbol}
-                    {Number(pricingPreview.subtotal_before_discount || 0).toLocaleString()}
+                    {tPages("orderNewSubtotalBeforeDiscount")}:{" "}
+                    <span className={numClass}>
+                      {currencySymbol}
+                      {Number(pricingPreview.subtotal_before_discount || 0).toLocaleString()}
+                    </span>
                   </p>
                   <p>
-                    {tPages("orderNewDiscount")}: −{currencySymbol}
-                    {Number(pricingPreview.discount_total || 0).toLocaleString()}
+                    {tPages("orderNewDiscount")}: −
+                    <span className={numClass}>
+                      {currencySymbol}
+                      {Number(pricingPreview.discount_total || 0).toLocaleString()}
+                    </span>
                   </p>
                   <p>
-                    {tPages("orderNewSubtotalAfterDiscount")}: {currencySymbol}
-                    {Number(pricingPreview.subtotal_after_discount || 0).toLocaleString()}
+                    {tPages("orderNewSubtotalAfterDiscount")}:{" "}
+                    <span className={numClass}>
+                      {currencySymbol}
+                      {Number(pricingPreview.subtotal_after_discount || 0).toLocaleString()}
+                    </span>
                   </p>
                   <p>
-                    {tPages("orderNewShippingLine")}: {currencySymbol}
-                    {Number(pricingPreview.shipping_cost || 0).toLocaleString()}
+                    {tPages("orderNewShippingLine")}:{" "}
+                    <span className={numClass}>
+                      {currencySymbol}
+                      {Number(pricingPreview.shipping_cost || 0).toLocaleString()}
+                    </span>
                   </p>
                   <p className="font-medium text-foreground">
-                    {tPages("orderNewTotalLine")}: {currencySymbol}
-                    {Number(pricingPreview.total || 0).toLocaleString()}
+                    {tPages("orderNewTotalLine")}:{" "}
+                    <span className={numClass}>
+                      {currencySymbol}
+                      {Number(pricingPreview.total || 0).toLocaleString()}
+                    </span>
                   </p>
                 </div>
               )}

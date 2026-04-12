@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Plus, Undo2 } from "lucide-react";
 import api from "@/lib/api";
@@ -17,6 +17,8 @@ import type {
 } from "@/types";
 import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify, normalizeError } from "@/notifications";
+import { numberTextClass } from "@/lib/number-font";
+import { cn } from "@/lib/utils";
 
 type AttrForm = { name: string; order: string };
 type ValueForm = { value: string; order: string };
@@ -26,6 +28,8 @@ const emptyValue: ValueForm = { value: "", order: "0" };
 
 export default function ProductAttributesPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
   const confirm = useConfirm();
@@ -247,7 +251,7 @@ export default function ProductAttributesPage() {
                 <span className="text-xs text-muted-foreground">{tPages("attributesOrder")}</span>
                 <Input
                   type="number"
-                  className="w-full font-numbers text-sm"
+                  className={cn("w-full text-sm", numClass)}
                   value={attrForm.order}
                   onChange={(e) => setAttrForm({ ...attrForm, order: e.target.value })}
                 />
@@ -341,7 +345,7 @@ export default function ProductAttributesPage() {
                     />
                     <Input
                       type="number"
-                      className="w-32 font-numbers text-sm"
+                      className={cn("w-32 text-sm", numClass)}
                       value={valueForm.order}
                       onChange={(e) => setValueForm({ ...valueForm, order: e.target.value })}
                       title={tPages("attributesOrder")}
