@@ -54,16 +54,14 @@ export default function NewOrderPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="rounded-card bg-muted/80 px-1 py-1 hidden md:block">
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={tPages("orderNewBackAria")}
               onClick={() => router.back()}
-              className="shrink-0"
+              aria-label={tPages("orderNewBackAria")}
+              className="flex shrink-0 items-center justify-center rounded-ui p-1 text-muted-foreground hover:bg-muted"
             >
-              <Undo2 className="size-4" />
-            </Button>
+              <Undo2 className="h-4 w-4" />
+            </button>
           </div>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">

@@ -500,16 +500,14 @@ export default function OrderDetailPage() {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-3">
             <div className="rounded-card bg-muted/80 px-1 py-1 hidden md:block">
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="icon"
                 onClick={() => router.back()}
                 aria-label={tPages("goBack")}
-                className="shrink-0"
+                className="flex shrink-0 items-center justify-center rounded-ui p-1 text-muted-foreground hover:bg-muted"
               >
-                <Undo2 className="size-4" />
-              </Button>
+                <Undo2 className="h-4 w-4" />
+              </button>
             </div>
             <h1
               className={cn(
