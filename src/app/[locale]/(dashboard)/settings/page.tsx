@@ -256,7 +256,11 @@ export default function SettingsPage() {
           <DataExportSection
             hidden={activeSection !== "data"}
             deleteStoreDisabled={
-              isLoading || !deleteStoreReady || deletionInProgress || deleteRequestSubmitting
+              isLoading ||
+              !deleteStoreReady ||
+              !contactEmail.trim() ||
+              deletionInProgress ||
+              deleteRequestSubmitting
             }
             onOpenDeleteConfirm={setDeleteConfirmOpen}
             storeDisplayName={deleteStoreDisplayName}

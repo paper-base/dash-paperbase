@@ -63,7 +63,7 @@ export function CheckoutSuccessAnimation({ className }: { className?: string }) 
   }
 
   return (
-    <div className={`${SIZE_WRAP} ${className ?? ""}`} style={{ aspectRatio: "1 / 1" }}>
+    <div className={`aspect-square ${SIZE_WRAP} ${className ?? ""}`}>
       <Lottie
         animationData={data}
         loop

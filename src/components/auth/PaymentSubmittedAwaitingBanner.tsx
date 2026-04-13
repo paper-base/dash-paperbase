@@ -1,13 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { numberTextClass } from "@/lib/number-font";
-import {
-  formatTimeLeftHm,
-  resolveStorefrontBlocksAtIso,
-} from "@/lib/storefront-blocks-at";
 
 interface PaymentSubmittedAwaitingBannerProps {
   endDate?: string | null;
@@ -21,28 +16,9 @@ export default function PaymentSubmittedAwaitingBanner({
   const locale = useLocale();
   const numClass = numberTextClass(locale);
   const t = useTranslations("dashboardLayout");
-  const [now, setNow] = useState(() => Date.now());
-
-  const deadlineMs = useMemo(() => {
-    const iso = resolveStorefrontBlocksAtIso(endDate, storefrontBlocksAt);
-    if (!iso) return null;
-    const parsed = Date.parse(iso);
-    return Number.isNaN(parsed) ? null : parsed;
-  }, [endDate, storefrontBlocksAt]);
-
-  useEffect(() => {
-    if (deadlineMs == null) return;
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, [deadlineMs]);
-
-  const timeLeftHm =
-    deadlineMs != null ? formatTimeLeftHm(deadlineMs - now) : null;
-
-  const line =
-    timeLeftHm != null
-      ? t("paymentSubmittedBannerOneLine", { time: timeLeftHm })
-      : t("paymentSubmittedBannerOneLineNoTimer");
+  void endDate;
+  void storefrontBlocksAt;
+  const line = t("paymentSubmittedBannerOneLineNoTimer");
 
   return (
     <div

@@ -30,6 +30,27 @@ export function TurnstileWidget() {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const [token, setToken] = useState("");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  function getAppliedTheme(): "light" | "dark" {
+    if (typeof document === "undefined") return "light";
+    const root = document.documentElement;
+    const attr = (root.getAttribute("data-theme") || "").toLowerCase();
+    if (attr === "dark" || attr === "light") return attr;
+    return root.classList.contains("dark") ? "dark" : "light";
+  }
+
+  useEffect(() => {
+    if (disabled) return;
+    setTheme(getAppliedTheme());
+
+    const root = document.documentElement;
+    const obs = new MutationObserver(() => {
+      setTheme(getAppliedTheme());
+    });
+    obs.observe(root, { attributes: true, attributeFilter: ["class", "data-theme"] });
+    return () => obs.disconnect();
+  }, [disabled]);
 
   useEffect(() => {
     if (disabled) return;
@@ -43,6 +64,7 @@ export function TurnstileWidget() {
       if (cancelled || !el || !window.turnstile) return false;
       widgetIdRef.current = window.turnstile.render(el, {
         sitekey: siteKey,
+        theme,
         size: "flexible",
         callback: (t: string) => setToken(t),
         "error-callback": () => setToken(""),
@@ -74,7 +96,7 @@ export function TurnstileWidget() {
       }
       setToken("");
     };
-  }, [siteKey, disabled]);
+  }, [siteKey, disabled, theme]);
 
   if (disabled) {
     return null;

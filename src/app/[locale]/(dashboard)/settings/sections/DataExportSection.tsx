@@ -109,8 +109,13 @@ export default function DataExportSection({
             <div className="p-5 md:p-6">
               <h3 className="text-base font-semibold text-foreground">{t("dataExport.removeTitle")}</h3>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                {contactEmail.trim() ? t("dataExport.removeDesc") : t("dataExport.removeNeedsContact")}
+                {t("dataExport.removeDesc")}
               </p>
+              {!contactEmail.trim() ? (
+                <p className="mt-2 max-w-2xl text-sm font-medium text-amber-900 dark:text-amber-100">
+                  {t("dataExport.storeEmailRequiredForDeletion")}
+                </p>
+              ) : null}
             </div>
             <div className="flex justify-end border-t border-amber-600/25 bg-amber-500/5 px-4 py-3 md:px-5">
               <Button
@@ -210,7 +215,14 @@ export default function DataExportSection({
           >
             <div className="p-5 md:p-6">
               <h3 className="text-base font-semibold text-foreground">{t("dataExport.deleteTitle")}</h3>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("dataExport.deleteDescScheduled")}</p>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                {t("dataExport.deleteDescScheduled")}
+              </p>
+              {!contactEmail.trim() ? (
+                <p className="mt-2 max-w-2xl text-sm font-medium text-amber-900 dark:text-amber-100">
+                  {t("dataExport.storeEmailRequiredForDeletion")}
+                </p>
+              ) : null}
             </div>
 
             <div className="border-t border-border/80 bg-muted/20 px-5 py-4 md:px-6">
