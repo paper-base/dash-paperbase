@@ -158,6 +158,8 @@ function SidebarContent({
   const [copiedStoreId, setCopiedStoreId] = useState<string | null>(null);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemePreference>("system");
+  /** Controlled so we can expand the sidebar first, then open the menu when collapsed. */
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   /** Mobile sheet: center menu and size below nav panel width (desktop-style inset). */
   const [mobileUserMenuLayout, setMobileUserMenuLayout] = useState(false);
 
@@ -175,6 +177,10 @@ function SidebarContent({
     const initial = getStoredThemePreference() ?? "system";
     setTheme(initial);
   }, []);
+
+  useEffect(() => {
+    if (collapsed) setUserMenuOpen(false);
+  }, [collapsed]);
 
   useEffect(() => {
     if (theme !== "system") return;
@@ -254,6 +260,17 @@ function SidebarContent({
     } catch {
       // Ignore clipboard permission/runtime errors.
     }
+  };
+
+  const handleUserMenuOpenChange = (open: boolean) => {
+    if (open && collapsed && onToggle) {
+      onToggle();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setUserMenuOpen(true));
+      });
+      return;
+    }
+    setUserMenuOpen(open);
   };
 
   return (
@@ -587,21 +604,29 @@ function SidebarContent({
         </div>
       )}
 
-      {/* User menu */}
-      <div className="shrink-0 border-t border-border p-4">
-        <DropdownMenu>
+      {/* User menu — when collapsed, keep padding tight so the avatar stays circular (w-16 minus padding). */}
+      <div
+        className={cn(
+          "shrink-0 border-t border-border",
+          collapsed ? "px-1 py-2" : "p-4"
+        )}
+      >
+        <DropdownMenu open={userMenuOpen} onOpenChange={handleUserMenuOpenChange}>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
               className={cn(
-                "flex w-full items-center gap-3 rounded-card border-0 bg-transparent p-3 text-left transition-colors",
+                "flex w-full items-center gap-3 rounded-card border-0 bg-transparent text-left transition-colors",
                 "outline-none hover:bg-accent",
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                collapsed && "justify-center"
+                collapsed ? "justify-center px-0 py-2" : "p-3",
+                collapsed && "min-h-11"
               )}
               aria-label={tSidebar("userMenu")}
             >
-              <UserAvatar publicId={userPublicId} name={ownerName} plan={userPlan} urgentSubscriptionRing={urgentSubscriptionRing} />
+              <span className="flex shrink-0 items-center justify-center">
+                <UserAvatar publicId={userPublicId} name={ownerName} plan={userPlan} urgentSubscriptionRing={urgentSubscriptionRing} />
+              </span>
               {!collapsed && (
                 <>
                   <div className="min-w-0 flex-1">
