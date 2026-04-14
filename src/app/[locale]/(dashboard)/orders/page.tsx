@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { toLocaleDigits } from "@/lib/locale-digits";
@@ -25,6 +25,10 @@ import { ORDER_FLAG_OPTIONS, formatOrderFlagLabel } from "@/lib/orders/order-fla
 import type { Order, PaginatedResponse } from "@/types";
 import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify, normalizeError } from "@/notifications";
+
+import { FraudCheckButton } from "./_components/FraudCheckButton";
+import { FraudCheckDialog } from "./_components/FraudCheckDialog";
+import type { FraudCheckApiOk, FraudCheckState } from "./_components/types";
 
 /** Shown after dispatch: Steadfast consignment id only (not provider name). */
 function courierCell(order: Order): string {
@@ -59,6 +63,11 @@ export default function OrdersPage() {
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
   const [flagUpdatingId, setFlagUpdatingId] = useState<string | null>(null);
   const [courierSendingId, setCourierSendingId] = useState<string | null>(null);
+
+  const [fraudByOrderId, setFraudByOrderId] = useState<Record<string, FraudCheckState>>(
+    {}
+  );
+  const [fraudDialogOrderId, setFraudDialogOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     const next = debouncedSearch.trim();
@@ -235,6 +244,36 @@ export default function OrdersPage() {
   const allSelected = orders.length > 0 && selectedIds.size === orders.length;
   const someSelected = selectedIds.size > 0;
 
+  async function handleFraudCheck(order: Order) {
+    const key = order.public_id;
+    const existing = fraudByOrderId[key];
+    if (existing?.kind === "ready") {
+      setFraudDialogOrderId(key);
+      return;
+    }
+    if (existing?.kind === "loading") return;
+
+    setFraudByOrderId((prev) => ({ ...prev, [key]: { kind: "loading" } }));
+    setFraudDialogOrderId(key);
+
+    try {
+      const { data } = await api.post<FraudCheckApiOk>("fraud-check/", {
+        phone: order.phone,
+      });
+      setFraudByOrderId((prev) => ({
+        ...prev,
+        [key]: { kind: "ready", data },
+      }));
+    } catch (err: unknown) {
+      const normalized = normalizeError(err, "Failed to run fraud check.");
+      const status = (err as any)?.response?.status as number | undefined;
+      setFraudByOrderId((prev) => ({
+        ...prev,
+        [key]: { kind: "error", message: normalized.message, status },
+      }));
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -361,6 +400,7 @@ export default function OrdersPage() {
                   <th className="th">{tPages("ordersListColOrderNumber")}</th>
                   <th className="th">{tPages("ordersListColCustomer")}</th>
                   <th className="th">{tPages("ordersListColPhone")}</th>
+                  <th className="th">Fraud Check</th>
                   <th className="th">{tPages("filtersStatus")}</th>
                   <th className="th">Flag</th>
                   <th className="th">{tPages("ordersListColTotal")}</th>
@@ -369,127 +409,212 @@ export default function OrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {orders.map((order) => (
-                  <ClickableTableRow
-                    key={order.public_id}
-                    href={`/orders/${order.public_id}`}
-                    aria-label={String(order.order_number)}
-                  >
-                    <td className="w-10 px-2 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(order.public_id)}
-                        onChange={() => toggleSelect(order.public_id)}
-                        className="form-checkbox"
-                        aria-label={tPages("ordersListSelectOrderAria", {
-                          orderNumber: order.order_number,
-                        })}
-                      />
-                    </td>
-                    <td className={`px-4 py-3 whitespace-nowrap font-medium text-foreground ${numClass}`}>
-                      {order.order_number}
-                    </td>
-                    <td className="px-4 py-3 text-foreground whitespace-nowrap">
-                      {order.shipping_name || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-foreground whitespace-nowrap">
-                      {order.phone || "—"}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="space-y-1">
-                        {order.has_unavailable_products ? (
-                          <p className="text-xs text-muted-foreground">
-                            {formatOrderStatusLabel(order.status, (key) => tPages(key))}{" "}
-                            •{" "}
-                            {(order.unavailable_products_count ?? 0) === 1
-                              ? "Product data corrupted."
-                              : `${order.unavailable_products_count} products data corrupted.`}
-                          </p>
-                        ) : (
-                          <Select
-                            className="w-[180px] capitalize"
-                            value={order.status}
-                            disabled={
-                              order.status === "cancelled" ||
-                              statusUpdatingId === order.public_id
-                            }
-                            onChange={(e) =>
-                              handleRowStatusChange(order, e.target.value)
-                            }
-                            aria-label={tPages("ordersListStatusForOrderAria", {
+                {orders.map((order) => {
+                  const fraud = fraudByOrderId[order.public_id] || { kind: "idle" };
+                  const readyData =
+                    fraud.kind === "ready" ? fraud.data : null;
+
+                  const warningText =
+                    fraud.kind === "ready" &&
+                    readyData &&
+                    (readyData as any)?.status === "limit_exceeded"
+                      ? String((readyData as any)?.response?.detail || "Limit exceeded.")
+                      : null;
+
+                  const errorText =
+                    fraud.kind === "error"
+                      ? fraud.message
+                      : fraud.kind === "ready" &&
+                          readyData &&
+                          (readyData as any)?.status === "error"
+                        ? String((readyData as any)?.response?.detail || "Fraud check failed.")
+                        : null;
+
+                  return (
+                    <Fragment key={order.public_id}>
+                      <ClickableTableRow
+                        href={`/orders/${order.public_id}`}
+                        aria-label={String(order.order_number)}
+                      >
+                        <td className="w-10 px-2 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(order.public_id)}
+                            onChange={() => toggleSelect(order.public_id)}
+                            className="form-checkbox"
+                            aria-label={tPages("ordersListSelectOrderAria", {
                               orderNumber: order.order_number,
                             })}
+                          />
+                        </td>
+                        <td
+                          className={`px-4 py-3 whitespace-nowrap font-medium text-foreground ${numClass}`}
+                        >
+                          {order.order_number}
+                        </td>
+                        <td className="px-4 py-3 text-foreground whitespace-nowrap">
+                          {order.shipping_name || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-foreground whitespace-nowrap">
+                          {order.phone || "—"}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <FraudCheckButton
+                            loading={fraud.kind === "loading"}
+                            disabled={!order.phone}
+                            onClick={() => handleFraudCheck(order)}
+                          />
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="space-y-1">
+                            {order.has_unavailable_products ? (
+                              <p className="text-xs text-muted-foreground">
+                                {formatOrderStatusLabel(order.status, (key) =>
+                                  tPages(key)
+                                )}{" "}
+                                •{" "}
+                                {(order.unavailable_products_count ?? 0) === 1
+                                  ? "Product data corrupted."
+                                  : `${order.unavailable_products_count} products data corrupted.`}
+                              </p>
+                            ) : (
+                              <Select
+                                className="w-[180px] capitalize"
+                                value={order.status}
+                                disabled={
+                                  order.status === "cancelled" ||
+                                  statusUpdatingId === order.public_id
+                                }
+                                onChange={(e) =>
+                                  handleRowStatusChange(order, e.target.value)
+                                }
+                                aria-label={tPages("ordersListStatusForOrderAria", {
+                                  orderNumber: order.order_number,
+                                })}
+                              >
+                                {ORDER_STATUS_OPTIONS.map((s) => (
+                                  <option key={s} value={s}>
+                                    {formatOrderStatusLabel(s, (key) => tPages(key))}
+                                  </option>
+                                ))}
+                              </Select>
+                            )}
+                            {!order.has_unavailable_products &&
+                            (order.unavailable_products_count ?? 0) > 0 ? (
+                              <p className="text-xs text-muted-foreground">
+                                {formatOrderStatusLabel(order.status, (key) =>
+                                  tPages(key)
+                                )}{" "}
+                                •{" "}
+                                {(order.unavailable_products_count ?? 0) === 1
+                                  ? "Product data corrupted."
+                                  : `${order.unavailable_products_count} products data corrupted.`}
+                              </p>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <Select
+                            className="w-[180px]"
+                            value={(order.flag || "") as string}
+                            disabled={flagUpdatingId === order.public_id}
+                            onChange={(e) =>
+                              handleRowFlagChange(order, e.target.value)
+                            }
+                            aria-label={`Flag for order ${order.order_number}`}
                           >
-                            {ORDER_STATUS_OPTIONS.map((s) => (
-                              <option key={s} value={s}>
-                                {formatOrderStatusLabel(s, (key) => tPages(key))}
+                            <option value="">{formatOrderFlagLabel(null)}</option>
+                            {ORDER_FLAG_OPTIONS.map((f) => (
+                              <option key={f} value={f}>
+                                {formatOrderFlagLabel(f)}
                               </option>
                             ))}
                           </Select>
-                        )}
-                        {!order.has_unavailable_products && (order.unavailable_products_count ?? 0) > 0 ? (
-                          <p className="text-xs text-muted-foreground">
-                            {formatOrderStatusLabel(order.status, (key) => tPages(key))}{" "}
-                            •{" "}
-                            {(order.unavailable_products_count ?? 0) === 1
-                              ? "Product data corrupted."
-                              : `${order.unavailable_products_count} products data corrupted.`}
-                          </p>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <Select
-                        className="w-[180px]"
-                        value={(order.flag || "") as string}
-                        disabled={flagUpdatingId === order.public_id}
-                        onChange={(e) => handleRowFlagChange(order, e.target.value)}
-                        aria-label={`Flag for order ${order.order_number}`}
-                      >
-                        <option value="">{formatOrderFlagLabel(null)}</option>
-                        {ORDER_FLAG_OPTIONS.map((f) => (
-                          <option key={f} value={f}>
-                            {formatOrderFlagLabel(f)}
-                          </option>
-                        ))}
-                      </Select>
-                    </td>
-                    <td className={`px-4 py-3 whitespace-nowrap text-foreground ${numClass}`}>
-                      {currencySymbol}
-                      {Number(order.total).toLocaleString()}
-                    </td>
-                    <td className={`px-4 py-3 text-muted-foreground whitespace-nowrap max-w-[220px] ${numClass}`}>
-                      {order.status === "confirmed" && !order.sent_to_courier ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-8 gap-1 px-2.5 text-xs"
-                          disabled={courierSendingId === order.public_id}
-                          onClick={() => handleSendToCourierRow(order)}
-                          aria-label={tPages("ordersListSendCourierAria", {
-                            orderNumber: order.order_number,
-                          })}
+                        </td>
+                        <td
+                          className={`px-4 py-3 whitespace-nowrap text-foreground ${numClass}`}
                         >
-                          <Truck className="size-3.5 shrink-0" />
-                          {courierSendingId === order.public_id
-                            ? tPages("ordersSending")
-                            : tPages("ordersSendToCourier")}
-                        </Button>
-                      ) : (
-                        <span className="block truncate" title={courierCell(order)}>
-                          {courierCell(order)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                      {formatDashboardDateTime(order.created_at, locale)}
-                    </td>
-                  </ClickableTableRow>
-                ))}
+                          {currencySymbol}
+                          {Number(order.total).toLocaleString()}
+                        </td>
+                        <td
+                          className={`px-4 py-3 text-muted-foreground whitespace-nowrap max-w-[220px] ${numClass}`}
+                        >
+                          {order.status === "confirmed" && !order.sent_to_courier ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 gap-1 px-2.5 text-xs"
+                              disabled={courierSendingId === order.public_id}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleSendToCourierRow(order);
+                              }}
+                              aria-label={tPages("ordersListSendCourierAria", {
+                                orderNumber: order.order_number,
+                              })}
+                            >
+                              <Truck className="size-3.5 shrink-0" />
+                              {courierSendingId === order.public_id
+                                ? tPages("ordersSending")
+                                : tPages("ordersSendToCourier")}
+                            </Button>
+                          ) : (
+                            <span className="block truncate" title={courierCell(order)}>
+                              {courierCell(order)}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                          {formatDashboardDateTime(order.created_at, locale)}
+                        </td>
+                      </ClickableTableRow>
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
+
+          <FraudCheckDialog
+            open={Boolean(fraudDialogOrderId)}
+            onOpenChange={(open) => {
+              if (!open) setFraudDialogOrderId(null);
+            }}
+            phone={
+              fraudDialogOrderId
+                ? orders.find((o) => o.public_id === fraudDialogOrderId)?.phone
+                : null
+            }
+            loading={
+              fraudDialogOrderId
+                ? (fraudByOrderId[fraudDialogOrderId]?.kind ?? "idle") === "loading"
+                : false
+            }
+            response={
+              fraudDialogOrderId && fraudByOrderId[fraudDialogOrderId]?.kind === "ready"
+                ? (fraudByOrderId[fraudDialogOrderId] as any).data?.response
+                : null
+            }
+            warningText={
+              fraudDialogOrderId &&
+              fraudByOrderId[fraudDialogOrderId]?.kind === "ready" &&
+              ((fraudByOrderId[fraudDialogOrderId] as any).data?.status === "limit_exceeded")
+                ? String((fraudByOrderId[fraudDialogOrderId] as any).data?.response?.detail || "Limit exceeded.")
+                : null
+            }
+            errorText={
+              fraudDialogOrderId && fraudByOrderId[fraudDialogOrderId]?.kind === "error"
+                ? (fraudByOrderId[fraudDialogOrderId] as any).message
+                : fraudDialogOrderId &&
+                    fraudByOrderId[fraudDialogOrderId]?.kind === "ready" &&
+                    ((fraudByOrderId[fraudDialogOrderId] as any).data?.status === "error")
+                  ? String((fraudByOrderId[fraudDialogOrderId] as any).data?.response?.detail || "Fraud check failed.")
+                  : null
+            }
+          />
 
           <div className="flex items-center justify-between">
             <button

@@ -59,6 +59,16 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Courier logos from BD Courier API (fraud-check response `logo` URLs).
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "api.bdcourier.com",
+        pathname: "/**",
+      },
+    ],
+  },
   async headers() {
     return [
       {

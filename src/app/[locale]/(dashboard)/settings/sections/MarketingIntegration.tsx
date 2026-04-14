@@ -34,18 +34,16 @@ const emptyForm: ConnectForm = {
 };
 
 type EventSettingKey =
-  | "track_order_created"
-  | "track_checkout_started"
-  | "track_product_detail_view"
-  | "track_search"
-  | "track_support_ticket";
+  | "track_purchase"
+  | "track_initiate_checkout"
+  | "track_view_content"
+  | "track_search";
 
 const EVENT_LABEL_KEYS: { key: EventSettingKey; labelKey: string }[] = [
-  { key: "track_order_created", labelKey: "eventOrderCreated" },
-  { key: "track_checkout_started", labelKey: "eventCheckoutStarted" },
-  { key: "track_product_detail_view", labelKey: "eventProductDetailView" },
+  { key: "track_purchase", labelKey: "eventPurchase" },
+  { key: "track_initiate_checkout", labelKey: "eventInitiateCheckout" },
+  { key: "track_view_content", labelKey: "eventViewContent" },
   { key: "track_search", labelKey: "eventSearch" },
-  { key: "track_support_ticket", labelKey: "eventSupportTicket" },
 ];
 
 type MarketingModal =
