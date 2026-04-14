@@ -21,6 +21,7 @@ import {
   ORDER_STATUS_OPTIONS,
   formatOrderStatusLabel,
 } from "@/lib/orders/order-statuses";
+import { ORDER_FLAG_OPTIONS, formatOrderFlagLabel } from "@/lib/orders/order-flags";
 import type { Order, PaginatedResponse } from "@/types";
 import { useConfirm } from "@/context/ConfirmDialogContext";
 import { notify, normalizeError } from "@/notifications";
@@ -43,6 +44,7 @@ export default function OrdersPage() {
   const { page, filters, setFilter, setPage, clearFilters } = useFilters([
     "customer",
     "status",
+    "flag",
     "date_range",
     "search",
   ]);
@@ -55,6 +57,7 @@ export default function OrdersPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDispatching, setBulkDispatching] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
+  const [flagUpdatingId, setFlagUpdatingId] = useState<string | null>(null);
   const [courierSendingId, setCourierSendingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -68,6 +71,7 @@ export default function OrdersPage() {
     const params: Record<string, string | number> = { page };
     if (filters.customer) params.customer = filters.customer;
     if (filters.status) params.status = filters.status;
+    if (filters.flag) params.flag = filters.flag;
     if (filters.date_range) params.date_range = filters.date_range;
     if (filters.search) params.search = filters.search;
     api
@@ -84,7 +88,14 @@ export default function OrdersPage() {
         notify.error(err);
       })
       .finally(() => setLoading(false));
-  }, [filters.customer, filters.date_range, filters.search, filters.status, page]);
+  }, [
+    filters.customer,
+    filters.date_range,
+    filters.flag,
+    filters.search,
+    filters.status,
+    page,
+  ]);
 
   useEffect(() => {
     fetchOrders();
@@ -181,6 +192,28 @@ export default function OrdersPage() {
     }
   }
 
+  async function handleRowFlagChange(order: Order, next: string) {
+    const normalized = (next || "").trim().toLowerCase();
+    const current = ((order.flag || "") as string).trim().toLowerCase();
+    if (normalized === current) return;
+    setFlagUpdatingId(order.public_id);
+    try {
+      const payload = { flag: normalized || null };
+      const { data } = await api.patch<Order>(
+        `admin/orders/${order.public_id}/`,
+        payload
+      );
+      setOrders((prev) =>
+        prev.map((o) => (o.public_id === order.public_id ? data : o))
+      );
+    } catch (e) {
+      console.error(e);
+      notify.error(e, { fallbackMessage: "Failed to update flag." });
+    } finally {
+      setFlagUpdatingId(null);
+    }
+  }
+
   async function handleSendToCourierRow(order: Order) {
     if (order.status !== "confirmed" || order.sent_to_courier) return;
     setCourierSendingId(order.public_id);
@@ -256,6 +289,15 @@ export default function OrdersPage() {
           }))}
         />
         <FilterDropdown
+          value={filters.flag}
+          onChange={(value) => setFilter("flag", value)}
+          placeholder="Flag"
+          options={ORDER_FLAG_OPTIONS.map((f) => ({
+            value: f,
+            label: formatOrderFlagLabel(f),
+          }))}
+        />
+        <FilterDropdown
           value={filters.date_range}
           onChange={(value) => setFilter("date_range", value)}
           placeholder={tPages("filtersDateRange")}
@@ -320,6 +362,7 @@ export default function OrdersPage() {
                   <th className="th">{tPages("ordersListColCustomer")}</th>
                   <th className="th">{tPages("ordersListColPhone")}</th>
                   <th className="th">{tPages("filtersStatus")}</th>
+                  <th className="th">Flag</th>
                   <th className="th">{tPages("ordersListColTotal")}</th>
                   <th className="th">{tPages("ordersListConsignmentId")}</th>
                   <th className="th">{tPages("ordersListColDate")}</th>
@@ -394,6 +437,22 @@ export default function OrdersPage() {
                           </p>
                         ) : null}
                       </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <Select
+                        className="w-[180px]"
+                        value={(order.flag || "") as string}
+                        disabled={flagUpdatingId === order.public_id}
+                        onChange={(e) => handleRowFlagChange(order, e.target.value)}
+                        aria-label={`Flag for order ${order.order_number}`}
+                      >
+                        <option value="">{formatOrderFlagLabel(null)}</option>
+                        {ORDER_FLAG_OPTIONS.map((f) => (
+                          <option key={f} value={f}>
+                            {formatOrderFlagLabel(f)}
+                          </option>
+                        ))}
+                      </Select>
                     </td>
                     <td className={`px-4 py-3 whitespace-nowrap text-foreground ${numClass}`}>
                       {currencySymbol}

@@ -16,6 +16,7 @@ import {
   ORDER_STATUS_OPTIONS,
   formatOrderStatusLabel,
 } from "@/lib/orders/order-statuses";
+import { ORDER_FLAG_OPTIONS, formatOrderFlagLabel } from "@/lib/orders/order-flags";
 import type {
   Order,
   OrderPricingPreview,
@@ -104,6 +105,7 @@ export default function OrderDetailPage() {
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [statusUpdateError, setStatusUpdateError] = useState("");
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+  const [flagUpdateLoading, setFlagUpdateLoading] = useState(false);
   const rightColRef = useRef<HTMLDivElement>(null);
   const [rightColHeight, setRightColHeight] = useState<number | null>(null);
 
@@ -455,6 +457,24 @@ export default function OrderDetailPage() {
       notify.error(normalized.message);
     } finally {
       setStatusUpdateLoading(false);
+    }
+  }
+
+  async function handleFlagChange(next: string) {
+    if (!order) return;
+    const normalized = (next || "").trim().toLowerCase();
+    const current = ((order.flag || "") as string).trim().toLowerCase();
+    if (normalized === current) return;
+    setFlagUpdateLoading(true);
+    try {
+      const payload = { flag: normalized || null };
+      const { data } = await api.patch<Order>(`admin/orders/${order_public_id}/`, payload);
+      setOrder(data);
+    } catch (err: unknown) {
+      const normalizedErr = normalizeError(err, "Failed to update flag.");
+      notify.error(normalizedErr.message);
+    } finally {
+      setFlagUpdateLoading(false);
     }
   }
 
@@ -837,7 +857,7 @@ export default function OrderDetailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="px-4 py-4 sm:px-6">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {order.status === "cancelled" ? (
                   <p className="text-sm text-muted-foreground">
                     {tPages("orderDetailOrderCancelledHint")}
@@ -850,24 +870,47 @@ export default function OrderDetailPage() {
                       : `${order.unavailable_products_count} products data corrupted.`}
                   </p>
                 ) : (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Select
-                      value={order.status}
-                      onChange={(e) => handleStatusChange(e.target.value)}
-                      disabled={statusUpdateLoading}
-                      className="h-9 w-[180px]"
-                    >
-                      {ORDER_STATUS_OPTIONS.map((s) => (
-                        <option key={s} value={s}>
-                          {formatOrderStatusLabel(s, tPages)}
-                        </option>
-                      ))}
-                    </Select>
-                    {statusUpdateLoading ? (
-                      <span className="text-xs text-muted-foreground">
-                        {tPages("orderDetailStatusUpdating")}
-                      </span>
-                    ) : null}
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Select
+                        value={order.status}
+                        onChange={(e) => handleStatusChange(e.target.value)}
+                        disabled={statusUpdateLoading}
+                        className="h-9 w-[180px]"
+                      >
+                        {ORDER_STATUS_OPTIONS.map((s) => (
+                          <option key={s} value={s}>
+                            {formatOrderStatusLabel(s, tPages)}
+                          </option>
+                        ))}
+                      </Select>
+                      {statusUpdateLoading ? (
+                        <span className="text-xs text-muted-foreground">
+                          {tPages("orderDetailStatusUpdating")}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Select
+                        value={(order.flag || "") as string}
+                        onChange={(e) => handleFlagChange(e.target.value)}
+                        disabled={flagUpdateLoading}
+                        className="h-9 w-[180px]"
+                        aria-label="Order flag"
+                      >
+                        <option value="">{formatOrderFlagLabel(null)}</option>
+                        {ORDER_FLAG_OPTIONS.map((f) => (
+                          <option key={f} value={f}>
+                            {formatOrderFlagLabel(f)}
+                          </option>
+                        ))}
+                      </Select>
+                      {flagUpdateLoading ? (
+                        <span className="text-xs text-muted-foreground">
+                          Updating…
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 )}
                 {statusUpdateError && (

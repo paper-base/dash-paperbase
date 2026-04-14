@@ -92,6 +92,7 @@ export interface Order {
   user_public_id?: string | null;
   email: string;
   status: string;
+  flag?: string | null;
   subtotal_before_discount: string;
   discount_total: string;
   subtotal_after_discount: string;
