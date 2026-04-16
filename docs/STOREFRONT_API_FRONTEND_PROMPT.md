@@ -40,6 +40,88 @@ The store is resolved entirely from the API key. No separate store ID, domain he
 
 ---
 
+## 🔥 Meta Pixel + CAPI Tracking Integration (MANDATORY FOR ALL STORES)
+
+### 1. Include `tracker.js` script
+
+Add this script tag to **every page** (including product pages and checkout):
+
+```html
+<script src="https://api.paperbase.me/static/tracker.js"></script>
+```
+
+### 2. Initialization (IMPORTANT)
+
+`tracker.js` auto-initializes:
+- PageView tracking
+- cookie collection (`_fbp`, `_fbc`)
+- event system + `event_id` generation (used for Meta Pixel + CAPI dedup)
+
+Ensure your publishable key is available as **one** of:
+- `window.PAPERBASE_PUBLISHABLE_KEY = "ak_pk_...";`, or
+- `window.__PAPERBASE_API_KEY__ = "ak_pk_...";`, or
+- call `tracker.init({ apiKey: "ak_pk_..." })`
+
+Optional debug mode:
+
+```js
+tracker.init({ apiKey: "ak_pk_...", debug: true });
+```
+
+### 3. Supported events (whitelisted)
+
+Stores automatically get these events only:
+- `PageView`
+- `ViewContent`
+- `AddToCart`
+- `InitiateCheckout`
+- `Purchase`
+
+### 4. No manual Meta Pixel setup required
+
+**Do not add your own `fbq` initialization.**
+
+The system handles:
+- Pixel firing (browser)
+- CAPI syncing (server)
+- Deduplication via the same `event_id`
+
+### 5. How tracking works (dedup flow)
+
+```mermaid
+flowchart TD
+  BrowserAction["Browser_Action"] --> TrackerGeneratesEventId["tracker.js_generates_event_id"]
+  TrackerGeneratesEventId --> MetaPixelFires["Meta_Pixel_fires_(browser)"]
+  TrackerGeneratesEventId --> BackendIngest["POST_/tracking/event"]
+  BackendIngest --> CeleryQueue["Celery_queue"]
+  CeleryQueue --> MetaCapi["Meta_CAPI_send"]
+  MetaPixelFires --> MetaDedup["Meta_deduplicates_by_event_id"]
+  MetaCapi --> MetaDedup
+```
+
+### 6. Requirements for store owners
+
+You must ensure:
+- `tracker.js` is loaded on **all** pages
+- checkout pages include the script
+- you do not add duplicate Pixel / `fbq` scripts
+- your site is HTTPS
+
+### 7. DO NOTs (VERY IMPORTANT)
+
+Store owners must NOT:
+- manually fire `fbq` events
+- manually send Meta CAPI events
+- override or generate your own `event_id`
+- modify `tracker.js`
+
+### 8. Troubleshooting
+
+- **No events**: verify the publishable API key (`ak_pk_...`) is present and correct.
+- **No dedup / duplicated server events**: this means `event_id` mismatch; it should not happen unless custom code modifies payloads.
+- **Missing Purchase**: confirm the checkout/thank-you page includes `tracker.js` and is not blocked by CSP/ad-blockers.
+---
+
 ## 2. Allowed Endpoints (Complete List)
 
 | Method | Path                                 | Purpose                        |
