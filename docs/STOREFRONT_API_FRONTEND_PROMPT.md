@@ -47,7 +47,7 @@ The store is resolved entirely from the API key. No separate store ID, domain he
 Add this script tag to **every page** (including product pages and checkout):
 
 ```html
-<script src="https://api.paperbase.me/static/tracker.js"></script>
+<script src="https://storage.paperbase.me/static/tracker.js"></script>
 ```
 
 ### 2. Initialization (IMPORTANT)
