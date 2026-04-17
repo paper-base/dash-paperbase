@@ -222,6 +222,7 @@
     "orderFormFixHighlightedFields": "Please correct the highlighted fields.",
     "orderEditAddressFieldsRequired": "Road / village, thana, and district are required.",
     "orderDetailShippingAddress": "Shipping address",
+    "orderDetailCityThana": "City / Thana",
     "orderNewBackAria": "Back to orders",
     "orderNewTitle": "Add order",
     "orderNewSubtitle": "Create an order and manage its line items (admin-style).",

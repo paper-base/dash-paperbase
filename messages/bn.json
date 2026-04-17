@@ -222,6 +222,7 @@
     "orderFormFixHighlightedFields": "চিহ্নিত ঘরগুলো ঠিক করুন।",
     "orderEditAddressFieldsRequired": "রাস্তা/গ্রাম, থানা ও জেলা আবশ্যক।",
     "orderDetailShippingAddress": "শিপিং ঠিকানা",
+    "orderDetailCityThana": "শহর / থানা",
     "orderNewBackAria": "অর্ডার তালিকায় ফিরুন",
     "orderNewTitle": "অর্ডার যোগ করুন",
     "orderNewSubtitle": "অর্ডার তৈরি করুন এবং লাইন আইটেম পরিচালনা করুন (অ্যাডমিন স্টাইল)।",

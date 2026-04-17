@@ -1040,7 +1040,7 @@ export default function OrderDetailPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      {tPages("orderFormThana")}
+                      {tPages("orderDetailCityThana")}
                       <span className="ml-0.5 text-destructive">*</span>
                     </label>
                     <Input
@@ -1109,7 +1109,7 @@ export default function OrderDetailPage() {
                           </p>
                           <p className="text-sm text-foreground">
                             <span className="text-muted-foreground">
-                              {tPages("orderFormThana")}:{" "}
+                              {tPages("orderDetailCityThana")}:{" "}
                             </span>
                             {addr.thana || "—"}
                           </p>
