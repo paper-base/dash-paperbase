@@ -49,6 +49,31 @@ type OrderExportPollResponse = {
   error_message?: string;
 };
 
+/**
+ * When downloading a blob, the browser does not use the server's filename unless
+ * we read `Content-Disposition` and set `<a download>`. Hardcoding a name overrides the API.
+ */
+function filenameFromContentDisposition(
+  header: string | null | undefined,
+  fallback: string
+): string {
+  if (!header || typeof header !== "string") return fallback;
+  const star = /filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i.exec(header);
+  if (star?.[1]) {
+    const raw = star[1].trim().replace(/^["']|["']$/g, "");
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
+  }
+  const quoted = /filename\s*=\s*"((?:\\.|[^"])*)"/i.exec(header);
+  if (quoted?.[1]) return quoted[1].replace(/\\(.)/g, "$1");
+  const unquoted = /filename\s*=\s*([^;\s]+)/i.exec(header);
+  if (unquoted?.[1]) return unquoted[1].replace(/^["']|["']$/g, "");
+  return fallback;
+}
+
 /** Shown after dispatch: Steadfast consignment id only (not provider name). */
 function courierCell(order: Order): string {
   if (!order.sent_to_courier) return "—";
@@ -273,11 +298,27 @@ export default function OrdersPage() {
     const path = exportPoll?.download_url;
     if (!path) return;
     try {
-      const { data } = await api.get<Blob>(path, { responseType: "blob" });
-      const url = URL.createObjectURL(data);
+      const res = await api.get<Blob>(path, { responseType: "blob" });
+      // Cross-origin: Content-Disposition is hidden from JS unless the API sets
+      // Access-Control-Expose-Headers (see api CORS). Prefer X-Export-Filename, then parse CD.
+      const h = res.headers;
+      const rawX =
+        typeof h.get === "function" ? h.get("X-Export-Filename") : undefined;
+      const xName = typeof rawX === "string" ? rawX.trim() : "";
+      const cd =
+        (typeof h.get === "function" && h.get("Content-Disposition")) ||
+        (res.headers as { "content-disposition"?: string })["content-disposition"];
+      const filename =
+        xName ||
+        filenameFromContentDisposition(
+          typeof cd === "string" ? cd : undefined,
+          ""
+        ) ||
+        "orders-export.csv";
+      const url = URL.createObjectURL(res.data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "orders-export.csv";
+      a.download = filename;
       a.rel = "noopener";
       document.body.appendChild(a);
       a.click();
