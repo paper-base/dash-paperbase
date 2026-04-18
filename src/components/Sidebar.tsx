@@ -44,6 +44,7 @@ import { useBranding, defaultBranding } from "@/context/BrandingContext";
 import UserAvatar from "@/components/UserAvatar";
 import { useSearchModal } from "@/context/SearchModalContext";
 import { useNavCounts } from "@/hooks/useNavCounts";
+import { useInventoryStatus } from "@/hooks/useInventoryStatus";
 import { useEnabledApps } from "@/hooks/useEnabledApps";
 import {
   APP_CONFIG,
@@ -68,6 +69,7 @@ import {
   type ThemePreference,
 } from "@/lib/theme";
 import SystemNotificationBanner from "@/components/system/SystemNotificationBanner";
+import { InventoryStatusDot } from "@/components/inventory/InventoryStatusDot";
 
 /** Top-level nav order; `__catalog__` is the Products / catalog group. */
 const MAIN_NAV_SEQUENCE = [
@@ -117,6 +119,9 @@ function SidebarContent({
   const { setOpen: setSearchOpen } = useSearchModal();
   const { counts, formatCount } = useNavCounts();
   const { isEnabled } = useEnabledApps();
+  const { status: inventoryNavStatus } = useInventoryStatus(
+    isEnabled("inventory")
+  );
   const userPublicId =
     meProfileStatus === "ready" ? (meProfile?.public_id ?? null) : null;
   const userPlan =
@@ -507,6 +512,18 @@ function SidebarContent({
                   <span className="flex-1 min-w-0 truncate leading-relaxed">
                     {tNav(app.id)}
                   </span>
+                  {token === "inventory" && (
+                    <>
+                      <InventoryStatusDot status={inventoryNavStatus} />
+                      {inventoryNavStatus !== "none" && (
+                        <span className="sr-only">
+                          {inventoryNavStatus === "red"
+                            ? tNav("inventoryStatusStockOut")
+                            : tNav("inventoryStatusLowStock")}
+                        </span>
+                      )}
+                    </>
+                  )}
                   {app.countKey &&
                     counts != null &&
                     counts[app.countKey] > 0 && (
@@ -549,11 +566,6 @@ function SidebarContent({
                 <span className="flex-1 min-w-0 truncate text-left leading-relaxed">
                   {tNav("more")}
                 </span>
-                {counts != null && moreLinks.some((id) => APP_CONFIG[id]?.countKey && counts[APP_CONFIG[id].countKey!] > 0) && (
-                  <span className="relative mr-1 inline-flex h-2 w-2 shrink-0 rounded-full bg-red-500">
-                    <span className="absolute inset-0 animate-ping rounded-full bg-red-400/80" />
-                  </span>
-                )}
                 <ChevronRight
                   className={cn("size-4 shrink-0 transition-transform", celeryOpen && "rotate-90")}
                 />

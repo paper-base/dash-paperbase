@@ -422,11 +422,11 @@ export default function VariantsPageClient() {
         </p>
       ) : null}
 
-      <FilterBar>
+      <FilterBar className="flex-nowrap overflow-x-auto overflow-y-clip [-webkit-overflow-scrolling:touch] sm:flex-wrap sm:overflow-x-visible sm:overflow-y-visible">
         <Select
           aria-label={tPages("variantsFiltersProduct")}
           className={cn(
-            "min-w-[200px] max-w-[min(100vw-2rem,320px)] text-xs font-medium"
+            "shrink-0 min-w-[200px] max-w-[min(100vw-2rem,320px)] text-xs font-medium"
           )}
           value={productId}
           onChange={(e) => {
@@ -443,7 +443,7 @@ export default function VariantsPageClient() {
         </Select>
         <Select
           aria-label={tPages("variantsFiltersVariantStatus")}
-          className="w-[160px] text-xs font-medium"
+          className="w-[160px] shrink-0 text-xs font-medium"
           value={variantStatusValue}
           onChange={(e) => {
             const v = e.target.value.trim();
@@ -458,13 +458,13 @@ export default function VariantsPageClient() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder={tPages("variantsFiltersSearchVariants")}
-          className="w-full md:w-72"
+          className="min-w-[8.5rem] shrink-0 sm:min-w-0 sm:w-52 sm:max-w-none md:w-72"
           disabled={!productId}
         />
         <button
           type="button"
           onClick={clearVariantFilters}
-          className="h-9 rounded-ui border border-border px-3 text-sm hover:bg-muted"
+          className="h-9 shrink-0 rounded-ui border border-border px-3 text-sm hover:bg-muted"
         >
           {tPages("filtersClear")}
         </button>
@@ -534,9 +534,12 @@ export default function VariantsPageClient() {
                       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         {tPages("variantsOptionsHeading")}
                       </p>
-                      <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="flex min-w-0 max-w-full flex-nowrap gap-4 overflow-x-auto overflow-y-clip [-webkit-overflow-scrolling:touch] sm:grid sm:grid-cols-2 sm:overflow-x-visible sm:pb-0">
                         {attributes.map((a) => (
-                          <label key={a.public_id} className="flex flex-col gap-2">
+                          <label
+                            key={a.public_id}
+                            className="flex min-w-[9.5rem] shrink-0 flex-col gap-2 sm:min-w-0"
+                          >
                             <span className="text-xs font-medium text-muted-foreground">
                               {a.name}
                             </span>
@@ -645,7 +648,7 @@ export default function VariantsPageClient() {
                           {v.sku}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">
+                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                         {v.option_labels?.length
                           ? v.option_labels.join(" · ")
                           : "—"}

@@ -1,9 +1,23 @@
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
-export function FilterBar({ children }: { children: ReactNode }) {
+export function FilterBar({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <div className="rounded-card border border-dashed border-card-border bg-card p-3">
-      <div className="flex flex-wrap items-center gap-2">{children}</div>
+      <div
+        className={cn(
+          "flex min-w-0 flex-wrap items-center gap-2",
+          className
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }

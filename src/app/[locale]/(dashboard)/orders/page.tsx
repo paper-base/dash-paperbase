@@ -1,11 +1,11 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { toLocaleDigits } from "@/lib/locale-digits";
 import { digitsInNumberFont, numberTextClass } from "@/lib/number-font";
-import { Truck, Undo2 } from "lucide-react";
+import { Download, Loader2, Truck, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,19 @@ import { FraudCheckButton } from "./_components/FraudCheckButton";
 import { FraudCheckDialog } from "./_components/FraudCheckDialog";
 import type { FraudCheckApiOk, FraudCheckState } from "./_components/types";
 import { useFeatures } from "@/hooks/useFeatures";
+import { useAuth } from "@/context/AuthContext";
+import {
+  canUserDeleteProducts,
+  type MeForProductDeletePermission,
+} from "@/lib/product-delete-permission";
+
+type OrderExportPollResponse = {
+  status: string;
+  progress: number;
+  download_url: string | null;
+  expires_at: string | null;
+  error_message?: string;
+};
 
 /** Shown after dispatch: Steadfast consignment id only (not provider name). */
 function courierCell(order: Order): string {
@@ -78,6 +91,16 @@ export default function OrdersPage() {
   const [fraudDialogOrderId, setFraudDialogOrderId] = useState<string | null>(null);
   const { hasFeature } = useFeatures();
   const canFraudCheck = hasFeature("fraud_check");
+  const { meProfile } = useAuth();
+  const canExportOrders = Boolean(
+    meProfile &&
+      canUserDeleteProducts(meProfile as MeForProductDeletePermission)
+  );
+
+  const [globalSelectActive, setGlobalSelectActive] = useState(false);
+  const [exportSubmitting, setExportSubmitting] = useState(false);
+  const [activeExportJobId, setActiveExportJobId] = useState<string | null>(null);
+  const [exportPoll, setExportPoll] = useState<OrderExportPollResponse | null>(null);
 
   function fraudStatus(data: FraudCheckApiOk | null | undefined): string | undefined {
     return data?.status ? String(data.status) : undefined;
@@ -134,7 +157,56 @@ export default function OrdersPage() {
     fetchOrders();
   }, [fetchOrders]);
 
+  useEffect(() => {
+    setGlobalSelectActive(false);
+  }, [
+    filters.customer,
+    filters.date_range,
+    filters.flag,
+    filters.payment_status,
+    filters.search,
+    filters.status,
+  ]);
+
+  useEffect(() => {
+    if (!activeExportJobId) return;
+
+    let cancelled = false;
+    const terminal = new Set(["COMPLETED", "FAILED", "EXPIRED"]);
+
+    async function pollOnce() {
+      try {
+        const { data } = await api.get<OrderExportPollResponse>(
+          `admin/orders/export/${activeExportJobId}/`
+        );
+        if (cancelled) return;
+        setExportPoll(data);
+        return terminal.has(data.status);
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) notify.error(e, { fallbackMessage: tPages("ordersExportPollFailed") });
+        return true;
+      }
+    }
+
+    let interval: ReturnType<typeof setInterval> | undefined;
+    (async () => {
+      const done = await pollOnce();
+      if (done || cancelled) return;
+      interval = setInterval(async () => {
+        const stop = await pollOnce();
+        if (stop && interval) clearInterval(interval);
+      }, 2500);
+    })();
+
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
+    };
+  }, [activeExportJobId, tPages]);
+
   const toggleSelect = (id: string) => {
+    setGlobalSelectActive(false);
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -144,6 +216,11 @@ export default function OrdersPage() {
   };
 
   const toggleSelectAll = () => {
+    if (globalSelectActive) {
+      setGlobalSelectActive(false);
+      setSelectedIds(new Set());
+      return;
+    }
     if (selectedIds.size === orders.length) {
       setSelectedIds(new Set());
     } else {
@@ -151,8 +228,74 @@ export default function OrdersPage() {
     }
   };
 
+  function selectAllMatchingFilters() {
+    setGlobalSelectActive(true);
+    setSelectedIds(new Set());
+  }
+
+  async function handleExportCsv() {
+    if (!canExportOrders) return;
+    if (!globalSelectActive && selectedIds.size === 0) return;
+    setExportSubmitting(true);
+    try {
+      type CreateResp = { job_id: string; status: string };
+      const body = globalSelectActive
+        ? {
+            select_all: true,
+            filters: {
+              customer: filters.customer || "",
+              status: filters.status || "",
+              flag: filters.flag || "",
+              date_range: filters.date_range || "",
+              payment_status: filters.payment_status || "",
+              search: filters.search || "",
+            },
+          }
+        : { select_all: false, order_ids: Array.from(selectedIds) };
+      const { data } = await api.post<CreateResp>("admin/orders/export/", body);
+      setActiveExportJobId(data.job_id);
+      setExportPoll({
+        status: (data.status || "PENDING").toUpperCase(),
+        progress: 0,
+        download_url: null,
+        expires_at: null,
+      });
+      notify.success(tPages("ordersExportStarted"));
+    } catch (err) {
+      console.error(err);
+      notify.error(err, { fallbackMessage: tPages("ordersExportStartFailed") });
+    } finally {
+      setExportSubmitting(false);
+    }
+  }
+
+  async function handleExportDownload() {
+    const path = exportPoll?.download_url;
+    if (!path) return;
+    try {
+      const { data } = await api.get<Blob>(path, { responseType: "blob" });
+      const url = URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "orders-export.csv";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      notify.error(err, { fallbackMessage: tPages("ordersExportDownloadFailed") });
+    }
+  }
+
+  function dismissExportPanel() {
+    setActiveExportJobId(null);
+    setExportPoll(null);
+  }
+
   async function handleBulkConfirmSendCourier() {
-    if (selectedIds.size === 0) return;
+    if (globalSelectActive || selectedIds.size === 0) return;
     const ok = await confirm({
       title: tPages("confirmDialogTitleSendCourier", {
         count: selectedIds.size,
@@ -265,8 +408,10 @@ export default function OrdersPage() {
     }
   }
 
-  const allSelected = orders.length > 0 && selectedIds.size === orders.length;
-  const someSelected = selectedIds.size > 0;
+  const allSelected =
+    globalSelectActive ||
+    (orders.length > 0 && selectedIds.size === orders.length);
+  const someSelected = globalSelectActive || selectedIds.size > 0;
 
   async function handleFraudCheck(order: Order) {
     const key = order.public_id;
@@ -324,13 +469,42 @@ export default function OrdersPage() {
             <span className={numClass}>{toLocaleDigits(String(count), locale)}</span>)
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {canExportOrders &&
+          count > 0 &&
+          selectedIds.size > 0 &&
+          !globalSelectActive ? (
+            <button
+              type="button"
+              onClick={selectAllMatchingFilters}
+              className="rounded-card border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted whitespace-nowrap"
+            >
+              {tPages("ordersExportSelectAllMatching", {
+                count: toLocaleDigits(String(count), locale),
+              })}
+            </button>
+          ) : null}
+          {canExportOrders && someSelected && (
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={exportSubmitting}
+              className="rounded-card border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted disabled:opacity-50 inline-flex items-center gap-2"
+            >
+              {exportSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+              ) : (
+                <Download className="h-4 w-4 shrink-0" aria-hidden />
+              )}
+              {exportSubmitting ? tPages("ordersExportStarting") : tPages("ordersExportCsv")}
+            </button>
+          )}
           {someSelected && (
             <>
               <button
                 type="button"
                 onClick={handleBulkConfirmSendCourier}
-                disabled={bulkDispatching}
+                disabled={bulkDispatching || globalSelectActive}
                 className="rounded-card border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted disabled:opacity-50"
               >
                 {bulkDispatching
@@ -418,6 +592,72 @@ export default function OrdersPage() {
         </button>
       </FilterBar>
 
+      {globalSelectActive ? (
+        <div className="rounded-card border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
+          {tPages("ordersExportGlobalSelectionBanner", {
+            count: toLocaleDigits(String(count), locale),
+          })}
+        </div>
+      ) : null}
+
+      {activeExportJobId && exportPoll ? (
+        <div className="rounded-card border border-border bg-card p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">{tPages("ordersExportTitle")}</p>
+              <p className="text-xs text-muted-foreground break-all">{activeExportJobId}</p>
+            </div>
+            <button
+              type="button"
+              onClick={dismissExportPanel}
+              className="shrink-0 text-xs text-muted-foreground hover:text-foreground underline"
+            >
+              {tPages("ordersExportDismiss")}
+            </button>
+          </div>
+          {exportPoll.status === "PENDING" || exportPoll.status === "PROCESSING" ? (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+                {exportPoll.status === "PENDING"
+                  ? tPages("ordersExportStatusPending")
+                  : tPages("ordersExportStatusProcessing")}
+              </p>
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-[width] duration-300"
+                  style={{ width: `${Math.min(100, Math.max(0, exportPoll.progress))}%` }}
+                />
+              </div>
+              <p className={`text-xs tabular-nums ${numClass}`}>
+                {toLocaleDigits(String(exportPoll.progress), locale)}%
+              </p>
+            </div>
+          ) : null}
+          {exportPoll.status === "COMPLETED" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" size="sm" onClick={handleExportDownload}>
+                <Download className="h-4 w-4 mr-1.5" aria-hidden />
+                {tPages("ordersExportDownload")}
+              </Button>
+              {exportPoll.expires_at ? (
+                <span className="text-xs text-muted-foreground">
+                  {tPages("ordersExportExpiresHint")}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+          {exportPoll.status === "FAILED" ? (
+            <p className="text-sm text-destructive">
+              {exportPoll.error_message || tPages("ordersExportFailed")}
+            </p>
+          ) : null}
+          {exportPoll.status === "EXPIRED" ? (
+            <p className="text-sm text-muted-foreground">{tPages("ordersExportExpired")}</p>
+          ) : null}
+        </div>
+      ) : null}
+
       {loading ? (
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
@@ -456,23 +696,6 @@ export default function OrdersPage() {
               <tbody className="divide-y divide-border/60">
                 {orders.map((order) => {
                   const fraud = fraudByOrderId[order.public_id] || { kind: "idle" };
-                  const readyData = fraud.kind === "ready" ? fraud.data : null;
-
-                  const warningText =
-                    fraud.kind === "ready" &&
-                    readyData &&
-                    fraudStatus(readyData) === "limit_exceeded"
-                      ? fraudDetail(readyData) ?? "Limit exceeded."
-                      : null;
-
-                  const errorText =
-                    fraud.kind === "error"
-                      ? fraud.message
-                      : fraud.kind === "ready" &&
-                          readyData &&
-                          fraudStatus(readyData) === "error"
-                        ? fraudDetail(readyData) ?? "Fraud check failed."
-                        : null;
 
                   return (
                     <Fragment key={order.public_id}>
@@ -483,7 +706,8 @@ export default function OrdersPage() {
                         <td className="w-10 px-4 py-3">
                           <input
                             type="checkbox"
-                            checked={selectedIds.has(order.public_id)}
+                            checked={globalSelectActive || selectedIds.has(order.public_id)}
+                            disabled={globalSelectActive}
                             onChange={() => toggleSelect(order.public_id)}
                             className="form-checkbox"
                             aria-label={tPages("ordersListSelectOrderAria", {

@@ -15,6 +15,7 @@ import type { Inventory, PaginatedResponse } from "@/types";
 import { notify } from "@/notifications";
 import { numberTextClass } from "@/lib/number-font";
 import { cn } from "@/lib/utils";
+import { INVENTORY_STATUS_REFRESH_EVENT } from "@/hooks/useInventoryStatus";
 
 export default function InventoryPage() {
   const router = useRouter();
@@ -134,6 +135,9 @@ export default function InventoryPage() {
       });
       setAdjustValue((prev) => ({ ...prev, [publicId]: "" }));
       fetchData();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(INVENTORY_STATUS_REFRESH_EVENT));
+      }
     } catch (err) {
       console.error(err);
       notify.error(err);
