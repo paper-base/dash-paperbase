@@ -65,7 +65,6 @@ import {
   applyThemePreference,
   getStoredThemePreference,
   persistThemePreference,
-  subscribeToSystemThemeChanges,
   type ThemePreference,
 } from "@/lib/theme";
 import SystemNotificationBanner from "@/components/system/SystemNotificationBanner";
@@ -189,11 +188,6 @@ function SidebarContent({
   useEffect(() => {
     if (collapsed) setUserMenuOpen(false);
   }, [collapsed]);
-
-  useEffect(() => {
-    if (theme !== "system") return;
-    return subscribeToSystemThemeChanges(() => applyThemePreference("system"));
-  }, [theme]);
 
   const handleThemeChange = (next: ThemePreference) => {
     setTheme(next);

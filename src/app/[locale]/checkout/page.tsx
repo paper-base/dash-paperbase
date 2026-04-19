@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Copy } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
-import { LoadingButton } from "@/components/ui/loading-button";
 import { getAccessToken } from "@/lib/auth";
 import { invalidateMeRoutingCache } from "@/lib/subscription-access";
 import api from "@/lib/api";
 import { CheckoutSuccessAnimation } from "@/components/checkout/CheckoutSuccessAnimation";
+import {
+  CheckoutProviderPaymentCard,
+  CheckoutProviderPicker,
+  type ManualPaymentProvider,
+} from "@/components/checkout/CheckoutManualPaymentViews";
 import { numberTextClass } from "@/lib/number-font";
-import { cn } from "@/lib/utils";
+
+const CHECKOUT_PROVIDER_STORAGE_KEY = "paperbase_checkout_manual_provider_v1";
 
 interface Plan {
   public_id: string;
@@ -35,33 +39,7 @@ interface PaymentConfig {
   nagad_number: string;
 }
 
-type Screen = "loading" | "form" | "submitted" | "error";
-
-function CopyButton({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // ignore
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      className="inline-flex items-center gap-1 rounded-ui px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      aria-label={copied ? "Copied" : "Copy number"}
-    >
-      <Copy className="h-3 w-3" aria-hidden />
-      {copied ? "Copied!" : "Copy"}
-    </button>
-  );
-}
+type Screen = "loading" | "selectProvider" | "form" | "submitted" | "error";
 
 export default function CheckoutPage() {
   const t = useTranslations("checkoutPage");
@@ -72,6 +50,7 @@ export default function CheckoutPage() {
   const [screen, setScreen] = useState<Screen>("loading");
   const [payment, setPayment] = useState<PendingPayment | null>(null);
   const [config, setConfig] = useState<PaymentConfig>({ bkash_number: "", nagad_number: "" });
+  const [selectedProvider, setSelectedProvider] = useState<ManualPaymentProvider | null>(null);
   const [transactionId, setTransactionId] = useState("");
   const [senderNumber, setSenderNumber] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -79,6 +58,35 @@ export default function CheckoutPage() {
   const [txnIdError, setTxnIdError] = useState<string | null>(null);
   /** After payment submit: brief profile load before CTA (keeps layout stable). */
   const [successProfileLoading, setSuccessProfileLoading] = useState(false);
+
+  function persistProviderChoice(p: ManualPaymentProvider) {
+    try {
+      sessionStorage.setItem(CHECKOUT_PROVIDER_STORAGE_KEY, p);
+    } catch {
+      // ignore
+    }
+  }
+
+  function handleSelectBkash() {
+    persistProviderChoice("bkash");
+    setSelectedProvider("bkash");
+    setScreen("form");
+  }
+
+  function handleSelectNagad() {
+    persistProviderChoice("nagad");
+    setSelectedProvider("nagad");
+    setScreen("form");
+  }
+
+  function handleChangeProvider() {
+    try {
+      sessionStorage.removeItem(CHECKOUT_PROVIDER_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    setScreen("selectProvider");
+  }
 
   useEffect(() => {
     if (!getAccessToken()) {
@@ -111,7 +119,31 @@ export default function CheckoutPage() {
         if (pendingRes.data.payment.transaction_id) {
           setScreen("submitted");
         } else {
-          setScreen("form");
+          const bk = Boolean(configRes.data.bkash_number?.trim());
+          const ng = Boolean(configRes.data.nagad_number?.trim());
+          if (bk && ng) {
+            let saved: string | null = null;
+            try {
+              saved = sessionStorage.getItem(CHECKOUT_PROVIDER_STORAGE_KEY);
+            } catch {
+              saved = null;
+            }
+            if (saved === "bkash" || saved === "nagad") {
+              setSelectedProvider(saved);
+              setScreen("form");
+            } else {
+              setScreen("selectProvider");
+            }
+          } else if (bk) {
+            setSelectedProvider("bkash");
+            setScreen("form");
+          } else if (ng) {
+            setSelectedProvider("nagad");
+            setScreen("form");
+          } else {
+            setSelectedProvider("bkash");
+            setScreen("form");
+          }
         }
       } catch {
         if (!cancelled) setScreen("error");
@@ -152,7 +184,7 @@ export default function CheckoutPage() {
 
     const trimmedTxn = transactionId.trim();
     if (!trimmedTxn) {
-      setTxnIdError(t("transactionIdLabel") + " is required.");
+      setTxnIdError(t("transactionIdRequired"));
       return;
     }
 
@@ -249,207 +281,86 @@ export default function CheckoutPage() {
     );
   }
 
-  // --- Payment form screen ---
-  const hasNumbers = config.bkash_number || config.nagad_number;
-  const monthlyEq =
-    payment?.plan?.billing_cycle === "yearly" && payment?.plan?.price
-      ? parseFloat(payment.plan.price)
-      : null;
-  const yearlyTotal =
-    monthlyEq !== null ? `${payment?.currency ?? "BDT"} ${(monthlyEq * 12).toLocaleString()}` : null;
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 px-4 py-10">
-      <div className="mx-auto max-w-lg space-y-6">
-        {/* Header */}
-        <div className="text-center">
-          <p className="mb-1 text-sm font-semibold tracking-wide text-foreground/70">Paperbase</p>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+  // --- Pick payment provider (both bKash + Nagad configured) ---
+  if (screen === "selectProvider" && payment) {
+    return (
+      <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-muted/30">
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 sm:py-16">
+          <p className="mb-2 max-w-md text-center text-sm font-semibold tracking-wide text-foreground">
+            Paperbase
+          </p>
+          <h1 className="mb-6 max-w-md text-center text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             {t("title")}
           </h1>
-        </div>
-
-        {/* Plan summary */}
-        {payment?.plan && (
-          <div className="border border-border bg-card px-5 py-4 shadow-sm">
-            <dl className="space-y-3 text-sm">
-              <div className="flex items-start justify-between gap-4">
-                <dt className="text-muted-foreground shrink-0">{t("planLabel")}</dt>
-                <dd className="font-medium text-foreground text-right">{payment.plan.name}</dd>
-              </div>
-              <div className="flex items-start justify-between gap-4">
-                <dt className="text-muted-foreground shrink-0">{t("billingPeriodLabel")}</dt>
-                <dd className="text-right">
-                  <span
-                    className={`inline-block rounded-ui px-2 py-0.5 text-xs font-semibold ${
-                      payment.plan.billing_cycle === "monthly"
-                        ? "bg-primary/15 text-primary"
-                        : "bg-muted text-foreground"
-                    }`}
-                  >
-                    {payment.plan.billing_cycle === "monthly"
-                      ? t("billingMonthly")
-                      : t("billingYearly")}
-                  </span>
-                </dd>
-              </div>
-              <p className="text-xs leading-relaxed text-muted-foreground border-t border-border pt-3">
-                {payment.plan.billing_cycle === "monthly"
-                  ? t("billingMonthlyHelp")
-                  : t("billingYearlyHelp")}
-              </p>
-              {payment.plan.billing_cycle === "yearly" && monthlyEq !== null && yearlyTotal && (
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  <span className={numClass}>
-                    {payment.currency} {monthlyEq.toLocaleString()}
-                  </span>
-                  /month billed yearly (
-                  <span className={numClass}>{yearlyTotal}</span>
-                  {` total)`}
-                </p>
-              )}
-              <div className="flex items-baseline justify-between gap-4 border-t border-border pt-3">
-                <dt className="text-muted-foreground">{t("amountLabel")}</dt>
-                <dd className={cn("text-lg font-bold text-foreground", numClass)}>
-                  {payment.currency} {parseFloat(payment.amount).toLocaleString()}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        )}
-
-        {/* Payment instructions */}
-        <div className="border border-border bg-card px-5 py-5 shadow-sm">
-          <h2 className="mb-3 text-sm font-semibold leading-snug text-foreground">
-            <span
-              className={cn(
-                "inline-block rounded-sm bg-primary/15 px-2 py-1 text-xs font-bold text-primary",
-                locale === "en" && "uppercase tracking-wide"
-              )}
-            >
-              {t("instructionsTitleHighlight")}
-            </span>
-          </h2>
-          <p className="mb-4 text-sm text-muted-foreground">{t("instructionsBody")}</p>
-
-          {!hasNumbers && (
-            <p className="text-sm text-muted-foreground italic">{t("noNumbersNote")}</p>
-          )}
-
-          {config.bkash_number && (
-            <div className="mb-3 flex items-center justify-between bg-muted/50 px-4 py-3">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t("bkashLabel")}
-                </p>
-                <p className={cn("mt-0.5 text-base font-semibold text-foreground", numClass)}>
-                  {config.bkash_number}
-                </p>
-              </div>
-              <CopyButton value={config.bkash_number} />
-            </div>
-          )}
-
-          {config.nagad_number && (
-            <div className="flex items-center justify-between bg-muted/50 px-4 py-3">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t("nagadLabel")}
-                </p>
-                <p className={cn("mt-0.5 text-base font-semibold text-foreground", numClass)}>
-                  {config.nagad_number}
-                </p>
-              </div>
-              <CopyButton value={config.nagad_number} />
-            </div>
-          )}
-        </div>
-
-        {/* Transaction form */}
-        <div className="border border-border bg-card px-5 py-5 shadow-sm">
-          <h2 className="mb-4 text-sm font-semibold text-foreground">{t("formTitle")}</h2>
-
-          {submitError && (
-            <div className="mb-4 border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive">
-              {submitError}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            <div>
-              <label
-                htmlFor="transaction_id"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                {t("transactionIdLabel")}
-                <span className="ml-1 text-destructive" aria-hidden>*</span>
-              </label>
-              <input
-                id="transaction_id"
-                type="text"
-                required
-                autoComplete="off"
-                value={transactionId}
-                onChange={(e) => {
-                  setTransactionId(e.target.value);
-                  setTxnIdError(null);
-                }}
-                placeholder={t("transactionIdPlaceholder")}
-                className={cn(
-                  "w-full rounded-ui border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50",
-                  numClass,
-                  txnIdError ? "border-destructive" : "border-input"
-                )}
-              />
-              {txnIdError && (
-                <p className="mt-1 text-xs text-destructive">{txnIdError}</p>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="sender_number"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                {t("senderNumberLabel")}
-              </label>
-              <input
-                id="sender_number"
-                type="tel"
-                autoComplete="tel"
-                value={senderNumber}
-                onChange={(e) => setSenderNumber(e.target.value)}
-                placeholder={t("senderNumberPlaceholder")}
-                className={cn(
-                  "w-full rounded-ui border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50",
-                  numClass
-                )}
-              />
-            </div>
-
-            <LoadingButton
-              type="submit"
-              className="w-full"
-              isLoading={submitting}
-              loadingText={t("submitting")}
-            >
-              {t("submit")}
-            </LoadingButton>
-          </form>
-        </div>
-
-        {/* Footer actions */}
-        <div className="flex flex-col gap-2 pb-6 sm:flex-row sm:justify-between">
+          <CheckoutProviderPicker
+            bkashAvailable={Boolean(config.bkash_number?.trim())}
+            nagadAvailable={Boolean(config.nagad_number?.trim())}
+            onSelectBkash={handleSelectBkash}
+            onSelectNagad={handleSelectNagad}
+          />
           <Button
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-foreground"
+            className="mt-8 text-muted-foreground hover:text-foreground"
             onClick={() => router.push("/plans")}
           >
             {t("backToPlans")}
           </Button>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // --- Payment form screen ---
+  const bothProvidersConfigured =
+    Boolean(config.bkash_number?.trim()) && Boolean(config.nagad_number?.trim());
+
+  if (screen === "form" && payment && selectedProvider) {
+    const phoneForProvider =
+      selectedProvider === "bkash" ? config.bkash_number : config.nagad_number;
+
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 px-4 py-10">
+        <div className="mx-auto max-w-lg space-y-6">
+          <div className="space-y-2 text-center">
+            <p className="text-sm font-semibold tracking-wide text-foreground">Paperbase</p>
+            {payment.plan?.billing_cycle === "yearly" && (
+              <p className="text-xs leading-relaxed text-muted-foreground">{t("billingYearlyHelp")}</p>
+            )}
+            {payment.plan?.billing_cycle === "monthly" && (
+              <p className="text-xs text-muted-foreground">{t("billingMonthlyHelp")}</p>
+            )}
+          </div>
+
+          <CheckoutProviderPaymentCard
+            provider={selectedProvider}
+            payment={{
+              public_id: payment.public_id,
+              amount: payment.amount,
+              currency: payment.currency,
+              plan: payment.plan,
+            }}
+            phoneNumber={phoneForProvider?.trim() ?? ""}
+            transactionId={transactionId}
+            senderNumber={senderNumber}
+            submitting={submitting}
+            submitError={submitError}
+            txnIdError={txnIdError}
+            onTransactionIdChange={(v) => {
+              setTransactionId(v);
+              setTxnIdError(null);
+            }}
+            onSenderNumberChange={setSenderNumber}
+            onSubmit={handleSubmit}
+            onClose={() => router.push("/plans")}
+            onChangeProvider={bothProvidersConfigured ? handleChangeProvider : undefined}
+            numClass={numClass}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback: still loading payment/provider state
+  return spinner;
 }
