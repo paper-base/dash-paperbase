@@ -20,8 +20,6 @@ import NetworkingSection from "./sections/NetworkingSection";
 import NotificationsSection from "./sections/NotificationsSection";
 import SecuritySection from "./sections/SecuritySection";
 import BillingSection from "./sections/BillingSection";
-import DataExportSection from "./sections/DataExportSection";
-import DeleteStoreFlow from "./DeleteStoreFlow";
 import { SettingsDesktopSectionNav, SettingsSectionNav } from "./SettingsNav";
 import { SECTIONS, type SettingsSection } from "./settingsSections";
 import { settingsInvertedButtonClassName } from "./SettingsSectionBody";
@@ -72,34 +70,6 @@ export default function SettingsPage() {
     emailPrefsSaving,
     handleAccountSubmit,
     handleStoreSubmit,
-    deleteConfirmPhrase,
-    setDeleteConfirmPhrase,
-    deleteConfirmStoreName,
-    setDeleteConfirmStoreName,
-    deleteConfirmOpen,
-    setDeleteConfirmOpen,
-    deleteModalStep,
-    deleteOtpCode,
-    setDeleteOtpCode,
-    deletionInProgress,
-    deleteConfirmMatches,
-    deleteOtpValid,
-    deleteExpectedStoreName,
-    deleteStoreDisplayName,
-    deleteStoreReady,
-    deleteRequestSubmitting,
-    deleteSuccessDisplayed,
-    deleteStatus,
-    deleteRequestError,
-    deletionSteps,
-    handleSendDeleteOtp,
-    handleConfirmDeleteOtp,
-    backToDeletePhraseStep,
-    resetDeleteFlow,
-    removeStore,
-    removeStoreSubmitting,
-    removeStoreError,
-    clearRemoveStoreError,
   } = controller;
 
   const activeSectionMeta = SECTIONS.find((s) => s.id === activeSection);
@@ -139,7 +109,6 @@ export default function SettingsPage() {
         </p>
 
         <div className="flex min-w-0 flex-col gap-6">
-        {/* Mobile: in-place expandable section picker */}
         <div className="md:hidden">
           <Collapsible open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
             <CollapsibleTrigger asChild>
@@ -170,7 +139,6 @@ export default function SettingsPage() {
           </Collapsible>
         </div>
 
-        {/* Desktop: horizontal nav at top */}
         <div className="hidden min-w-0 md:block" aria-label={tSettings("navAria")}>
           <SettingsDesktopSectionNav
             activeSection={activeSection}
@@ -178,9 +146,7 @@ export default function SettingsPage() {
           />
         </div>
 
-        {/* Content area */}
         <main className="min-w-0 w-full flex-1">
-          {/* Account section */}
           <AccountSection
             hidden={activeSection !== "account"}
             isLoading={isLoading}
@@ -192,7 +158,6 @@ export default function SettingsPage() {
             onSubmit={handleAccountSubmit}
           />
 
-          {/* Store Info section */}
           <StoreInfoSection
             hidden={activeSection !== "store"}
             previewUrl={previewUrl}
@@ -218,25 +183,20 @@ export default function SettingsPage() {
             onSubmit={handleStoreSubmit}
           />
 
-          {/* Dynamic Fields section */}
           <DynamicFieldsSection
             hidden={activeSection !== "eav"}
             message={dynamicFieldsMessage}
             onMessage={setDynamicFieldsMessage}
           />
 
-          {/* Apps section */}
           <AppsSection hidden={activeSection !== "apps"} enabledApps={enabledApps} />
 
-          {/* Integrations section */}
           <IntegrationsSection
             hidden={activeSection !== "integrations"}
           />
 
-          {/* Networking section */}
           <NetworkingSection hidden={activeSection !== "networking"} />
 
-          {/* Notifications section */}
           <NotificationsSection
             hidden={activeSection !== "notifications"}
             notificationPrefs={notificationPrefs}
@@ -246,69 +206,12 @@ export default function SettingsPage() {
             emailPrefsSaving={emailPrefsSaving}
           />
 
-          {/* Security section */}
           <SecuritySection hidden={activeSection !== "security"} />
 
-          {/* Billing section */}
           <BillingSection hidden={activeSection !== "billing"} />
-
-          {/* Data & Export section */}
-          <DataExportSection
-            hidden={activeSection !== "data"}
-            deleteStoreDisabled={
-              isLoading ||
-              !deleteStoreReady ||
-              !contactEmail.trim() ||
-              deletionInProgress ||
-              deleteRequestSubmitting
-            }
-            onOpenDeleteConfirm={setDeleteConfirmOpen}
-            storeDisplayName={deleteStoreDisplayName}
-            expectedStoreNameForRemove={deleteExpectedStoreName}
-            storeSubtitle={storeType.trim() ? storeType : tSettings("currentStoreFallback")}
-            logoSrc={previewUrl}
-            contactEmail={contactEmail}
-            onRemoveStore={removeStore}
-            removeStoreError={removeStoreError}
-            clearRemoveStoreError={clearRemoveStoreError}
-            removeStoreDisabled={
-              isLoading ||
-              !contactEmail.trim() ||
-              removeStoreSubmitting ||
-              deletionInProgress ||
-              deleteRequestSubmitting
-            }
-            removeStoreSubmitting={removeStoreSubmitting}
-          />
         </main>
         </div>
       </div>
-
-      <DeleteStoreFlow
-        deleteConfirmOpen={deleteConfirmOpen}
-        onDeleteConfirmOpenChange={setDeleteConfirmOpen}
-        deleteModalStep={deleteModalStep}
-        deleteConfirmStoreName={deleteConfirmStoreName}
-        onDeleteConfirmStoreNameChange={setDeleteConfirmStoreName}
-        deleteConfirmPhrase={deleteConfirmPhrase}
-        onDeleteConfirmPhraseChange={setDeleteConfirmPhrase}
-        otpCode={deleteOtpCode}
-        onOtpCodeChange={setDeleteOtpCode}
-        handleSendDeleteOtp={handleSendDeleteOtp}
-        handleConfirmDeleteOtp={handleConfirmDeleteOtp}
-        onBackToPhraseStep={backToDeletePhraseStep}
-        deleteConfirmMatches={deleteConfirmMatches}
-        otpValid={deleteOtpValid}
-        deletionInProgress={deletionInProgress}
-        deleteRequestSubmitting={deleteRequestSubmitting}
-        deleteSuccessDisplayed={deleteSuccessDisplayed}
-        deleteStatus={deleteStatus}
-        deletionSteps={deletionSteps}
-        deleteRequestError={deleteRequestError}
-        expectedStoreName={deleteExpectedStoreName}
-        storeDisplayName={deleteStoreDisplayName}
-        onCloseDeletion={resetDeleteFlow}
-      />
     </div>
   );
 }

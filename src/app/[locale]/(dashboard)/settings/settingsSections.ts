@@ -9,7 +9,6 @@ import {
   User,
   Shield,
   CreditCard,
-  Database,
 } from "lucide-react";
 
 export type SettingsSection =
@@ -21,8 +20,7 @@ export type SettingsSection =
   | "networking"
   | "notifications"
   | "security"
-  | "billing"
-  | "data";
+  | "billing";
 
 export type SettingsSectionLabelKey =
   | "sectionStore"
@@ -33,8 +31,7 @@ export type SettingsSectionLabelKey =
   | "sectionNotifications"
   | "sectionAccount"
   | "sectionSecurity"
-  | "sectionBilling"
-  | "sectionData";
+  | "sectionBilling";
 
 export const SECTIONS: {
   id: SettingsSection;
@@ -50,5 +47,4 @@ export const SECTIONS: {
   { id: "account", labelKey: "sectionAccount", icon: User },
   { id: "security", labelKey: "sectionSecurity", icon: Shield },
   { id: "billing", labelKey: "sectionBilling", icon: CreditCard },
-  { id: "data", labelKey: "sectionData", icon: Database },
 ];

@@ -31,8 +31,6 @@ export interface MeForRouting {
   /** User public_id from auth/me/; used for cache key when JWT omits user_public_id. */
   public_id?: string;
   active_store_public_id: string | null;
-  /** True when the user owns a suspended / pending-delete store that can be restored. */
-  has_recoverable_stores?: boolean;
   /**
    * Latest subscription row by server `updated_at` (REJECTED / PENDING_REVIEW only).
    * Distinct from `subscription.subscription_status` (candidate row / calendar).
@@ -61,7 +59,7 @@ export function subscriptionIsPaidPeriod(me: MeForRouting): boolean {
   return cal === "ACTIVE" || cal === "GRACE";
 }
 
-/** Clear cached auth/me (logout, store deletion, etc.). */
+/** Clear cached auth/me (logout, etc.). */
 export function invalidateMeRoutingCache(): void {
   clearMeProfileCache();
 }
@@ -71,11 +69,7 @@ export async function fetchMeForRouting(): Promise<MeForRouting> {
   return ensureMeProfile();
 }
 
-export type PostAuthPath =
-  | "/"
-  | "/onboarding"
-  | "/onboarding/create-store"
-  | "/recover";
+export type PostAuthPath = "/" | "/onboarding" | "/onboarding/create-store";
 
 /**
  * Where to send the user after login / 2FA, using server truth from auth/me/.
@@ -84,9 +78,6 @@ export type PostAuthPath =
 export function resolvePostAuthPath(me: MeForRouting): PostAuthPath {
   if (me.active_store_public_id) {
     return "/";
-  }
-  if (me.has_recoverable_stores === true) {
-    return "/recover";
   }
   /** Dashboard is never gated by subscription; pending payment is surfaced in-app only. */
   return "/onboarding";

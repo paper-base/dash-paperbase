@@ -81,12 +81,6 @@ export default function DashboardLayoutClient({
     subscriptionIsPaidPeriod(meProfile) &&
     isEligiblePlan &&
     storeCount === 0;
-  const shouldRedirectToRecover =
-    meReady &&
-    meProfile &&
-    subscriptionIsPaidPeriod(meProfile) &&
-    !meProfile.active_store_public_id &&
-    meProfile.has_recoverable_stores === true;
   const authCheckReady = authHydrated && !isLoading;
 
   useEffect(() => {
@@ -103,11 +97,6 @@ export default function DashboardLayoutClient({
     if (!shouldRedirectToOnboarding) return;
     router.replace("/onboarding");
   }, [shouldRedirectToOnboarding, router]);
-
-  useEffect(() => {
-    if (!shouldRedirectToRecover) return;
-    router.replace("/recover");
-  }, [shouldRedirectToRecover, router]);
 
   /** One-time: new store owners with no subscription row → /plans (flag prevents loops). */
   useEffect(() => {
@@ -160,7 +149,7 @@ export default function DashboardLayoutClient({
     meProfileStatus === "loading" ||
     (meProfileStatus === "idle" && isAuthenticated);
 
-  if (authBlocking || shouldRedirectToOnboarding || shouldRedirectToRecover) {
+  if (authBlocking || shouldRedirectToOnboarding) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />

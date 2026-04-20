@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useTranslations } from "next-intl";
 import { useBranding } from "@/context/BrandingContext";
 import { useEnabledApps } from "@/hooks/useEnabledApps";
 import { useFeatures } from "@/hooks/useFeatures";
@@ -9,8 +8,6 @@ import { useAutoExpire } from "@/hooks/useAutoExpire";
 import api from "@/lib/api";
 import { useAccountSettings } from "./useAccountSettings";
 import { useStoreSettings } from "./useStoreSettings";
-import { useDeleteStore } from "./useDeleteStore";
-import { useRemoveStore } from "./useRemoveStore";
 import type { DynamicFieldsMessage } from "@/components/DynamicFieldsPanel";
 
 const NOTIFICATION_PREFS_KEY = "akkho_notification_prefs";
@@ -30,27 +27,14 @@ const defaultPrefs: NotificationPrefs = {
 };
 
 export default function useSettingsPageController() {
-  const t = useTranslations("settings");
   const { branding, isHydrated, isFetching, refetch } = useBranding();
   const enabledApps = useEnabledApps();
   const { hasFeature, loading: orderEmailFeatureLoading } = useFeatures();
   const orderEmailNotificationsEnabled = hasFeature("order_email_notifications");
 
-  // ── Focused sub-hooks ──────────────────────────────────────────────────────
   const account = useAccountSettings({ onSaveSuccess: refetch });
   const store = useStoreSettings({ onSaveSuccess: refetch });
 
-  const deletePayloadEmail =
-    branding?.owner_email?.trim() || account.ownerEmail.trim();
-  const deletePayloadStoreName =
-    branding?.admin_name?.trim() || store.storeName.trim();
-  const deleteStoreDisplayName = deletePayloadStoreName || t("deleteFlow.fallbackStoreName");
-  const deleteStoreReady = Boolean(deletePayloadEmail && deletePayloadStoreName);
-
-  const deleteStore = useDeleteStore(deletePayloadEmail, deletePayloadStoreName);
-  const removeStoreHook = useRemoveStore();
-
-  // ── Sync branding into local state once loaded ─────────────────────────────
   useEffect(() => {
     if (!branding) return;
     account.setOwnerName(branding.owner_name ?? "");
@@ -59,12 +43,10 @@ export default function useSettingsPageController() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [branding]);
 
-  // ── Dynamic fields ─────────────────────────────────────────────────────────
   const [dynamicFieldsMessage, setDynamicFieldsMessage] =
     useState<DynamicFieldsMessage>(null);
   useAutoExpire(dynamicFieldsMessage, setDynamicFieldsMessage);
 
-  // ── Notification preferences ───────────────────────────────────────────────
   const [notificationPrefs, setNotificationPrefs] =
     useState<NotificationPrefs>(defaultPrefs);
   const [emailPrefsSaving, setEmailPrefsSaving] = useState(false);
@@ -151,12 +133,10 @@ export default function useSettingsPageController() {
 
   const isLoading = !isHydrated || branding === null;
 
-  // ── Compose & return ───────────────────────────────────────────────────────
   return {
     isLoading,
     enabledApps,
 
-    // Account
     ownerName: account.ownerName,
     setOwnerName: account.setOwnerName,
     ownerEmail: account.ownerEmail,
@@ -164,7 +144,6 @@ export default function useSettingsPageController() {
     accountMessage: account.message,
     handleAccountSubmit: account.handleSubmit,
 
-    // Store
     storeName: store.storeName,
     setStoreName: store.setStoreName,
     storeType: store.storeType,
@@ -188,48 +167,13 @@ export default function useSettingsPageController() {
     storeMessage: store.message,
     handleStoreSubmit: store.handleSubmit,
 
-    // Dynamic fields
     dynamicFieldsMessage,
     setDynamicFieldsMessage,
 
-    // Notifications
     notificationPrefs,
     updateNotificationPref,
     orderEmailNotificationsEnabled,
     orderEmailFeatureLoading,
     emailPrefsSaving,
-
-    // Delete store
-    deleteConfirmPhrase: deleteStore.confirmPhrase,
-    setDeleteConfirmPhrase: deleteStore.setConfirmPhrase,
-    deleteConfirmStoreName: deleteStore.confirmStoreName,
-    setDeleteConfirmStoreName: deleteStore.setConfirmStoreName,
-    deleteConfirmOpen: deleteStore.confirmOpen,
-    setDeleteConfirmOpen: deleteStore.setConfirmOpen,
-    deleteModalStep: deleteStore.modalStep,
-    deleteOtpCode: deleteStore.otpCode,
-    setDeleteOtpCode: deleteStore.setOtpCode,
-    deletionInProgress: deleteStore.inProgress,
-    deleteJobId: deleteStore.jobId,
-    deleteStatus: deleteStore.status,
-    deleteRequestError: deleteStore.requestError,
-    deleteRequestSubmitting: deleteStore.submitting,
-    deleteSuccessDisplayed: deleteStore.successDisplayed,
-    deletionSteps: deleteStore.steps,
-    deleteConfirmMatches: deleteStore.confirmMatches,
-    deleteOtpValid: deleteStore.otpValid,
-    /** Exact store name from branding (matches API `store_name` and modal typing field). */
-    deleteExpectedStoreName: deletePayloadStoreName,
-    deleteStoreDisplayName,
-    deleteStoreReady,
-    handleSendDeleteOtp: deleteStore.handleSendDeleteOtp,
-    handleConfirmDeleteOtp: deleteStore.handleConfirmDeleteOtp,
-    backToDeletePhraseStep: deleteStore.backToPhraseStep,
-    resetDeleteFlow: deleteStore.resetFlow,
-
-    removeStoreSubmitting: removeStoreHook.submitting,
-    removeStoreError: removeStoreHook.error,
-    clearRemoveStoreError: removeStoreHook.clearError,
-    removeStore: removeStoreHook.removeStore,
   };
 }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getAccessToken } from "@/lib/auth";
-import { fetchMeForRouting, resolvePostAuthPath } from "@/lib/subscription-access";
+import { fetchMeForRouting } from "@/lib/subscription-access";
 import SubscriptionAccessBlock from "@/components/auth/SubscriptionAccessBlock";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 
@@ -34,20 +34,8 @@ export default function OnboardingLayout({
       try {
         const me = await fetchMeForRouting();
         if (cancelled) return;
-        const path = resolvePostAuthPath(me);
-        // Strict ownership: if the user has ANY owned store (active or not), onboarding is blocked.
-        // - ACTIVE store -> dashboard
-        // - INACTIVE / PENDING_DELETE -> recover
         if (me.active_store_public_id) {
           router.replace("/");
-          return;
-        }
-        if (me.store) {
-          router.replace("/recover");
-          return;
-        }
-        if (path === "/recover") {
-          router.replace("/recover");
           return;
         }
         setSubGate("ok");
