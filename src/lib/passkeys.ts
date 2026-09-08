@@ -12,6 +12,7 @@ import {
   startRegistration,
   startAuthentication,
   browserSupportsWebAuthn,
+  platformAuthenticatorIsAvailable,
 } from "@simplewebauthn/browser";
 import type {
   PublicKeyCredentialCreationOptionsJSON,
@@ -21,6 +22,20 @@ import type {
 } from "@simplewebauthn/browser";
 
 export { browserSupportsWebAuthn };
+
+/**
+ * True when this device has a usable built-in platform authenticator
+ * (Touch ID / Face ID / Windows Hello / Android biometrics). Used to decide
+ * whether to offer on-device passkey enrollment. Never throws.
+ */
+export async function platformAuthenticatorAvailable(): Promise<boolean> {
+  if (!browserSupportsWebAuthn()) return false;
+  try {
+    return await platformAuthenticatorIsAvailable();
+  } catch {
+    return false;
+  }
+}
 
 /** True if the user cancelled/dismissed the OS passkey prompt (not a real error). */
 export function isPasskeyCancellation(err: unknown): boolean {

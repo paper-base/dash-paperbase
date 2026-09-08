@@ -9,9 +9,34 @@ import { Button } from "@/components/ui/button";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { resolvePostAuthRoute } from "@/lib/subscription-access";
 import { isNetworkError } from "@/lib/network-error";
-import { browserSupportsWebAuthn, isPasskeyCancellation } from "@/lib/passkeys";
+import {
+  browserSupportsWebAuthn,
+  isPasskeyCancellation,
+  platformAuthenticatorAvailable,
+} from "@/lib/passkeys";
 
-type Phase = "verifying" | "enroll" | "error";
+type Phase = "verifying" | "enroll" | "offer" | "error";
+
+// Per-device "don't offer again" flag for the post-login passkey nudge.
+const PASSKEY_OFFER_DISMISSED_KEY = "pb_passkey_device_offer_dismissed";
+
+function offerDismissedOnThisDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(PASSKEY_OFFER_DISMISSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function rememberOfferDismissed(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(PASSKEY_OFFER_DISMISSED_KEY, "1");
+  } catch {
+    /* storage unavailable (private mode) — non-fatal */
+  }
+}
 
 export default function MagicLinkPasskeyPage() {
   const router = useRouter();
@@ -43,7 +68,16 @@ export default function MagicLinkPasskeyPage() {
       try {
         const result = await verifyMagicLink(token);
         if (result.action === "signed_in") {
-          await goToDashboard();
+          // Signed in via the email link (the account already has a passkey, just
+          // not on this device). Offer to add one here — optional, and only when
+          // the device can make a platform passkey and hasn't dismissed the offer.
+          const canOffer =
+            !offerDismissedOnThisDevice() && (await platformAuthenticatorAvailable());
+          if (canOffer) {
+            setPhase("offer");
+          } else {
+            await goToDashboard();
+          }
           return;
         }
         setTicket(result.enrollment_ticket);
@@ -93,6 +127,38 @@ export default function MagicLinkPasskeyPage() {
     }
   }
 
+  // Optional, post-login enrollment on a device that signed in via the email link.
+  // Uses the authenticated register flow (tokens are already stored), not a ticket.
+  async function handleOfferEnroll() {
+    setError("");
+    if (!browserSupportsWebAuthn()) {
+      handleSkip();
+      return;
+    }
+    setEnrolling(true);
+    try {
+      await enrollPasskey({});
+      await goToDashboard();
+    } catch (err: unknown) {
+      if (isPasskeyCancellation(err)) {
+        setError("Passkey setup was cancelled. Try again, or skip for now.");
+        return;
+      }
+      if (isNetworkError(err)) {
+        setError("We couldn't reach the server. Please try again.");
+        return;
+      }
+      setError("We couldn't create your passkey. Try again, or skip for now.");
+    } finally {
+      setEnrolling(false);
+    }
+  }
+
+  function handleSkip() {
+    rememberOfferDismissed();
+    void goToDashboard();
+  }
+
   if (phase === "verifying") {
     return (
       <AuthPageShell headline="Verifying your link" description="One moment…">
@@ -113,6 +179,48 @@ export default function MagicLinkPasskeyPage() {
           >
             Back to sign in
           </Link>
+        </div>
+      </AuthPageShell>
+    );
+  }
+
+  if (phase === "offer") {
+    return (
+      <AuthPageShell
+        headline="Add a passkey to this device"
+        description="Sign in faster next time — no email link needed."
+        containerClassName="space-y-8"
+      >
+        <div className="mx-auto w-11/12 max-w-sm space-y-6 text-center sm:w-full">
+          {error && (
+            <div className="rounded-ui border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            You&apos;re signed in. Set up a passkey on this device (Touch ID, Face ID,
+            Windows Hello, or a security key) so next time you can sign in here
+            instantly instead of waiting for an email link.
+          </p>
+          <div className="space-y-3">
+            <Button
+              type="button"
+              loading={enrolling}
+              onClick={() => void handleOfferEnroll()}
+              className="w-full gap-2"
+            >
+              <KeyRound size={16} />
+              Create a passkey
+            </Button>
+            <button
+              type="button"
+              onClick={handleSkip}
+              disabled={enrolling}
+              className="w-full text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50"
+            >
+              Not now
+            </button>
+          </div>
         </div>
       </AuthPageShell>
     );
