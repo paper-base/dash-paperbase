@@ -12,6 +12,8 @@ import { FilterDropdown } from "@/components/filters/FilterDropdown";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useFilters } from "@/hooks/useFilters";
 import { useInventoryListQuery } from "@/hooks/useInventoryListQuery";
+import { usePermissions } from "@/context/PermissionsContext";
+import { useConfirm } from "@/context/ConfirmDialogContext";
 import api from "@/lib/api";
 import {
   inventoryListQueryKey,
@@ -31,6 +33,9 @@ export default function InventoryPage() {
   const numClass = numberTextClass(locale);
   const tPages = useTranslations("pages");
   const tCommon = useTranslations("common");
+  const { has } = usePermissions();
+  const canReconcile = has("inventory.adjust");
+  const confirm = useConfirm();
   const { page, filters, setFilter, setPage, clearFilters } = useFilters([
     "search",
     "stock",
@@ -38,6 +43,7 @@ export default function InventoryPage() {
     "type",
   ]);
   const [adjusting, setAdjusting] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
   const [adjustValue, setAdjustValue] = useState<Record<string, string>>({});
   const [searchInput, setSearchInput] = useState(filters.search || "");
   const debouncedSearch = useDebouncedValue(searchInput);
@@ -162,6 +168,38 @@ export default function InventoryPage() {
     }
   }
 
+  async function handleSync() {
+    if (syncing) return;
+    const ok = await confirm({
+      title: tPages("inventorySyncConfirmTitle"),
+      message: tPages("inventorySyncConfirmMessage"),
+      confirmText: tPages("inventorySync"),
+      variant: "warning",
+    });
+    if (!ok) return;
+    setSyncing(true);
+    try {
+      const { data } = await api.post("admin/inventory/reconcile/", {});
+      const removed = (data?.orphans_removed ?? 0) + (data?.product_level_removed ?? 0);
+      const created = data?.rows_created ?? 0;
+      void queryClient.invalidateQueries({ queryKey: inventoryListQueryKey() });
+      void queryClient.invalidateQueries({ queryKey: inventoryStatusQueryKey });
+      notify.success(
+        removed === 0 && created === 0
+          ? tPages("inventorySyncUpToDate")
+          : tPages("inventorySyncDoneDesc", { removed, created }),
+        { title: tPages("inventorySyncDoneTitle") },
+      );
+    } catch (err) {
+      notify.error(err, {
+        title: tPages("inventorySyncFailedTitle"),
+        fallbackMessage: tPages("inventorySyncFailedDesc"),
+      });
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -204,17 +242,32 @@ export default function InventoryPage() {
             );
           })}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-9 shrink-0 self-start px-3"
-          aria-label="Toggle filters"
-          aria-expanded={filtersOpen}
-          onClick={() => setFiltersOpen((v) => !v)}
-        >
-          <FunnelIcon className="size-4" aria-hidden />
-        </Button>
+        <div className="flex items-start gap-2 shrink-0">
+          {canReconcile ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 self-start px-3"
+              onClick={handleSync}
+              disabled={syncing}
+              title={tPages("inventorySyncHint")}
+            >
+              {syncing ? tPages("inventorySyncing") : tPages("inventorySync")}
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-9 self-start px-3"
+            aria-label="Toggle filters"
+            aria-expanded={filtersOpen}
+            onClick={() => setFiltersOpen((v) => !v)}
+          >
+            <FunnelIcon className="size-4" aria-hidden />
+          </Button>
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground flex flex-wrap items-baseline gap-x-1.5 gap-y-1">

@@ -125,8 +125,8 @@ export const variantsProductsQueryKey = [...variantsQueryKeyRoot, "products"] as
 
 export const variantsAttributesQueryKey = [...variantsQueryKeyRoot, "attributes"] as const;
 
-export function variantsListQueryKey(productId: string) {
-  return [...variantsQueryKeyRoot, "list", productId] as const;
+export function variantsListQueryKey(productId: string, search = "") {
+  return [...variantsQueryKeyRoot, "list", productId, search] as const;
 }
 
 export const notificationsQueryKey = ["notifications"] as const;

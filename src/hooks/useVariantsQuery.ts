@@ -47,24 +47,31 @@ export async function fetchAllAttributes(): Promise<ProductAttributeAdmin[]> {
   return out;
 }
 
-export async function fetchVariantsList(productId: string): Promise<ProductVariant[]> {
+export async function fetchVariantsList(
+  opts: { productId?: string; search?: string } = {},
+): Promise<ProductVariant[]> {
+  const productId = (opts.productId ?? "").trim();
+  const search = (opts.search ?? "").trim();
   const acc: ProductVariant[] = [];
-  let page = 1;
+  // Cursor pagination (AdminListCursorPagination): follow `next` cursors so a
+  // store-wide (no-product) search still returns every matching page.
+  let cursor: string | null = null;
   while (true) {
+    const params: Record<string, string> = {
+      page_size: "100",
+      include_inactive: "true",
+    };
+    if (productId) params.product_public_id = productId;
+    if (search) params.search = search;
+    if (cursor) params.cursor = cursor;
     const { data } = await api.get<PaginatedResponse<ProductVariant>>(
       "admin/product-variants/",
-      {
-        params: {
-          product_public_id: productId,
-          page,
-          page_size: 100,
-          include_inactive: true,
-        },
-      },
+      { params },
     );
     acc.push(...data.results);
-    if (!data.next) break;
-    page += 1;
+    const next = data.next ? cursorFromLink(data.next) : null;
+    if (!next) break;
+    cursor = next;
   }
   return acc;
 }
@@ -83,10 +90,13 @@ export function useVariantAttributesQuery() {
   });
 }
 
-export function useVariantsListQuery(productId: string) {
+export function useVariantsListQuery(opts: { productId?: string; search?: string }) {
+  const productId = (opts.productId ?? "").trim();
+  const search = (opts.search ?? "").trim();
   return useQuery({
-    queryKey: variantsListQueryKey(productId),
-    queryFn: () => fetchVariantsList(productId),
-    enabled: !!productId,
+    queryKey: variantsListQueryKey(productId, search),
+    queryFn: () => fetchVariantsList({ productId, search }),
+    // Product selected → its variants; otherwise a store-wide SKU/option search.
+    enabled: !!productId || !!search,
   });
 }
