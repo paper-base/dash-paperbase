@@ -193,6 +193,8 @@ export interface ProductVariant {
   product_public_id: string;
   sku: string;
   price_override: string | null;
+  /** Short note shown in the storefront when this variant is selected. */
+  price_note: string | null;
   /** Catalog sell price (override or product base); admin list/detail. */
   effective_price?: string;
   available_quantity: number;

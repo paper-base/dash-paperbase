@@ -43,6 +43,7 @@ import {
 
 type VariantForm = {
   price_override: string;
+  price_note: string;
   is_active: boolean;
   /** one value public_id per attribute (or empty) */
   picks: Record<string, string>;
@@ -53,6 +54,7 @@ const emptyForm = (attrs: ProductAttributeAdmin[]): VariantForm => {
   for (const a of attrs) picks[a.public_id] = "";
   return {
     price_override: "",
+    price_note: "",
     is_active: true,
     picks,
   };
@@ -110,10 +112,19 @@ export default function VariantsPageClient() {
 
   const [searchInput, setSearchInput] = useState(filters.search || "");
   const debouncedSearch = useDebouncedValue(searchInput);
+  const activeSearch = debouncedSearch.trim();
+  // Store-wide search: find variants by SKU/option without picking a product first.
+  const storeWide = !productId && activeSearch.length > 0;
+  const showList = !!productId || activeSearch.length > 0;
 
   const productsQuery = useVariantProductsQuery();
   const attributesQuery = useVariantAttributesQuery();
-  const variantsQuery = useVariantsListQuery(productId);
+  const variantsQuery = useVariantsListQuery({
+    productId,
+    // When a product is chosen we load its variants once and filter client-side;
+    // otherwise the search is sent to the backend so it spans the whole store.
+    search: productId ? "" : debouncedSearch,
+  });
 
   const products = productsQuery.data ?? [];
   const attributes = attributesQuery.data ?? [];
@@ -126,6 +137,12 @@ export default function VariantsPageClient() {
   const [form, setForm] = useState<VariantForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [togglingVariantId, setTogglingVariantId] = useState<string | null>(null);
+  // Editor: hide attribute types not relevant to the variant being edited (on by
+  // default). `editorScope` is the set of attribute public_ids to keep visible,
+  // computed once when the editor opens so dropdowns don't shift while picking.
+  // null = show all (can't infer — e.g. a product's very first variant).
+  const [hideUnusedAttributes, setHideUnusedAttributes] = useState(true);
+  const [editorScope, setEditorScope] = useState<Set<string> | null>(null);
   const { handleKeyDown } = useEnterNavigation(() => {
     const form = document.querySelector('form');
     if (form instanceof HTMLFormElement) form.requestSubmit();
@@ -183,7 +200,7 @@ export default function VariantsPageClient() {
   );
 
   const filteredVariants = useMemo(() => {
-    const q = (filters.search || "").trim().toLowerCase();
+    const q = activeSearch.toLowerCase();
     let rows = variants;
     if (q) {
       rows = rows.filter((v) => {
@@ -195,7 +212,65 @@ export default function VariantsPageClient() {
     if (st === "active") rows = rows.filter((v) => v.is_active);
     else if (st === "inactive") rows = rows.filter((v) => !v.is_active);
     return rows;
-  }, [variants, filters.search, filters.variant_status]);
+  }, [variants, activeSearch, filters.variant_status]);
+
+  // Store-wide search rows span products; map public_id -> name to label each row.
+  const productNameById = useMemo(
+    () => new Map(products.map((p) => [p.public_id, p.name])),
+    [products]
+  );
+
+  // Which attribute *types* the selected product's variants actually use.
+  const attributeIdByValueId = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const a of attributes) for (const val of a.values) m.set(val.public_id, a.public_id);
+    return m;
+  }, [attributes]);
+
+  // Attribute types used across the selected product's existing variants — the
+  // seed for the "new variant" editor scope.
+  const usedAttributePublicIds = useMemo(() => {
+    const used = new Set<string>();
+    if (!productId) return used; // only meaningful when scoped to one product
+    for (const v of variants) {
+      for (const valId of v.attribute_value_public_ids || []) {
+        const aid = attributeIdByValueId.get(valId);
+        if (aid) used.add(aid);
+      }
+    }
+    return used;
+  }, [productId, variants, attributeIdByValueId]);
+
+  // Attribute ids a given variant actually sets (its non-"None" options).
+  const scopeForVariant = useCallback(
+    (v: ProductVariant) => {
+      const scope = new Set<string>();
+      for (const valId of v.attribute_value_public_ids || []) {
+        const aid = attributeIdByValueId.get(valId);
+        if (aid) scope.add(aid);
+      }
+      return scope;
+    },
+    [attributeIdByValueId]
+  );
+
+  // Whether there is anything to hide (drives the toggle's visibility).
+  const canToggleAttributes =
+    editing !== null && editorScope !== null && editorScope.size < attributes.length;
+
+  // Attributes shown in the editor. With hide-on, keep the opened scope plus any
+  // attribute the form already has a value for (so a pick is never hidden).
+  const editorAttributes = useMemo(() => {
+    if (!hideUnusedAttributes || editorScope === null) return attributes;
+    const picked = form
+      ? new Set(
+          Object.entries(form.picks)
+            .filter(([, val]) => val)
+            .map(([k]) => k)
+        )
+      : new Set<string>();
+    return attributes.filter((a) => editorScope.has(a.public_id) || picked.has(a.public_id));
+  }, [attributes, hideUnusedAttributes, editorScope, form]);
 
   function applyProductPublicIdToUrl(value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -221,6 +296,10 @@ export default function VariantsPageClient() {
   function openNew() {
     setEditing("new");
     setForm(emptyForm(attributes));
+    setHideUnusedAttributes(true);
+    // A new variant inherits the attribute types the product already uses; if the
+    // product has no variants yet we can't infer them, so show all (null).
+    setEditorScope(usedAttributePublicIds.size > 0 ? new Set(usedAttributePublicIds) : null);
   }
 
   function openEdit(v: ProductVariant) {
@@ -238,19 +317,34 @@ export default function VariantsPageClient() {
     setEditing(v.public_id);
     setForm({
       price_override: v.price_override ?? "",
+      price_note: v.price_note ?? "",
       is_active: v.is_active,
       picks,
     });
+    setHideUnusedAttributes(true);
+    // Scope = attribute types the product uses, plus any this variant sets.
+    const scope = new Set<string>([...usedAttributePublicIds, ...scopeForVariant(v)]);
+    setEditorScope(scope.size > 0 ? scope : null);
   }
 
   function closePanel() {
     setEditing(null);
     setForm(null);
+    setEditorScope(null);
   }
 
   async function saveVariant(e: FormEvent) {
     e.preventDefault();
-    if (!productId || !form) return;
+    if (!form) return;
+    // New variants belong to the selected product; edits keep their own product
+    // (which may not be the current filter when editing a store-wide search hit).
+    const editingVariant =
+      editing && editing !== "new"
+        ? variants.find((v) => v.public_id === editing)
+        : undefined;
+    const targetProductId =
+      editing === "new" ? productId : editingVariant?.product_public_id || productId;
+    if (!targetProductId) return;
     setSaving(true);
     setError("");
     const attribute_value_public_ids: string[] = [];
@@ -259,13 +353,14 @@ export default function VariantsPageClient() {
       if (raw) attribute_value_public_ids.push(raw);
     }
     const payload: Record<string, unknown> = {
-      product_public_id: productId,
+      product_public_id: targetProductId,
       is_active: form.is_active,
       attribute_value_public_ids,
     };
     const po = form.price_override.trim();
     if (po) payload.price_override = po;
     else payload.price_override = null;
+    payload.price_note = form.price_note.trim();
 
     try {
       if (editing === "new") {
@@ -310,15 +405,13 @@ export default function VariantsPageClient() {
     setError("");
     try {
       await api.patch(`admin/product-variants/${v.public_id}/`, { is_active });
-      if (productId) {
-        queryClient.setQueryData<ProductVariant[]>(
-          variantsListQueryKey(productId),
-          (prev) =>
-            (prev ?? []).map((row) =>
-              row.public_id === v.public_id ? { ...row, is_active } : row,
-            ),
-        );
-      }
+      queryClient.setQueryData<ProductVariant[]>(
+        variantsListQueryKey(productId, productId ? "" : activeSearch),
+        (prev) =>
+          (prev ?? []).map((row) =>
+            row.public_id === v.public_id ? { ...row, is_active } : row,
+          ),
+      );
       invalidateVariantCaches();
     } catch {
       notify.error(new Error("variant_status_update_failed"), {
@@ -419,7 +512,6 @@ export default function VariantsPageClient() {
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder={tPages("variantsFiltersSearchVariants")}
           className="min-w-[8.5rem] shrink-0 sm:min-w-0 sm:w-52 sm:max-w-none md:w-72"
-          disabled={!productId}
         />
         <button
           type="button"
@@ -440,14 +532,18 @@ export default function VariantsPageClient() {
         </p>
       ) : null}
 
-      {productId ? (
+      {showList ? (
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-lg font-medium text-foreground">{tPages("variantsSkusHeading")}</h2>
-            <Button type="button" size="sm" onClick={openNew} disabled={editing !== null}>
-              <Plus className="mr-2 size-4" />
-              {tPages("variantsAddVariant")}
-            </Button>
+            <h2 className="text-lg font-medium text-foreground">
+              {productId ? tPages("variantsSkusHeading") : tPages("variantsSearchResultsHeading")}
+            </h2>
+            {productId ? (
+              <Button type="button" size="sm" onClick={openNew} disabled={editing !== null}>
+                <Plus className="mr-2 size-4" />
+                {tPages("variantsAddVariant")}
+              </Button>
+            ) : null}
           </div>
 
           {editing !== null && form ? (
@@ -488,15 +584,45 @@ export default function VariantsPageClient() {
                         onKeyDown={handleKeyDown}
                       />
                     </label>
+                    <label className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {tPages("variantsPriceNote")}
+                      </span>
+                      <Input
+                        type="text"
+                        maxLength={200}
+                        className="w-full max-w-md text-sm"
+                        value={form.price_note}
+                        onChange={(e) => setForm({ ...form, price_note: e.target.value })}
+                        placeholder={tPages("variantsPriceNotePlaceholder")}
+                        onKeyDown={handleKeyDown}
+                      />
+                      <span className="text-[11px] text-muted-foreground">
+                        {tPages("variantsPriceNoteHint")}
+                      </span>
+                    </label>
                   </div>
 
                   {attributes.length > 0 ? (
                     <div className="flex flex-col gap-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        {tPages("variantsOptionsHeading")}
-                      </p>
+                      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          {tPages("variantsOptionsHeading")}
+                        </p>
+                        {canToggleAttributes ? (
+                          <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground">
+                            <input
+                              type="checkbox"
+                              checked={hideUnusedAttributes}
+                              onChange={(e) => setHideUnusedAttributes(e.target.checked)}
+                              className="form-checkbox"
+                            />
+                            <span>{tPages("variantsHideUnusedAttributes")}</span>
+                          </label>
+                        ) : null}
+                      </div>
                       <div className="flex min-w-0 max-w-full flex-nowrap gap-4 overflow-x-auto overflow-y-clip [-webkit-overflow-scrolling:touch] sm:grid sm:grid-cols-2 sm:overflow-x-visible sm:pb-0">
-                        {attributes.map((a) => (
+                        {editorAttributes.map((a) => (
                           <label
                             key={a.public_id}
                             className="flex min-w-[9.5rem] shrink-0 flex-col gap-2 sm:min-w-0"
@@ -564,13 +690,13 @@ export default function VariantsPageClient() {
             </Card>
           ) : null}
 
-          {variantsLoading ? null : variants.length === 0 ? (
+          {variantsLoading ? null : filteredVariants.length === 0 ? (
             <p className="rounded-card border border-border p-8 text-center text-sm text-muted-foreground">
-              {tPages("variantsEmpty")}
-            </p>
-          ) : filteredVariants.length === 0 ? (
-            <p className="rounded-card border border-border p-8 text-center text-sm text-muted-foreground">
-              {tPages("variantsEmptyFiltered")}
+              {storeWide
+                ? tPages("variantsSearchNoResults")
+                : variants.length === 0
+                  ? tPages("variantsEmpty")
+                  : tPages("variantsEmptyFiltered")}
             </p>
           ) : (
             <div className="overflow-x-auto rounded-card border border-border">
@@ -607,6 +733,14 @@ export default function VariantsPageClient() {
                         >
                           {v.sku}
                         </span>
+                        {!productId ? (
+                          <span
+                            className="mt-0.5 block max-w-[16rem] truncate text-xs font-normal text-muted-foreground"
+                            title={productNameById.get(v.product_public_id) ?? v.product_public_id}
+                          >
+                            {productNameById.get(v.product_public_id) ?? v.product_public_id}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                         {v.option_labels?.length
@@ -614,7 +748,17 @@ export default function VariantsPageClient() {
                           : "—"}
                       </td>
                       <td className={cn("px-4 py-3 text-foreground", numClass)}>
-                        {v.price_override ?? selectedProduct?.price ?? "—"}
+                        <span className="block">
+                          {v.price_override ?? v.effective_price ?? selectedProduct?.price ?? "—"}
+                        </span>
+                        {v.price_note ? (
+                          <span
+                            className="mt-0.5 block max-w-[16rem] truncate text-xs font-normal text-muted-foreground"
+                            title={v.price_note}
+                          >
+                            {v.price_note}
+                          </span>
+                        ) : null}
                       </td>
                       <td className={cn("px-4 py-3", numClass)}>{v.available_quantity}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
