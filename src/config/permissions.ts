@@ -173,14 +173,6 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ],
   },
   {
-    id: "api_keys",
-    label: "API keys",
-    permissions: [
-      { key: "api_keys.view", label: "View API keys" },
-      { key: "api_keys.manage", label: "Manage API keys" },
-    ],
-  },
-  {
     id: "activity",
     label: "Activity log",
     permissions: [{ key: "activity.view", label: "View the store activity log" }],

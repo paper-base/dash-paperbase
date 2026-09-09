@@ -157,7 +157,6 @@ export const couriersQueryKey = ["couriers"] as const;
 
 export const checkoutSettingsQueryKey = ["checkout-settings"] as const;
 
-export const apiKeysQueryKey = ["api-keys"] as const;
 
 export const domainsQueryKey = ["domains"] as const;
 

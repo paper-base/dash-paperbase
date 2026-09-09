@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { 
-  CellTowerIcon, 
   PlugsIcon, 
   StorefrontIcon, 
   ShoppingCartIcon, 
@@ -30,7 +29,6 @@ export type SettingsSection =
   | "eav"
   | "apps"
   | "integrations"
-  | "networking"
   | "domains"
   | "notifications"
   | "team"
@@ -43,7 +41,6 @@ export type SettingsSectionLabelKey =
   | "sectionEav"
   | "sectionApps"
   | "sectionIntegrations"
-  | "sectionNetworking"
   | "sectionDomains"
   | "sectionNotifications"
   | "sectionAccount"
@@ -74,7 +71,6 @@ export const SECTION_PERMISSION: Partial<Record<SettingsSection, string | string
   eav: "products.view",
   apps: "settings.view",
   integrations: ["integrations.view", "couriers.view"],
-  networking: "api_keys.view",
   domains: "domains.view",
   notifications: "settings.manage",
   team: "team.view",
@@ -106,7 +102,6 @@ export const SECTIONS: SettingsSectionNavItem[] = [
   { id: "eav", labelKey: "sectionEav", icon: Layers },
   { id: "apps", labelKey: "sectionApps", icon: AppStoreLogoIcon },
   { id: "integrations", labelKey: "sectionIntegrations", icon: PlugsIcon },
-  { id: "networking", labelKey: "sectionNetworking", icon: CellTowerIcon },
   { id: "domains", labelKey: "sectionDomains", icon: Globe },
   { id: "notifications", labelKey: "sectionNotifications", icon: BellRingingIcon },
   { id: "team", displayLabel: "Team", icon: Users },
