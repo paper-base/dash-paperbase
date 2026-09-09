@@ -19,6 +19,7 @@ import DynamicFieldsSection from "./sections/DynamicFieldsSection";
 import AppsSection from "./sections/AppsSection";
 import IntegrationsSection from "./sections/IntegrationsSection";
 import NetworkingSection from "./sections/NetworkingSection";
+import DomainsSection from "./sections/DomainsSection";
 import NotificationsSection from "./sections/NotificationsSection";
 import SecuritySection from "./sections/SecuritySection";
 import TeamSection from "./sections/team/TeamSection";
@@ -265,6 +266,7 @@ export default function SettingsPage() {
           />
 
           <NetworkingSection hidden={activeSection !== "networking"} />
+          <DomainsSection hidden={activeSection !== "domains"} />
 
           <NotificationsSection
             hidden={activeSection !== "notifications"}

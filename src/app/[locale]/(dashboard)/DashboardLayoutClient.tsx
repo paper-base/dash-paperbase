@@ -264,6 +264,26 @@ export default function DashboardLayoutClient({
                   moderatorNotice={isModerator}
                 />
               ) : null}
+              {subscriptionUiState === "trial" ? (
+                <div
+                  role="status"
+                  className="border-b border-border bg-primary/10"
+                >
+                  <div className="mx-auto flex w-full max-w-[88rem] flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 py-1 text-center md:gap-x-3 md:px-4 md:py-1">
+                    <p className="text-center text-[11px] leading-snug text-foreground sm:text-xs">
+                      {tDashboardLayout("trialBannerText", {
+                        days: subscription?.days_remaining ?? 0,
+                      })}{" "}
+                      <DeferredNavLink
+                        href="/plans"
+                        className="font-medium underline underline-offset-2"
+                      >
+                        {tDashboardLayout("trialBannerCta")}
+                      </DeferredNavLink>
+                    </p>
+                  </div>
+                </div>
+              ) : null}
               {subscriptionUiState === "inactive" ? (
                 <div
                   role="status"

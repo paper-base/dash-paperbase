@@ -149,6 +149,14 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ],
   },
   {
+    id: "domains",
+    label: "Domains",
+    permissions: [
+      { key: "domains.view", label: "View storefront domains" },
+      { key: "domains.manage", label: "Connect & manage domains" },
+    ],
+  },
+  {
     id: "settings",
     label: "Store settings",
     permissions: [

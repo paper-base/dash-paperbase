@@ -16,6 +16,7 @@ import {
   CreditCard,
   Palette,
   Users,
+  Globe,
 } from "lucide-react";
 
 /** Lucide or Phosphor SVG icon used in settings nav (sidebar + in-page tabs). */
@@ -30,6 +31,7 @@ export type SettingsSection =
   | "apps"
   | "integrations"
   | "networking"
+  | "domains"
   | "notifications"
   | "team"
   | "security"
@@ -42,6 +44,7 @@ export type SettingsSectionLabelKey =
   | "sectionApps"
   | "sectionIntegrations"
   | "sectionNetworking"
+  | "sectionDomains"
   | "sectionNotifications"
   | "sectionAccount"
   | "sectionSecurity"
@@ -72,6 +75,7 @@ export const SECTION_PERMISSION: Partial<Record<SettingsSection, string | string
   apps: "settings.view",
   integrations: ["integrations.view", "couriers.view"],
   networking: "api_keys.view",
+  domains: "domains.view",
   notifications: "settings.manage",
   team: "team.view",
   billing: "billing.view",
@@ -103,6 +107,7 @@ export const SECTIONS: SettingsSectionNavItem[] = [
   { id: "apps", labelKey: "sectionApps", icon: AppStoreLogoIcon },
   { id: "integrations", labelKey: "sectionIntegrations", icon: PlugsIcon },
   { id: "networking", labelKey: "sectionNetworking", icon: CellTowerIcon },
+  { id: "domains", labelKey: "sectionDomains", icon: Globe },
   { id: "notifications", labelKey: "sectionNotifications", icon: BellRingingIcon },
   { id: "team", displayLabel: "Team", icon: Users },
   { id: "account", labelKey: "sectionAccount", icon: User },

@@ -159,6 +159,8 @@ export const checkoutSettingsQueryKey = ["checkout-settings"] as const;
 
 export const apiKeysQueryKey = ["api-keys"] as const;
 
+export const domainsQueryKey = ["domains"] as const;
+
 export const marketingIntegrationsQueryKey = ["marketing-integrations"] as const;
 
 export const storeSettingsCurrentQueryKey = ["store-settings", "current"] as const;

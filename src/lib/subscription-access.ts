@@ -22,6 +22,8 @@ export interface MeSubscription {
   days_remaining: number;
   /** ISO 8601 instant when storefront API keys start receiving subscription_expired (BD calendar). */
   storefront_blocks_at?: string | null;
+  /** True while the store is on the free trial granted at signup. */
+  is_trial?: boolean;
   /**
    * Calendar state of the latest DB ACTIVE subscription row (if any).
    * When renewal is PENDING_REVIEW, this can be ACTIVE/GRACE while `subscription_status` stays PENDING_REVIEW.
