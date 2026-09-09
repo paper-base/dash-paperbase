@@ -1880,7 +1880,10 @@
       "msgRemoved": "Domain removed.",
       "msgRemoveFailed": "We couldn't remove that domain.",
       "liveAt": "Your store is live at",
-      "copyUrlAria": "Copy store address"
+      "copyUrlAria": "Copy store address",
+      "sslPending": "Setting up the secure connection. This usually takes a few minutes, and your site may show a browser warning until it is ready.",
+      "sslIssued": "Secure connection is active.",
+      "sslFailed": "There is a problem with the secure connection."
     },
     "sectionDomains": "Domains"
   },

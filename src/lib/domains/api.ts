@@ -36,6 +36,9 @@ export interface StoreDomain {
   status: StoreDomainStatus;
   is_primary: boolean;
   ssl_status: StoreDomainSslStatus;
+  ssl_checked_at: string | null;
+  ssl_expires_at: string | null;
+  ssl_error: string;
   verified_at: string | null;
   last_checked_at: string | null;
   check_error: string;
@@ -91,5 +94,13 @@ export async function removeDomain(publicId: string): Promise<void> {
 
 /** True while a domain is still being connected, so the UI keeps polling. */
 export function domainIsSettling(domain: StoreDomain): boolean {
-  return domain.status === "pending" || domain.status === "verifying";
+  if (domain.status === "pending" || domain.status === "verifying") return true;
+  // DNS is done but the certificate has not arrived, so the site does not load
+  // over https yet. Keep polling: this is the window where a merchant is most
+  // likely to be staring at the screen wondering whether it worked.
+  return (
+    domain.status === "active" &&
+    domain.kind === "custom" &&
+    (domain.ssl_status === "pending" || domain.ssl_status === "none")
+  );
 }

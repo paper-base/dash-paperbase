@@ -150,6 +150,30 @@ export default function DomainsSection({ hidden }: { hidden: boolean }) {
   const busy =
     connect.isPending || verify.isPending || setPrimary.isPending || remove.isPending;
 
+  /**
+   * What a shopper would experience right now.
+   *
+   * Without this a domain whose DNS has verified but whose certificate has not
+   * issued yet looks identical to a working one -- so the merchant visits a
+   * browser warning and opens a support ticket. Only shown for custom domains;
+   * the Paperbase address is always secure.
+   */
+  function certificateNotice(domain: StoreDomain): string {
+    if (domain.kind !== "custom" || domain.status !== "active") return "";
+    switch (domain.ssl_status) {
+      case "issued":
+        return t("domains.sslIssued");
+      case "failed":
+        return domain.ssl_error
+          ? `${t("domains.sslFailed")} ${domain.ssl_error}`
+          : t("domains.sslFailed");
+      case "pending":
+      case "none":
+      default:
+        return t("domains.sslPending");
+    }
+  }
+
   function statusLabel(status: StoreDomainStatus): string {
     switch (status) {
       case "active":
@@ -329,6 +353,20 @@ export default function DomainsSection({ hidden }: { hidden: boolean }) {
                           ? ` · ${t("domains.verifiedAt")} ${formatDashboardDateTime(domain.verified_at, locale)}`
                           : ""}
                       </p>
+                      {certificateNotice(domain) ? (
+                        <p
+                          className={cn(
+                            "mt-2 text-xs leading-relaxed",
+                            domain.ssl_status === "failed"
+                              ? "text-destructive"
+                              : domain.ssl_status === "issued"
+                                ? "text-emerald-700 dark:text-emerald-300"
+                                : "text-amber-700 dark:text-amber-300",
+                          )}
+                        >
+                          {certificateNotice(domain)}
+                        </p>
+                      ) : null}
                       {domain.check_error ? (
                         <p className="mt-2 text-xs leading-relaxed text-amber-700 dark:text-amber-300">
                           {domain.check_error}
