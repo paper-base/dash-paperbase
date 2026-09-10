@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
+  ALL_SECTIONS,
   SECTIONS,
   SECTION_OWNER_ONLY,
   SECTION_PERMISSION,
@@ -39,6 +40,8 @@ function loadSettingsMessages(locale: "en" | "bn"): Record<string, unknown> {
 }
 
 const SECTION_IDS = SECTIONS.map((row) => row.id);
+/** Flag-independent: orphan checks ask whether a key names a real section. */
+const CATALOG_IDS = ALL_SECTIONS.map((row) => row.id);
 
 /** A `has` that grants exactly the listed keys and records what was asked. */
 function grants(...keys: string[]) {
@@ -59,13 +62,19 @@ function grants(...keys: string[]) {
  */
 function visibleIdsFor(
   has: (key: string) => boolean,
-  opts: { isOwner?: boolean; isSuperuser?: boolean } = {},
+  opts: {
+    isOwner?: boolean;
+    isSuperuser?: boolean;
+    sections?: SettingsSectionNavItem[];
+  } = {},
 ): SettingsSection[] {
   const { isOwner = false, isSuperuser = false } = opts;
-  return SECTIONS.filter((row) => {
-    if (SECTION_OWNER_ONLY[row.id] && !(isOwner || isSuperuser)) return false;
-    return sectionMatchesPermission(SECTION_PERMISSION[row.id], has);
-  }).map((row) => row.id);
+  return (opts.sections ?? SECTIONS)
+    .filter((row) => {
+      if (SECTION_OWNER_ONLY[row.id] && !(isOwner || isSuperuser)) return false;
+      return sectionMatchesPermission(SECTION_PERMISSION[row.id], has);
+    })
+    .map((row) => row.id);
 }
 
 describe("sectionMatchesPermission", () => {
@@ -194,14 +203,14 @@ describe("SECTIONS integrity", () => {
 describe("permission map ↔ SECTIONS consistency", () => {
   it("has no orphaned SECTION_PERMISSION keys", () => {
     const orphans = Object.keys(SECTION_PERMISSION).filter(
-      (id) => !SECTION_IDS.includes(id as SettingsSection),
+      (id) => !CATALOG_IDS.includes(id as SettingsSection),
     );
     expect(orphans).toEqual([]);
   });
 
   it("has no orphaned SECTION_OWNER_ONLY keys", () => {
     const orphans = Object.keys(SECTION_OWNER_ONLY).filter(
-      (id) => !SECTION_IDS.includes(id as SettingsSection),
+      (id) => !CATALOG_IDS.includes(id as SettingsSection),
     );
     expect(orphans).toEqual([]);
   });
@@ -316,8 +325,8 @@ describe("REGRESSION: the Networking / API keys section stays removed", () => {
 });
 
 describe("REGRESSION: 'domains' survives as host routing's settings surface", () => {
-  it("keeps the domains section in the nav", () => {
-    const domains = SECTIONS.find((row) => row.id === "domains");
+  it("keeps the domains section in the catalog", () => {
+    const domains = ALL_SECTIONS.find((row) => row.id === "domains");
     expect(domains, "the domains section must not be collateral damage of the networking removal").toBeDefined();
     expect(domains && "labelKey" in domains && domains.labelKey).toBe("sectionDomains");
   });
@@ -329,8 +338,43 @@ describe("REGRESSION: 'domains' survives as host routing's settings surface", ()
 
   it("shows domains to a staff role holding only domains.view", () => {
     expect(sectionMatchesPermission(SECTION_PERMISSION.domains, grants("domains.view").has)).toBe(true);
-    expect(visibleIdsFor(grants("domains.view").has)).toContain("domains");
+    expect(
+      visibleIdsFor(grants("domains.view").has, { sections: ALL_SECTIONS }),
+    ).toContain("domains");
     // ...and hides it from a role without that key.
-    expect(visibleIdsFor(grants("settings.manage").has)).not.toContain("domains");
+    expect(
+      visibleIdsFor(grants("settings.manage").has, { sections: ALL_SECTIONS }),
+    ).not.toContain("domains");
+  });
+});
+
+/**
+ * The Domains UI walks a merchant through repointing a real domain. The platform
+ * can only honour that once host routing and certificate provisioning are on, so
+ * the section ships dark and is opened deliberately, per environment.
+ */
+describe("domains section is gated until the platform can serve custom domains", () => {
+  it("is absent from the nav unless NEXT_PUBLIC_DOMAINS_ENABLED is set", () => {
+    // The suite runs without the flag, which is also the production default.
+    expect(process.env.NEXT_PUBLIC_DOMAINS_ENABLED).not.toBe("1");
+    expect(SECTIONS.map((row) => row.id)).not.toContain("domains");
+  });
+
+  it("still exists in the catalog, so the flag flips it on rather than re-adding it", () => {
+    expect(ALL_SECTIONS.map((row) => row.id)).toContain("domains");
+  });
+
+  it("gates on an explicit opt-in value, not mere presence of the variable", () => {
+    // `=== "1"` and not a truthiness check: an empty or "0" value must stay off.
+    expect(MODULE_SOURCE).toMatch(
+      /process\.env\.NEXT_PUBLIC_DOMAINS_ENABLED === "1"/,
+    );
+  });
+
+  it("filters the nav from the catalog, so no other section is affected", () => {
+    const hidden = ALL_SECTIONS.map((r) => r.id).filter(
+      (id) => !SECTIONS.map((r) => r.id).includes(id),
+    );
+    expect(hidden).toEqual(["domains"]);
   });
 });
