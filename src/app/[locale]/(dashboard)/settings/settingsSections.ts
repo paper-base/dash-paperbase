@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { 
-  CellTowerIcon, 
   PlugsIcon, 
   StorefrontIcon, 
   ShoppingCartIcon, 
@@ -16,6 +15,7 @@ import {
   CreditCard,
   Palette,
   Users,
+  Globe,
 } from "lucide-react";
 
 /** Lucide or Phosphor SVG icon used in settings nav (sidebar + in-page tabs). */
@@ -29,7 +29,7 @@ export type SettingsSection =
   | "eav"
   | "apps"
   | "integrations"
-  | "networking"
+  | "domains"
   | "notifications"
   | "team"
   | "security"
@@ -41,7 +41,7 @@ export type SettingsSectionLabelKey =
   | "sectionEav"
   | "sectionApps"
   | "sectionIntegrations"
-  | "sectionNetworking"
+  | "sectionDomains"
   | "sectionNotifications"
   | "sectionAccount"
   | "sectionSecurity"
@@ -71,7 +71,7 @@ export const SECTION_PERMISSION: Partial<Record<SettingsSection, string | string
   eav: "products.view",
   apps: "settings.view",
   integrations: ["integrations.view", "couriers.view"],
-  networking: "api_keys.view",
+  domains: "domains.view",
   notifications: "settings.manage",
   team: "team.view",
   billing: "billing.view",
@@ -91,7 +91,8 @@ export const SECTION_OWNER_ONLY: Partial<Record<SettingsSection, boolean>> = {
   security: true,
 };
 
-export const SECTIONS: SettingsSectionNavItem[] = [
+/** Every settings section that exists, before any feature-flag filtering. */
+export const ALL_SECTIONS: SettingsSectionNavItem[] = [
   { id: "store", labelKey: "sectionStore", icon: StorefrontIcon },
   { id: "customization", labelKey: "sectionCustomization", icon: Palette },
   {
@@ -102,10 +103,29 @@ export const SECTIONS: SettingsSectionNavItem[] = [
   { id: "eav", labelKey: "sectionEav", icon: Layers },
   { id: "apps", labelKey: "sectionApps", icon: AppStoreLogoIcon },
   { id: "integrations", labelKey: "sectionIntegrations", icon: PlugsIcon },
-  { id: "networking", labelKey: "sectionNetworking", icon: CellTowerIcon },
+  { id: "domains", labelKey: "sectionDomains", icon: Globe },
   { id: "notifications", labelKey: "sectionNotifications", icon: BellRingingIcon },
   { id: "team", displayLabel: "Team", icon: Users },
   { id: "account", labelKey: "sectionAccount", icon: User },
   { id: "security", labelKey: "sectionSecurity", icon: Shield },
   { id: "billing", labelKey: "sectionBilling", icon: CreditCard },
 ];
+
+/**
+ * Custom domains stay hidden until the platform can actually serve them.
+ *
+ * With the API's TRAEFIK_CERT_PROVISIONING_ENABLED and HOST_STORE_ROUTING_ENABLED
+ * off, connecting a domain still writes a real StoreDomain row and the background
+ * verifier can flip it to active -- so the UI would badge it "Live" and tell the
+ * merchant their store is at https://theirdomain.com while no certificate exists
+ * and no hostname binds to a store. Pointing a live domain here on that promise
+ * takes the shop down.
+ *
+ * Set NEXT_PUBLIC_DOMAINS_ENABLED=1 only once the shared storefront is serving
+ * host-routed traffic and certificates are being issued.
+ */
+const DOMAINS_UI_ENABLED = process.env.NEXT_PUBLIC_DOMAINS_ENABLED === "1";
+
+export const SECTIONS: SettingsSectionNavItem[] = ALL_SECTIONS.filter(
+  (section) => section.id !== "domains" || DOMAINS_UI_ENABLED,
+);

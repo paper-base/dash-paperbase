@@ -12,6 +12,7 @@ export type SubscriptionUIState =
   | "grace"
   | "expired"
   | "inactive"
+  | "trial"
   | "none";
 
 /**
@@ -21,7 +22,9 @@ export type SubscriptionUIState =
  */
 export function resolveSubscriptionUIState(
   subscriptionStatus: SubscriptionStatus,
-  latestPaymentStatus: LatestPaymentStatus | undefined | null
+  latestPaymentStatus: LatestPaymentStatus | undefined | null,
+  /** Optional: an ACTIVE trial gets its own countdown lane instead of no banner. */
+  isTrial?: boolean
 ): SubscriptionUIState {
   const lps = latestPaymentStatus ?? null;
   if (lps === "REJECTED") return "rejected";
@@ -31,13 +34,17 @@ export function resolveSubscriptionUIState(
   if (subscriptionStatus === "GRACE") return "grace";
   if (subscriptionStatus === "EXPIRED") return "expired";
   if (subscriptionStatus === "NONE") return "inactive";
+  // Only an ACTIVE trial: once it lapses the grace/expired lanes above take over,
+  // so a merchant never sees "trial ends in N days" on a dead storefront.
+  if (isTrial && subscriptionStatus === "ACTIVE") return "trial";
   return "none";
 }
 
 export function resolveSubscriptionUIStateFromMe(me: MeForRouting): SubscriptionUIState {
   return resolveSubscriptionUIState(
     me.subscription.subscription_status,
-    me.latest_payment_status ?? null
+    me.latest_payment_status ?? null,
+    me.subscription.is_trial === true
   );
 }
 
